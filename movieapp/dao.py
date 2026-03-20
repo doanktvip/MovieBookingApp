@@ -1,8 +1,6 @@
 import hashlib
-
-from movieapp import db
-from movieapp.models import User
-
+from movieapp import db,app
+from movieapp.models import Movie,Genre,MovieGenre,User
 
 def auth_user(username, password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
@@ -18,3 +16,13 @@ def add_user(username, email, password):
     u = User(username=username, email=email, password=hashed_password)
     db.session.add(u)
     db.session.commit()
+
+
+def load_movies():
+    return Movie.query.all()
+
+def load_genres():
+    return Genre.query.all()
+
+def load_movie_genres():
+    return Genre.query.all()
