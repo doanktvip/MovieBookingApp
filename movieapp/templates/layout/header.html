@@ -1,7 +1,7 @@
 <header>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-header-footer fixed-top mb-5">
-        <div class="container">
-            <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1773997387/LOGO_TICKET_NOBACKGROUND_tdmfnw.png" style="width: 3rem;">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-header-footer fixed-top mb-5 ">
+        <div class="container-fluid">
+            <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774015846/LOGO2_gnv4mp.png" style="width: 8rem;">
             <a class="navbar-brand" href="#"></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
                 <span class="navbar-toggler-icon"></span>
@@ -21,7 +21,7 @@
 <!--                    </form>-->
 
                     <!-- Menu -->
-                    <ul class="navbar-nav align-items-center header-menu">
+                    <ul class="navbar-nav header-menu">
                         <li class="nav-item ms-2">
                             <a class="nav-link active" href="/">
                                 <i class="bi bi-house-door me-1"></i> Trang chủ
@@ -73,16 +73,16 @@
                     </li>
                     {% if current_user.is_authenticated%}
                     <li class="nav-item me-2">
-                        <a class="btn btn-danger rounded-pill px-4" href="/logout">
-                            Đăng xuất
+                        <a class="btn btn-danger btn-custom me-3 px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap justify-content-center"
+                           href="/logout">
+                            <i class="bi bi-box-arrow-right fs-5 me-2"></i> Đăng xuất
                         </a>
                     </li>
                     {% else %}
                     <li class="nav-item me-2">
-                        <a class="btn btn-danger rounded-pill px-4"
-                           data-bs-toggle="modal"
-                           data-bs-target="#loginModal">
-                            Đăng nhập
+                        <a class="btn btn-danger btn-custom me-3 px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap justify-content-center"
+                           data-bs-toggle="modal" data-bs-target="#loginModal">
+                            <i class="bi bi-box-arrow-in-right fs-5 me-2"></i> Đăng nhập
                         </a>
 
                     </li>
