@@ -55,36 +55,38 @@
                         <div class="d-flex align-items-center justify-content-between auth-row">
 
                             <!-- LEFT: avatar + name -->
-<!--                            <a class="d-flex align-items-center text-white text-decoration-none me-3"-->
-<!--                               href="">-->
-<!--                                <img src=""-->
-<!--                                     width="32"-->
-<!--                                     height="32"-->
-<!--                                     class="rounded-circle me-2">-->
-<!--                                <span class="fw-semibold"></span>-->
-<!--                            </a>-->
+                            <!--                            <a class="d-flex align-items-center text-white text-decoration-none me-3"-->
+                            <!--                               href="">-->
+                            <!--                                <img src=""-->
+                            <!--                                     width="32"-->
+                            <!--                                     height="32"-->
+                            <!--                                     class="rounded-circle me-2">-->
+                            <!--                                <span class="fw-semibold"></span>-->
+                            <!--                            </a>-->
 
                             <!-- RIGHT: logout -->
-<!--                            <a class="btn btn-dark rounded-pill px-4 btn-gradient btn-logout"-->
-<!--                               href="">-->
-<!--                                Đăng xuất-->
-<!--                            </a>-->
+                            <!--                            <a class="btn btn-dark rounded-pill px-4 btn-gradient btn-logout"-->
+                            <!--                               href="">-->
+                            <!--                                Đăng xuất-->
+                            <!--                            </a>-->
 
                         </div>
                     </li>
-
-
+                    {% if current_user.is_authenticated%}
                     <li class="nav-item me-2">
-                        <a class="btn btn-danger rounded-pill px-4 btn-gradient" href="">
+                        <a class="btn btn-danger rounded-pill px-4" href="/logout">
+                            Đăng xuất
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item me-2">
+                        <a class="btn btn-danger rounded-pill px-4"
+                           data-bs-toggle="modal"
+                           data-bs-target="#loginModal">
                             Đăng nhập
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="btn btn-danger rounded-pill px-4 btn-gradient" href="">
-                            Đăng ký
-                        </a>
-                    </li>
-
+                    {% endif %}
                 </ul>
             </div>
 

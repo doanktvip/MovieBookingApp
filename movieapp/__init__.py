@@ -1,5 +1,5 @@
 from flask import Flask
-
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -10,6 +10,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
 app.config["PAGE_SIZE"] = 3
 
 db = SQLAlchemy(app)
+login_manager = LoginManager(app)
 
 # thêm cái này m sửa được thì sửa chatlgpt nó bảo thế
 from movieapp import admin

@@ -16,16 +16,75 @@
 {%block header%}
 {%include 'layout/header.html'%}
 {%endblock%}
+
 <main class="flex-fill">
     {%block content%}
-
     {%endblock%}
 </main>
-
 
 {%block footer%}
 {%include 'layout/footer.html'%}
 {%endblock%}
+
+{%include 'login.html'%}
+{%include 'register.html'%}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="position-fixed end-0 p-3" style="top: 70px; z-index: 1060;">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center shadow-lg"
+         role="alert">
+
+        {% if category == 'success' %}
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+        {% elif category == 'danger' %}
+        <i class="bi bi-exclamation-circle-fill me-2 fs-5 text-danger"></i>
+        {% endif %}
+
+        <div class="fw-bold">
+            {{ message }}
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Tự động đóng TẤT CẢ thông báo sau 3 giây
+            setTimeout(function() {
+                let alertNodes = document.querySelectorAll('.alert');
+                alertNodes.forEach(function(alertNode) {
+                    let alert = new bootstrap.Alert(alertNode);
+                    alert.close();
+                });
+            }, 3000);
+
+            // 2. Kiểm tra URL xem lỗi từ đâu để bật đúng Modal
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorSource = urlParams.get('error');
+
+            if (errorSource === 'register') {
+                // Mở Modal Đăng ký
+                var registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+                registerModal.show();
+            } else if (errorSource === 'login') {
+                // Mở Modal Đăng nhập
+                var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            }
+
+            // 3. Dọn dẹp URL (Xóa ?error=... đi cho sạch đẹp)
+            if (errorSource) {
+                const cleanUrl = new URL(window.location);
+                cleanUrl.searchParams.delete('error');
+                window.history.replaceState({}, document.title, cleanUrl.toString());
+            }
+        });
+    </script>
+</div>
+{% endif %}
+{% endwith %}
 
 </body>
 </html>
