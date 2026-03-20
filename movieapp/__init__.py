@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_login import LoginManager
 import cloudinary
 from flask_sqlalchemy import SQLAlchemy
 
@@ -11,6 +12,7 @@ app.config["PAGE_SIZE"] = 3
 cloudinary.config(cloud_name="dtqkyyzv7", api_key="368798656518318", api_secret="DJdPWyRK2AVwUKiap4QsjPD7nis")
 
 db = SQLAlchemy(app)
+login_manager = LoginManager(app)
 
 # thêm cái này m sửa được thì sửa chatlgpt nó bảo thế
 from movieapp import admin
