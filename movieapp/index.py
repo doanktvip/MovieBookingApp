@@ -2,14 +2,15 @@ import hashlib
 from movieapp import app, dao, login_manager
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_login import login_user, current_user, logout_user
-
 from movieapp.models import User
 
 
+#Trang chủ
 @app.route('/')
 def index():
-    return render_template('index.html', m=hashlib.md5("123".encode("utf-8")).hexdigest())
-
+    movies=dao.load_movies()
+    genres=dao.load_genres()
+    return render_template('index.html',movies=movies,genres=genres)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -61,7 +62,6 @@ def register():
         print(str(e))
         flash("Đăng ký thất bại. Tên đăng nhập hoặc Email đã tồn tại!", "danger")
         return redirect(url_for('index', error='register'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
