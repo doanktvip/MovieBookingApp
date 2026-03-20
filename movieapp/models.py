@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy import Column, Enum, Integer, String, DateTime, ForeignKey, Float, Boolean, Text
 from sqlalchemy.orm import relationship
 from movieapp import db, app
@@ -43,6 +45,14 @@ class User(BaseModel, UserMixin):
 
     bookings = relationship('Booking', backref='user', lazy=True)
 
+class Genre(BaseModel):
+    __tablename__ = 'genre'
+    name=Column(String(50), nullable=False)
+
+class MovieGenre(BaseModel):
+    __tablename__ = 'movie_genre'
+    movie_id = Column(Integer, ForeignKey('movie.id'), nullable=False)
+    genre_id = Column(Integer, ForeignKey('genre.id'), nullable=False)
 
 class Movie(BaseModel):
     __tablename__ = 'movie'
@@ -51,10 +61,11 @@ class Movie(BaseModel):
     image = Column(String(255))
     description = Column(Text)
     release_date = Column(DateTime)
-    genre = Column(String(100))
+    rate=Column(Float)
+    limited_age=Column(Integer)
     is_active = Column(Boolean, default=True)
-
     showtimes = relationship('Showtime', backref='movie', lazy=True)
+    genres = relationship('Genre',secondary="movie_genre", backref='movie', lazy=True)
 
 
 class Room(BaseModel):
@@ -117,3 +128,22 @@ if __name__ == "__main__":
         print("--- Đã xóa sạch các bảng cũ ---")
         db.create_all()
         print("Đã tạo các bảng thành công trong MySQL!")
+        with open("data/genre.json",encoding="utf-8") as f:
+            genres = json.load(f)
+            for g in genres:
+                genre = Genre(**g)
+                db.session.add(genre)
+            db.session.commit()
+        with open("data/movie.json",encoding="utf-8") as f:
+            movies = json.load(f)
+            for m in movies:
+                movie = Movie(**m)
+                db.session.add(movie)
+            db.session.commit()
+        with open("data/moviegenre.json",encoding="utf-8") as f:
+            movie_genres = json.load(f)
+            for g in movie_genres:
+                movie_genre = MovieGenre(**g)
+                db.session.add(movie_genre)
+        db.session.commit()
+
