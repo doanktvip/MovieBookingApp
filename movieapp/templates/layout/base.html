@@ -63,6 +63,7 @@
             // 2. Kiểm tra URL xem lỗi từ đâu để bật đúng Modal
             const urlParams = new URLSearchParams(window.location.search);
             const errorSource = urlParams.get('error');
+            const successSource=urlParams.get('success')
 
             if (errorSource === 'register') {
                 // Mở Modal Đăng ký
@@ -74,10 +75,16 @@
                 loginModal.show();
             }
 
+            if (successSource === 'register') {
+            var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            }
+
             // 3. Dọn dẹp URL (Xóa ?error=... đi cho sạch đẹp)
-            if (errorSource) {
+            if (errorSource||successSource) {
                 const cleanUrl = new URL(window.location);
                 cleanUrl.searchParams.delete('error');
+                cleanUrl.searchParams.delete('success');
                 window.history.replaceState({}, document.title, cleanUrl.toString());
             }
         });

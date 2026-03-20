@@ -57,7 +57,7 @@ def register():
     try:
         dao.add_user(username=username, email=email, password=password)
         flash("Đăng ký thành công! Vui lòng đăng nhập.", "success")
-        return redirect(url_for('index'))
+        return redirect(url_for('index',success='register'))
     except Exception as e:
         print(str(e))
         flash("Đăng ký thất bại. Tên đăng nhập hoặc Email đã tồn tại!", "danger")
