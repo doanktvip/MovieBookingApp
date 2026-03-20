@@ -1,6 +1,7 @@
 from movieapp import app, dao
 from flask import Flask, render_template, request, url_for
-from flask_login import login_user,current_user, logout_user
+from flask_login import login_user, current_user, logout_user
+
 
 #Trang chủ
 @app.route('/')
