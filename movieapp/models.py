@@ -75,8 +75,8 @@ class Room(BaseModel):
     __tablename__ = 'room'
     room_name = Column(String(50), nullable=False)
     capacity = Column(Integer)
-
     seats = relationship('Seat', backref='room', cascade="all, delete-orphan", lazy=True)
+    cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
     showtimes = relationship('Showtime', backref='room', lazy=True)
 
 
@@ -95,7 +95,7 @@ class Showtime(BaseModel):
     room_id = Column(Integer, ForeignKey('room.id'), nullable=False)
     start_time = Column(DateTime, nullable=False)
     base_price = Column(Float, default=0.0)
-
+    cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
     showtime_seats = relationship('ShowtimeSeat', backref='showtime', lazy=True)
 
 
@@ -123,3 +123,12 @@ class Ticket(BaseModel):
     booking_id = Column(Integer, ForeignKey('booking.id'), nullable=False)
     seat_id = Column(Integer, ForeignKey('seat.id'), nullable=False)
     price = Column(Float)
+
+class Cinema(BaseModel):
+    __tablename__ = 'cinema'
+    name=Column(String(50), nullable=False)
+    address = Column(String(200), nullable=False)
+    map_url=Column(String(200), nullable=False)
+    hotline=Column(String(20))
+    rooms= relationship('Room', backref='cinema', lazy=True)
+    showtimes = db.relationship('Showtime', backref='cinema', lazy=True)
