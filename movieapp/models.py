@@ -45,14 +45,17 @@ class User(BaseModel, UserMixin):
 
     bookings = relationship('Booking', backref='user', lazy=True)
 
+
 class Genre(BaseModel):
     __tablename__ = 'genre'
-    name=Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False)
+
 
 class MovieGenre(BaseModel):
     __tablename__ = 'movie_genre'
     movie_id = Column(Integer, ForeignKey('movie.id'), nullable=False)
     genre_id = Column(Integer, ForeignKey('genre.id'), nullable=False)
+
 
 class Movie(BaseModel):
     __tablename__ = 'movie'
@@ -60,12 +63,12 @@ class Movie(BaseModel):
     duration = Column(Integer)
     image = Column(String(255))
     description = Column(Text)
-    release_date = Column(DateTime)
-    rate=Column(Float)
-    limited_age=Column(Integer)
+    release_date = Column(DateTime, nullable=False)
+    rate = Column(Float)
+    limited_age = Column(Integer)
     is_active = Column(Boolean, default=True)
     showtimes = relationship('Showtime', backref='movie', lazy=True)
-    genres = relationship('Genre',secondary="movie_genre", backref='movie', lazy=True)
+    genres = relationship('Genre', secondary="movie_genre", backref='movie', lazy=True)
 
 
 class Room(BaseModel):
@@ -120,5 +123,3 @@ class Ticket(BaseModel):
     booking_id = Column(Integer, ForeignKey('booking.id'), nullable=False)
     seat_id = Column(Integer, ForeignKey('seat.id'), nullable=False)
     price = Column(Float)
-
-

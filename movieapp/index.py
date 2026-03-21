@@ -1,4 +1,6 @@
 import hashlib
+import math
+
 from movieapp import app, dao, login_manager
 from flask import Flask, render_template, request, url_for, redirect, flash
 from flask_login import login_user, current_user, logout_user
@@ -68,9 +70,15 @@ def register():
 
 @app.route("/movies")
 def movie():
-    movies = dao.load_movies()
+    genre_id = request.args.get('genre')
+    kw = request.args.get('keyword')
+    page = int(request.args.get('page', 1))
+    movies = dao.load_movies(genre_id=genre_id, kw=kw, page=page)
     genres = dao.load_genres()
-    return render_template('movie.html', movies=movies, genres=genres)
+    total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
+    total_pages = math.ceil(total_movies / app.config['PAGE_SIZE'])
+    return render_template('movie.html', movies=movies, genres=genres,
+                           pages=total_pages, page=page)
 
 
 if __name__ == '__main__':
