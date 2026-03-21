@@ -1,0 +1,17 @@
+[
+  {
+    "title": "Đặt vé Online",
+    "icon": "bi bi-calendar",
+    "description": "Đặt vé nhanh chóng, tiện lợi, chọn ghế và thanh toán online dễ dàng"
+  },
+  {
+     "title": "Hệ thống Rạp Toàn Quốc",
+    "icon":"bi bi-geo-alt",
+    "description": "Hơn 100+ rạp chiếu phim hiện đại trên toàn quốc, luôn sẵn sàng phục vụ"
+  },
+  {
+    "title": "Ưu đãi Đặc biệt",
+    "icon": "bi bi-tag",
+    "description": "Nhiều chương trình khuyến mãi hấp dẫn dành riêng cho thành viên DDN"
+  }
+]
