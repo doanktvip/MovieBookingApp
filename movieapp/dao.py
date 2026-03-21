@@ -1,4 +1,6 @@
 import hashlib
+import json
+
 from movieapp import db,app
 from movieapp.models import Movie,Genre,MovieGenre,User
 
@@ -18,11 +20,18 @@ def add_user(username, email, password):
     db.session.commit()
 
 
-def load_movies():
-    return Movie.query.all()
+def load_movies(limit=None):
+    query=Movie.query
+    if limit:
+        query = query.limit(limit)
+    return query.all()
 
 def load_genres():
     return Genre.query.all()
 
 def load_movie_genres():
     return Genre.query.all()
+def load_tien_ich():
+    with open("data/tienich.json",encoding="utf-8") as f:
+        tien_ich = json.load(f)
+        return tien_ich

@@ -5,12 +5,14 @@ from flask_login import login_user, current_user, logout_user
 from movieapp.models import User
 
 
-#Trang chủ
+# Trang chủ
 @app.route('/')
 def index():
-    movies=dao.load_movies()
-    genres=dao.load_genres()
-    return render_template('index.html',movies=movies,genres=genres)
+    movies = dao.load_movies()
+    genres = dao.load_genres()
+    tien_ich = dao.load_tien_ich()
+    return render_template('index.html', movies=movies, genres=genres,tien_ich=tien_ich)
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -57,11 +59,19 @@ def register():
     try:
         dao.add_user(username=username, email=email, password=password)
         flash("Đăng ký thành công! Vui lòng đăng nhập.", "success")
-        return redirect(url_for('index',success='register'))
+        return redirect(url_for('index', success='register'))
     except Exception as e:
         print(str(e))
         flash("Đăng ký thất bại. Tên đăng nhập hoặc Email đã tồn tại!", "danger")
         return redirect(url_for('index', error='register'))
+
+
+@app.route("/movies")
+def movie():
+    movies = dao.load_movies()
+    genres = dao.load_genres()
+    return render_template('movie.html', movies=movies, genres=genres)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
