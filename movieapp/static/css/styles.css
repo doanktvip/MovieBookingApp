@@ -1,3 +1,51 @@
+:root {
+  --header-height: 60px;
+}
+
+header, nav {
+  height: var(--header-height);
+}
+
+.movie-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fff;
+    border-radius: 8px;
+}
+
+.movie-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2)
+}
+
+.ddn-background {
+    background-image: radial-gradient(ellipse at 50% 0%, #5c0a0a 0%, #240404 40%, #000000 85%) !important;
+    background-color: #000000 !important;
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: white;
+}
+
+.ddn-glass {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.ddn-glass:hover,
+.ddn-glass:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+    color: white !important;
+}
+
+.ddn-glass::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
 /*Header*/
 .header-menu .nav-link {
     transition: color 0.3s ease;
@@ -76,7 +124,7 @@
     transition: all 0.3s ease;
 }
 
-.custom-indicators button.active {
+    .custom-indicators button.active {
     width: 45px !important;
     background-color: #dc3545 !important; /* Màu đỏ */
 }

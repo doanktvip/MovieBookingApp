@@ -1,70 +1,72 @@
 {%extends 'layout/base.html'%}
 
 {%block content%}
-<main class="mt-5">
-    <!-- Carousel -->
-    <div id="heroCarousel" class="carousel slide mt-5" data-bs-ride="carousel">
+<!-- Carousel -->
+<div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
 
-        <div class="carousel-indicators custom-indicators">
-            {% for movie in movies %}
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}"
-                    class="{% if loop.first %}active{% endif %}" aria-current="true"
-                    aria-label="Slide {{ loop.index }}"></button>
-            {% endfor %}
-        </div>
+    <div class="carousel-indicators custom-indicators">
+        {% for movie in movies %}
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}" aria-current="true"
+                aria-label="Slide {{ loop.index }}"></button>
+        {% endfor %}
+    </div>
 
-        <div class="carousel-inner">
-            {% for movie in movies %}
-            <div class="carousel-item {% if loop.first %}active{% endif %}">
-                <div class="carousel-image-wrapper">
-                    <img src="{{ movie.image }}" class="d-block w-100 hero-img" alt="{{ movie.title }}">
-                    <div class="gradient-overlay"></div>
-                </div>
+    <div class="carousel-inner">
+        {% for movie in movies %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="carousel-image-wrapper">
+                <img src="{{ movie.image }}" class="d-block w-100 hero-img" alt="{{ movie.title }}">
+                <div class="gradient-overlay"></div>
+            </div>
 
-                <div class="custom-hero-content">
-                    <div class="container h-100 position-relative">
-                        <div class="row h-100 align-items-center">
-                            <div class="col-12 col-md-8 col-lg-6 mt-4 mt-md-5">
-                                <h1 class="movie-title text-white">{{ movie.title }}</h1>
+            <div class="custom-hero-content">
+                <div class="container h-100 position-relative">
+                    <div class="row h-100 align-items-center">
+                        <div class="col-12 col-md-8 col-lg-6 mt-4 mt-md-5">
+                            <h1 class="movie-title text-white">{{ movie.title }}</h1>
 
-                                <div class="movie-meta text-light mb-3">
-                                    <span class="rating text-warning fw-bold"><i class="bi bi-star-fill me-1"></i>{{movie.rate}}/10</span>
-                                    <span class="separator mx-2">•</span>
-                                    <span>{{ movie.duration }}p</span>
-                                    <span class="separator mx-2">•</span>
-                                    <span>{{ movie.release_date.strftime('%Y') if movie.release_date else '2024' }}</span>
-                                </div>
+                            <div class="movie-meta text-light mb-3">
+                                <span class="rating text-warning fw-bold"><i class="bi bi-star-fill me-1"></i>{{movie.rate}}/10</span>
+                                <span class="separator mx-2">•</span>
+                                <span>{{ movie.duration }}p</span>
+                                <span class="separator mx-2">•</span>
+                                <span>{{ movie.release_date.strftime('%Y') if movie.release_date else '2024' }}</span>
+                            </div>
 
-                                <div class="movie-genres mb-3">
-                                    {% for genre in movie.genres %}
-                                    <span class="badge bg-secondary rounded-pill me-2 px-3 py-2 bg-opacity-50 border border-light">{{ genre.name }}</span>
-                                    {% endfor %}
-                                </div>
+                            <div class="movie-genres mb-3">
+                                {% for genre in movie.genres %}
+                                <span class="badge bg-secondary rounded-pill me-2 px-3 py-2 bg-opacity-50 border border-light">{{ genre.name }}</span>
+                                {% endfor %}
+                            </div>
 
-                                <p class="movie-description text-light mb-4">{{ movie.description }}</p>
+                            <p class="movie-description text-light mb-4">{{ movie.description }}</p>
 
-                                <div class="movie-actions">
-                                    <a href="#" class="btn btn-danger btn-custom me-3 px-4 py-2 fw-bold">
-                                         Đặt vé ngay
-                                    </a>
-                                    <a href="#" class="btn btn-light btn-custom text-dark px-4 py-2 fw-bold">
-                                        Chi tiết
-                                    </a>
-                                </div>
+                            <div class="movie-actions">
+                                <a href="#" class="btn btn-danger btn-custom me-3 px-4 py-2 fw-bold">
+                                    Đặt vé ngay
+                                </a>
+                                <a href="#" class="btn btn-light btn-custom text-dark px-4 py-2 fw-bold">
+                                    Chi tiết
+                                </a>
                             </div>
                         </div>
-                        <div class="age-badge bg-danger text-white fw-bold px-3 py-1 rounded position-absolute top-0 end-0 mt-5 me-5">T{{movie.limited_age}}</div>
+                    </div>
+                    <div class="age-badge bg-danger text-white fw-bold px-3 py-1 rounded position-absolute top-0 end-0 mt-5 me-5">
+                        T{{movie.limited_age}}
                     </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
-        <button class="carousel-control-prev custom-nav-btn" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-            <div class="nav-icon-circle"><i class="carousel-control-prev-icon w-10"></i></div>
-        </button>
-        <button class="carousel-control-next custom-nav-btn" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-            <div class="nav-icon-circle"><i class="carousel-control-next-icon"></i></div>
-        </button>
+        {% endfor %}
     </div>
-</main>
+    <button class="carousel-control-prev custom-nav-btn" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="prev">
+        <div class="nav-icon-circle"><i class="carousel-control-prev-icon w-10"></i></div>
+    </button>
+    <button class="carousel-control-next custom-nav-btn" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="next">
+        <div class="nav-icon-circle"><i class="carousel-control-next-icon"></i></div>
+    </button>
+</div>
 {%endblock%}
