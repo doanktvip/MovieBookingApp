@@ -46,6 +46,10 @@ header, nav {
     color: rgba(255, 255, 255, 0.5) !important;
 }
 
+.bg-orange {
+    background-color: #fd7e14 !important;
+    color: white !important;
+}
 /*Header*/
 .header-menu .nav-link {
     transition: color 0.3s ease;

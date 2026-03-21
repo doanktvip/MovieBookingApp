@@ -1,6 +1,7 @@
 import hashlib
-from movieapp import db,app
-from movieapp.models import Movie,Genre,MovieGenre,User
+from movieapp import db, app
+from movieapp.models import Movie, Genre, MovieGenre, User
+
 
 def auth_user(username, password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
@@ -18,11 +19,30 @@ def add_user(username, email, password):
     db.session.commit()
 
 
-def load_movies():
-    return Movie.query.all()
+def load_movies( genre_id=None, kw=None, page=1):
+    query = Movie.query
+    if genre_id:
+        query = query.filter(Movie.genres.any(Genre.id == genre_id))
+    if kw:
+        query = query.filter(Movie.title.contains(kw))
+    if page:
+        start = (page - 1) * app.config['PAGE_SIZE']
+        query = query.slice(start, start + app.config['PAGE_SIZE'])
+    return query.all()
+
 
 def load_genres():
     return Genre.query.all()
 
+
 def load_movie_genres():
     return Genre.query.all()
+
+
+def count_movies(genre_id=None, kw=None):
+    query = Movie.query
+    if genre_id:
+        query = query.filter(Movie.genres.any(Genre.id == genre_id))
+    if kw:
+        query = query.filter(Movie.title.contains(kw))
+    return query.count()

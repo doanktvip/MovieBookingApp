@@ -3,22 +3,49 @@
 {% block content %}
 <div class="card bg-transparent text-white border-0 rounded-0 min-vh-100">
     <div class="card-body container py-5">
-        <h1 class="card-title display-5 fw-bold mb-1">Phim Đang Chiếu</h1>
+
+        <h1 class="card-title display-6 fw-bold mb-1">Phim Đang Chiếu</h1>
         <h6 class="card-subtitle mb-4 text-secondary">Khám phá những bộ phim mới nhất và hấp dẫn nhất</h6>
 
         <div class="mb-4">
-            <div class="col-md-5 mb-3">
-                <input type="text"
-                       class="form-control text-white ddn-glass"
-                       placeholder="Tìm kiếm phim...">
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="#" class="btn btn-danger rounded-pill px-4">Tất cả</a>
-                {% for g in genres %}
-                <a href="#" class="btn ddn-glass rounded-pill px-4 text-white">{{ g.name }}</a>
-                {% endfor %}
-            </div>
+            <form action="{{ url_for('movie') }}" method="GET" id="filterForm">
+                <div class="col-md-5 mb-3">
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control text-white ddn-glass"
+                               placeholder="Tìm kiếm phim..."
+                               name="keyword"
+                               value="{{ request.args.get('keyword', '') }}">
+                        <button class="btn ddn-glass text-white px-4" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+
+                    <input type="radio" class="btn-check" name="genre" id="genre-all" value=""
+                           onchange="document.getElementById('filterForm').submit();"
+                           {% if not request.args.get('genre') %}checked{% endif %}>
+                    <label class="btn {{ 'btn-danger' if not request.args.get('genre') else 'ddn-glass text-white' }} rounded-pill px-4"
+                           for="genre-all">
+                        Tất cả
+                    </label>
+
+                    {% for g in genres %}
+                    <input type="radio" class="btn-check" name="genre" id="genre-{{ g.id }}" value="{{ g.id }}"
+                           onchange="document.getElementById('filterForm').submit();"
+                           {% if request.args.get('genre') == g.id|string %}checked{% endif %}>
+                    <label class="btn {{ 'btn-danger' if request.args.get('genre') == g.id|string else 'ddn-glass text-white' }} rounded-pill px-4"
+                           for="genre-{{ g.id }}">
+                        {{ g.name }}
+                    </label>
+                    {% endfor %}
+
+                </div>
+            </form>
         </div>
+        {%if movies%}
         <div class="row g-4">
             {% for m in movies %}
             <div class="col-12 col-md-4 col-lg-3">
@@ -26,9 +53,14 @@
                     <div class="position-relative">
                         <img src="{{ m.image }}" class="card-img-top rounded-3" alt="{{ m.name }}"
                              style="aspect-ratio: 2/3; object-fit: cover;">
-                        <span class="position-absolute top-0 end-0 m-2 badge bg-danger">
-                    T{{ m.limited_age }}
-                  </span>
+                        <span class="position-absolute top-0 end-0 m-2 badge text-white
+                        {% if m.limited_age <= 13 %}
+                        bg-warning
+                        {% elif m.limited_age <= 16 %}
+                        bg-orange
+                        {% else %}
+                        bg-danger
+                        {% endif %}">T{{ m.limited_age }}</span>
                     </div>
 
                     <div class="card-body ddn-glass p-3">
@@ -43,7 +75,8 @@
                         <div class="mb-3 d-flex flex-wrap gap-1">
                             {% if m.genres %}
                             {% for g in m.genres %}
-                            <span class="badge border border-danger text-white bg-opacity-10 bg-danger fw-normal">{{ g.name }}</span>
+                            <span class="badge text-danger fw-normal px-2 py-1"
+                                  style="background-color: rgba(220, 53, 69, 0.15);">{{ g.name }}</span>
                             {% endfor %}
                             {% else %}
                             <span class="text-secondary small">Đang cập nhật...</span>
@@ -52,11 +85,38 @@
                         <a href="#" class="btn btn-danger w-100 fw-bold">Đặt vé</a>
                     </div>
                 </div>
-
             </div>
             {% endfor %}
         </div>
-
+        <div class="d-flex justify-content-center mt-5 mb-4">
+            <ul class="pagination gap-2 border-0 mb-0">
+                {% for p in range(1, pages + 1) %}
+                <li class="page-item">
+                    <a class="page-link {% if p == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('movie', **dict(request.args, page=p)) }}">
+                        {{ p }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% else %}
+        <div class="d-flex flex-column align-items-center justify-content-center py-5 my-5 text-center">
+            <div class="mb-4">
+                <i class="bi bi-film text-secondary" style="font-size: 6rem; opacity: 0.2;"></i>
+            </div>
+            <h1 class="fw-bold text-white mb-3" style="letter-spacing: -1px;">
+                Hiện chưa có phim nào!
+            </h1>
+            <p class="text-secondary fs-4 mb-5 mx-auto">
+                Danh mục này hiện đang trống hoặc không tìm thấy phim phù hợp. <br>
+                Vui lòng quay lại sau hoặc chọn thể loại khác bạn nhé!
+            </p>
+            <a href="{{ url_for('movie') }}" class="btn btn-danger rounded-pill px-5 py-3 fw-bold shadow-lg">
+                <i class="bi bi-arrow-left-circle me-2"></i> Xem tất cả phim
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

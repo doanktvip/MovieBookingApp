@@ -7,8 +7,7 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="mynavbar">
-
+            <div class="collapse navbar-collapse bg-dark p-3 p-lg-0 mt-2 mt-lg-0 rounded" id="mynavbar">
                 <!-- LEFT: Search + menu -->
                 <div class="d-flex align-items-center gap-3 me-1 mx-auto">
 
@@ -50,38 +49,29 @@
 
                 <!-- RIGHT: Auth buttons -->
                 <ul class="navbar-nav ms-auto header-auth">
-
-                    <li class="nav-item w-100">
-                        <div class="d-flex align-items-center justify-content-between auth-row">
-
-                            <!-- LEFT: avatar + name -->
-                            <!--                            <a class="d-flex align-items-center text-white text-decoration-none me-3"-->
-                            <!--                               href="">-->
-                            <!--                                <img src=""-->
-                            <!--                                     width="32"-->
-                            <!--                                     height="32"-->
-                            <!--                                     class="rounded-circle me-2">-->
-                            <!--                                <span class="fw-semibold"></span>-->
-                            <!--                            </a>-->
-
-                            <!-- RIGHT: logout -->
-                            <!--                            <a class="btn btn-dark rounded-pill px-4 btn-gradient btn-logout"-->
-                            <!--                               href="">-->
-                            <!--                                Đăng xuất-->
-                            <!--                            </a>-->
-
-                        </div>
-                    </li>
+                    <!--                    <li class="nav-item w-100">-->
+                    <!--                        <div class="d-flex align-items-center justify-content-between auth-row">-->
+                    <!--                            &lt;!&ndash; LEFT: avatar + name &ndash;&gt;-->
+                    <!--                            <a class="d-flex align-items-center text-white text-decoration-none me-3"-->
+                    <!--                               href="">-->
+                    <!--                                <img src=""-->
+                    <!--                                     width="32"-->
+                    <!--                                     height="32"-->
+                    <!--                                     class="rounded-circle me-2">-->
+                    <!--                                <span class="fw-semibold"></span>-->
+                    <!--                            </a>-->
+                    <!--                        </div>-->
+                    <!--                    </li>-->
                     {% if current_user.is_authenticated%}
-                    <li class="nav-item me-2">
-                        <a class="btn btn-danger btn-custom me-3 px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap justify-content-center"
+                    <li class="nav-item d-flex justify-content-center w-100 my-2 my-lg-0">
+                        <a class="btn btn-danger btn-custom px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap"
                            href="/logout">
                             <i class="bi bi-box-arrow-right fs-5 me-2"></i> Đăng xuất
                         </a>
                     </li>
                     {% else %}
-                    <li class="nav-item me-2">
-                        <a class="btn btn-danger btn-custom me-3 px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap justify-content-center"
+                    <li class="nav-item d-flex justify-content-center w-100 my-2 my-lg-0">
+                        <a class="btn btn-danger btn-custom px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap"
                            data-bs-toggle="modal" data-bs-target="#loginModal">
                             <i class="bi bi-box-arrow-in-right fs-5 me-2"></i> Đăng nhập
                         </a>
