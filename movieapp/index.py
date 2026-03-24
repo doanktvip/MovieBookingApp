@@ -13,7 +13,7 @@ def index():
     movies = dao.load_movies()
     genres = dao.load_genres()
     tien_ich = dao.load_tien_ich()
-    return render_template('index.html', movies=movies, genres=genres,tien_ich=tien_ich)
+    return render_template('index.html', movies=movies, genres=genres, tien_ich=tien_ich)
 
 
 @app.route('/login', methods=['POST'])

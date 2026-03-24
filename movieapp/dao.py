@@ -1,7 +1,7 @@
 import hashlib
 import json
-from movieapp import db,app
-from movieapp.models import Movie,Genre,MovieGenre,User
+from movieapp import db, app
+from movieapp.models import Movie, Genre, User
 
 
 def auth_user(username, password):
@@ -20,7 +20,7 @@ def add_user(username, email, password):
     db.session.commit()
 
 
-def load_movies( genre_id=None, kw=None, page=1):
+def load_movies(genre_id=None, kw=None, page=1):
     query = Movie.query
     if genre_id:
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
@@ -36,9 +36,6 @@ def load_genres():
     return Genre.query.all()
 
 
-def load_movie_genres():
-    return Genre.query.all()
-
 def count_movies(genre_id=None, kw=None):
     query = Movie.query
     if genre_id:
@@ -46,8 +43,9 @@ def count_movies(genre_id=None, kw=None):
     if kw:
         query = query.filter(Movie.title.contains(kw))
     return query.count()
-  
+
+
 def load_tien_ich():
-    with open("data/tienich.json",encoding="utf-8") as f:
+    with open("data/tienich.json", encoding="utf-8") as f:
         tien_ich = json.load(f)
         return tien_ich

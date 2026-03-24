@@ -1,11 +1,10 @@
-import json
-
 from sqlalchemy import Column, Enum, Integer, String, DateTime, ForeignKey, Float, Boolean, Text
 from sqlalchemy.orm import relationship
 from movieapp import db, app
 from flask_login import UserMixin
 from datetime import datetime
 import enum
+from datetime import timedelta
 
 
 # --- 1. Lớp Base ---
@@ -32,6 +31,12 @@ class BookingStatus(enum.Enum):
     PENDING = "pending"
     PAID = "paid"
     CANCELLED = "cancelled"
+    FAILED = "failed"
+
+
+movie_genre = db.Table('movie_genre',
+                       Column('movie_id', Integer, ForeignKey('movie.id'), primary_key=True),
+                       Column('genre_id', Integer, ForeignKey('genre.id'), primary_key=True))
 
 
 # --- 3. Định nghĩa các Model ---
@@ -49,12 +54,7 @@ class User(BaseModel, UserMixin):
 class Genre(BaseModel):
     __tablename__ = 'genre'
     name = Column(String(50), nullable=False)
-
-
-class MovieGenre(BaseModel):
-    __tablename__ = 'movie_genre'
-    movie_id = Column(Integer, ForeignKey('movie.id'), nullable=False)
-    genre_id = Column(Integer, ForeignKey('genre.id'), nullable=False)
+    movies = relationship('Movie', secondary=movie_genre, back_populates='genres', lazy=True)
 
 
 class Movie(BaseModel):
@@ -68,15 +68,16 @@ class Movie(BaseModel):
     limited_age = Column(Integer)
     is_active = Column(Boolean, default=True)
     showtimes = relationship('Showtime', backref='movie', lazy=True)
-    genres = relationship('Genre', secondary="movie_genre", backref='movie', lazy=True)
+    genres = relationship('Genre', secondary=movie_genre, back_populates='movies', lazy=True)
 
 
 class Room(BaseModel):
     __tablename__ = 'room'
     room_name = Column(String(50), nullable=False)
     capacity = Column(Integer)
-    seats = relationship('Seat', backref='room', cascade="all, delete-orphan", lazy=True)
     cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
+
+    seats = relationship('Seat', backref='room', cascade="all, delete-orphan", lazy=True)
     showtimes = relationship('Showtime', backref='room', lazy=True)
 
 
@@ -94,9 +95,11 @@ class Showtime(BaseModel):
     movie_id = Column(Integer, ForeignKey('movie.id'), nullable=False)
     room_id = Column(Integer, ForeignKey('room.id'), nullable=False)
     start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
     base_price = Column(Float, default=0.0)
-    cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
-    showtime_seats = relationship('ShowtimeSeat', backref='showtime', lazy=True)
+
+    bookings = relationship('Booking', backref='showtime', lazy=True)
+    showtime_seats = relationship('ShowtimeSeat', backref='showtime', cascade="all, delete-orphan", lazy=True)
 
 
 class ShowtimeSeat(BaseModel):
@@ -104,7 +107,9 @@ class ShowtimeSeat(BaseModel):
     showtime_id = Column(Integer, ForeignKey('showtime.id'), nullable=False)
     seat_id = Column(Integer, ForeignKey('seat.id'), nullable=False)
     status = Column(Enum(SeatStatus), default=SeatStatus.AVAILABLE)
-    actual_price = Column(Float)
+    price = Column(Float)
+
+    ticket = relationship('Ticket', backref='showtime_seat', uselist=False, lazy=True)
 
 
 class Booking(BaseModel):
@@ -114,21 +119,22 @@ class Booking(BaseModel):
     total_price = Column(Float, nullable=False)
     status = Column(Enum(BookingStatus), default=BookingStatus.PENDING)
     payment_method = Column(String(50))
+    transaction_id = Column(String(100), nullable=True)
 
-    tickets = relationship('Ticket', backref='booking', lazy=True)
+    tickets = relationship('Ticket', backref='booking', cascade="all, delete-orphan", lazy=True)
 
 
 class Ticket(BaseModel):
     __tablename__ = 'ticket'
     booking_id = Column(Integer, ForeignKey('booking.id'), nullable=False)
-    seat_id = Column(Integer, ForeignKey('seat.id'), nullable=False)
-    price = Column(Float)
+    showtime_seat_id = Column(Integer, ForeignKey('showtime_seat.id'), nullable=False)
+    final_price = Column(Float, nullable=False)
+
 
 class Cinema(BaseModel):
     __tablename__ = 'cinema'
-    name=Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False)
     address = Column(String(200), nullable=False)
-    map_url=Column(String(200), nullable=False)
-    hotline=Column(String(20))
-    rooms= relationship('Room', backref='cinema', lazy=True)
-    showtimes = db.relationship('Showtime', backref='cinema', lazy=True)
+    map_url = Column(String(200), nullable=False)
+    hotline = Column(String(20))
+    rooms = relationship('Room', backref='cinema', lazy=True)
