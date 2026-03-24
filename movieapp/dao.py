@@ -49,3 +49,7 @@ def load_tien_ich():
     with open("data/tienich.json", encoding="utf-8") as f:
         tien_ich = json.load(f)
         return tien_ich
+
+
+def get_movie_by_id(movie_id):
+    return Movie.query.get(movie_id)

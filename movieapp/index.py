@@ -81,5 +81,10 @@ def movie():
                            pages=total_pages, page=page)
 
 
+@app.route('/movies/<int:movie_id>')
+def movie_detail(movie_id):
+    return render_template('movie-detail.html', movie=dao.get_movie_by_id(movie_id))
+
+
 if __name__ == '__main__':
     app.run(debug=True)

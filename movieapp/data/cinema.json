@@ -1,9 +1,10 @@
 [
   {
     "id": 1,
-    "name": "Cinema Center",
-    "address": "123 Đường Nguyễn Huệ, Quận 1, TP.HCM",
-    "map_url": "https://maps.google.com/...",
-    "hotline": "19001234"
+    "name": "Cinema Quận 1",
+    "address": "123 Lê Lợi, Q.1, TP.HCM",
+    "map_url": "https://maps.example.com/cinema1",
+    "hotline": "19001111",
+    "province_id": 1
   }
 ]

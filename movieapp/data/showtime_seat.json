@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "showtime_id": 1,
+    "seat_id": 1,
+    "status": "booked",
+    "price": 75000.0
+  },
+  {
+    "id": 2,
+    "showtime_id": 1,
+    "seat_id": 2,
+    "status": "booked",
+    "price": 75000.0
+  }
+]
