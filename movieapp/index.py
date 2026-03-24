@@ -92,5 +92,10 @@ def cinema():
         pages = math.ceil(total / app.config['PAGE_SIZE'])
     return render_template('cinema.html', cinemas=cinemas,page=page,pages=pages)
 
+@app.route('/movies/<int:movie_id>')
+def movie_detail(movie_id):
+    return render_template('movie-detail.html', movie=dao.get_movie_by_id(movie_id))
+
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,6 +1,0 @@
-[
-  {"id": 1, "showtime_id": 1, "seat_id": 1, "status": "booked", "price": 75000.0},
-  {"id": 2, "showtime_id": 1, "seat_id": 2, "status": "booked", "price": 75000.0},
-  {"id": 3, "showtime_id": 1, "seat_id": 3, "status": "available", "price": 85000.0},
-  {"id": 4, "showtime_id": 1, "seat_id": 4, "status": "available", "price": 85000.0}
-]

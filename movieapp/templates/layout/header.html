@@ -1,85 +1,88 @@
 <header>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-header-footer fixed-top">
-        <div class="container-fluid">
-            <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774015846/LOGO2_gnv4mp.png"
-                 style="width: 8rem;">
-            <a class="navbar-brand" href="#"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse bg-dark p-3 p-lg-0 mt-2 mt-lg-0 rounded" id="mynavbar">
-                <!-- LEFT: Search + menu -->
-                <div class="d-flex align-items-center gap-3 me-1 mx-auto">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-header-footer fixed-top py-0">
+        <div class="container-fluid h-100 align-items-center">
+            <!--Phần logo-->
+            <div class="d-flex align-items-center" style="flex: 1;">
+                <a class="navbar-brand d-flex align-items-center m-0" href="#">
+                    <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774015846/LOGO2_gnv4mp.png"
+                         style="width: 8rem;">
+                </a>
+            </div>
+            <!--Phần avatar-->
+            <div class="d-flex align-items-center justify-content-end order-lg-3 gap-2" style="flex: 1;">
 
-                    <!--                    &lt;!&ndash; Search &ndash;&gt;-->
-                    <!--                    <form class="d-flex position-relative header-search" method="get">-->
-                    <!--                        <i class="bi bi-search position-absolute start-0 ms-3 top-50 translate-middle-y"></i>-->
-                    <!--                        <input class="form-control pe-4 rounded-pill ps-5"-->
-                    <!--                               type="text"-->
-                    <!--                               placeholder="Tìm kiếm phim, rạp phim"-->
-                    <!--                               name="q">-->
-                    <!--                    </form>-->
+                {% if current_user.is_authenticated %}
+                <div class="dropdown">
+                    <a class="p-1 fw-bold d-flex align-items-center text-decoration-none"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="https://res.cloudinary.com/db4bjqp4f/image/upload/v1765436438/shtnr60mecp057e2uctk.jpg"
+                             width="36" height="36" class="rounded-circle border border-2 border-secondary">
+                    </a>
 
-                    <!-- Menu -->
-                    <ul class="navbar-nav header-menu">
-                        <li class="nav-item ms-2">
-                            <a class="nav-link active" href="/">
-                                <i class="bi bi-house-door me-1"></i> Trang chủ
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark mt-2 shadow">
+                        <li><span class="dropdown-item-text fw-bold">Xin chào, {{ current_user.username }}</span></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center text-white" href="">
+                                <i class="bi bi-person-circle me-2"></i> Tài khoản của tôi
                             </a>
                         </li>
-                        <li class="nav-item ms-2">
-                            <a class="nav-link text-white" href="/movies">
-                                <i class="bi bi-film me-1"></i> Phim
-                            </a>
-                        </li>
-
-                        <li class="nav-item ms-2">
-                            <a class="nav-link text-white" href="/cinemas">
-                                <i class="bi bi-camera-reels me-1"></i> Rạp
-                            </a>
-                        </li>
-
-                        <li class="nav-item ms-2">
-                            <a class="nav-link text-white" href="#">
-                                <i class="bi bi-ticket me-1"></i> Vé của tôi
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center text-danger fw-semibold" href="/logout">
+                                <i class="bi bi-box-arrow-right fs-5 me-2"></i> Đăng xuất
                             </a>
                         </li>
                     </ul>
                 </div>
+                {% else %}
+                <a class="btn btn-danger btn-custom px-3 py-1 fw-bold align-items-center rounded-pill text-nowrap d-none d-lg-flex"
+                   data-bs-toggle="modal" data-bs-target="#loginModal" style="cursor: pointer;">
+                    <i class="bi bi-box-arrow-in-right fs-5 me-1"></i> Đăng nhập
+                </a>
+                {% endif %}
 
-                <!-- RIGHT: Auth buttons -->
-                <ul class="navbar-nav ms-auto header-auth">
-                    <!--                    <li class="nav-item w-100">-->
-                    <!--                        <div class="d-flex align-items-center justify-content-between auth-row">-->
-                    <!--                            &lt;!&ndash; LEFT: avatar + name &ndash;&gt;-->
-                    <!--                            <a class="d-flex align-items-center text-white text-decoration-none me-3"-->
-                    <!--                               href="">-->
-                    <!--                                <img src=""-->
-                    <!--                                     width="32"-->
-                    <!--                                     height="32"-->
-                    <!--                                     class="rounded-circle me-2">-->
-                    <!--                                <span class="fw-semibold"></span>-->
-                    <!--                            </a>-->
-                    <!--                        </div>-->
-                    <!--                    </li>-->
-                    {% if current_user.is_authenticated%}
-                    <li class="nav-item d-flex justify-content-center w-100 my-2 my-lg-0">
-                        <a class="btn btn-danger btn-custom px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap"
-                           href="/logout">
-                            <i class="bi bi-box-arrow-right fs-5 me-2"></i> Đăng xuất
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="nav-item d-flex justify-content-center w-100 my-2 my-lg-0">
-                        <a class="btn btn-danger btn-custom px-4 py-1 fw-bold d-flex align-items-center rounded-pill text-nowrap"
-                           data-bs-toggle="modal" data-bs-target="#loginModal">
-                            <i class="bi bi-box-arrow-in-right fs-5 me-2"></i> Đăng nhập
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
+                <button class="navbar-toggler border-0 px-1" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#mynavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
             </div>
+            <!--Phần navbar-->
+            <div class="collapse navbar-collapse order-lg-2 bg-dark p-3 p-lg-0 mt-2 mt-lg-0 rounded flex-lg-grow-0"
+                 id="mynavbar">
+                <ul class="navbar-nav header-menu mx-auto">
+                    <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
+                        <a class="nav-link active" href="/">
+                            <i class="bi bi-house-door me-1"></i> Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
+                        <a class="nav-link text-white" href="/movies">
+                            <i class="bi bi-film me-1"></i> Phim
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
+                        <a class="nav-link text-white" href="">
+                            <i class="bi bi-camera-reels me-1"></i> Rạp
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
+                        <a class="nav-link text-white" href="">
+                            <i class="bi bi-ticket me-1"></i> Vé của tôi
+                        </a>
+                    </li>
+                </ul>
 
+                {% if not current_user.is_authenticated %}
+                <div class="d-lg-none mt-3 pt-3 border-top border-secondary">
+                    <a class="btn btn-danger btn-custom py-2 fw-bold d-flex justify-content-center align-items-center rounded-pill w-100"
+                       data-bs-toggle="modal" data-bs-target="#loginModal" style="cursor: pointer;">
+                        <i class="bi bi-box-arrow-in-right fs-5 me-2"></i> Đăng nhập
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </nav>
 </header>

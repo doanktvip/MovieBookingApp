@@ -34,6 +34,11 @@ class BookingStatus(enum.Enum):
     FAILED = "failed"
 
 
+class TranslationType(enum.Enum):
+    SUBTITLE = "Phụ đề"
+    DUBBING = "Lồng tiếng"
+
+
 movie_genre = db.Table('movie_genre',
                        Column('movie_id', Integer, ForeignKey('movie.id'), primary_key=True),
                        Column('genre_id', Integer, ForeignKey('genre.id'), primary_key=True))
@@ -90,6 +95,13 @@ class Seat(BaseModel):
     is_vip = Column(Boolean, default=False)
 
 
+class MovieFormat(BaseModel):
+    __tablename__ = 'movie_format'
+    name = Column(String(20), nullable=False, unique=True)
+
+    showtimes = relationship('Showtime', backref='movie_format', lazy=True)
+
+
 class Showtime(BaseModel):
     __tablename__ = 'showtime'
     movie_id = Column(Integer, ForeignKey('movie.id'), nullable=False)
@@ -98,6 +110,8 @@ class Showtime(BaseModel):
     end_time = Column(DateTime, nullable=False)
     base_price = Column(Float, default=0.0)
 
+    format_id = Column(Integer, ForeignKey('movie_format.id'), nullable=False)
+    translation = Column(Enum(TranslationType), default=TranslationType.SUBTITLE)
     bookings = relationship('Booking', backref='showtime', lazy=True)
     showtime_seats = relationship('ShowtimeSeat', backref='showtime', cascade="all, delete-orphan", lazy=True)
 
@@ -138,3 +152,10 @@ class Cinema(BaseModel):
     map_url = Column(String(200), nullable=False)
     hotline = Column(String(20))
     rooms = relationship('Room', backref='cinema', lazy=True)
+    province_id = Column(Integer, ForeignKey('province.id'), nullable=False)
+
+
+class Province(BaseModel):
+    __tablename__ = 'province'
+    name = Column(String(50), nullable=False)
+    cinemas = relationship('Cinema', backref='province', lazy=True)

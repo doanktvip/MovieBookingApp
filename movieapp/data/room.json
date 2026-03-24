@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "room_name": "Phòng chiếu 1",
+    "room_name": "Phòng 1 (Standard)",
     "capacity": 50,
     "cinema_id": 1
   },

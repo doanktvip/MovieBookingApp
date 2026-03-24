@@ -89,3 +89,6 @@ def load_cinema(keyword=None,page=None):
             end = start + app.config["PAGE_SIZE"]
             query = query.slice(start, end)
         return query.all(),total
+
+def get_movie_by_id(movie_id):
+    return Movie.query.get(movie_id)

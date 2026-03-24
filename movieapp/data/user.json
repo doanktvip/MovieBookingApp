@@ -2,15 +2,15 @@
   {
     "id": 1,
     "username": "admin",
-    "password": "202cb962ac59075b964b07152d234b70",
-    "email": "admin@movieapp.com",
+    "password": "123",
+    "email": "admin@cinema.com",
     "role": "admin",
     "active": true
   },
   {
     "id": 2,
     "username": "nguyenvana",
-    "password": "202cb962ac59075b964b07152d234b70",
+    "password": "123",
     "email": "vana@gmail.com",
     "role": "user",
     "active": true
