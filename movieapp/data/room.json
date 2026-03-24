@@ -7,8 +7,55 @@
   },
   {
     "id": 2,
-    "room_name": "Phòng 2 (VIP)",
+    "room_name": "Phòng chiếu 2",
     "capacity": 30,
     "cinema_id": 1
+  },
+  {
+    "id": 3,
+    "room_name": "Phòng chiếu 3",
+    "capacity": 60,
+    "cinema_id": 1
+  },
+  {
+    "id": 4,
+    "room_name": "Phòng chiếu 1",
+    "capacity": 40,
+    "cinema_id": 2
+  },{
+    "id": 5,
+    "room_name": "Phòng chiếu 2",
+    "capacity": 60,
+    "cinema_id": 2
+  },
+  {
+    "id": 6,
+    "room_name": "Phòng chiếu 3",
+    "capacity": 50,
+    "cinema_id": 2
+  },
+  {
+    "id": 7,
+    "room_name": "Phòng chiếu 1",
+    "capacity": 60,
+    "cinema_id": 3
+  },
+  {
+    "id": 8,
+    "room_name": "Phòng chiếu 2",
+    "capacity": 70,
+    "cinema_id": 3
+  },
+  {
+    "id": 9,
+    "room_name": "Phòng chiếu 3",
+    "capacity": 50,
+    "cinema_id": 3
+  },
+  {
+    "id": 10,
+    "room_name": "Phòng chiếu 1",
+    "capacity": 60,
+    "cinema_id": 4
   }
 ]
