@@ -61,9 +61,10 @@ def remove_accents(input_str):
     # Xử lý riêng chữ đ/Đ của tiếng Việt và chuyển về chữ thường
     return s2.replace('đ', 'd').replace('Đ', 'D').lower()
 
-def load_cinema(keyword=None):
+def load_cinema(keyword=None,page=None):
     all_cinemas = Cinema.query.all()
     query = Cinema.query
+    total=0
     #tim kiem theo ten rap
     if keyword:
         keyword = remove_accents(keyword).strip()
@@ -73,6 +74,18 @@ def load_cinema(keyword=None):
             address_clean=remove_accents(c.address)
             if keyword in name_clean or keyword in address_clean:
                 result.append(c)
-        return result
 
-    return query.all()
+        # Phân trang
+        total = len(result)
+        if page:
+            start = (int(page) - 1) * app.config["PAGE_SIZE"]
+            end = start + app.config["PAGE_SIZE"]
+            query = query.slice(start, end)
+        return result,total
+    else:
+        total = query.count()
+        if page:
+            start = (int(page) - 1) * app.config["PAGE_SIZE"]
+            end = start + app.config["PAGE_SIZE"]
+            query = query.slice(start, end)
+        return query.all(),total

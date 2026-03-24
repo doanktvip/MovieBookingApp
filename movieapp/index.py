@@ -84,8 +84,13 @@ def movie():
 @app.route("/cinemas")
 def cinema():
     keyword = request.args.get('keyword_cinema')
-    cinemas = dao.load_cinema(keyword=keyword)
-    return render_template('cinema.html', cinemas=cinemas)
+    page = request.args.get("page", default=1, type=int)
+    cinemas,total = dao.load_cinema(keyword=keyword,page=page)
+    if total == 0:
+        pages = 1
+    else:
+        pages = math.ceil(total / app.config['PAGE_SIZE'])
+    return render_template('cinema.html', cinemas=cinemas,page=page,pages=pages)
 
 if __name__ == '__main__':
     app.run(debug=True)
