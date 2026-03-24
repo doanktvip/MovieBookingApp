@@ -1,0 +1,69 @@
+{% extends 'layout/base.html' %}
+{% block content %}
+<div class="container">
+    <div class=" row">
+        <h1 class=" fw-bold mb-1">Hệ Thống Rạp DDN</h1>
+        <h5 class="mt-2 text-secondary">Tìm rạp DDN gần nhất</h5>
+    </div>
+    <div class="row mb-3">
+        <form method="get">
+            <div class="input-group">
+                <input type="text"
+                       class="form-control text-white ddn-glass p-2"
+                       placeholder="Tìm kiếm rạp phim theo tên hoặc địa chỉ ..."
+                       name="keyword_cinema">
+                <button class="btn ddn-glass text-white px-4" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+    {%for c in cinemas%}
+    <div class="row mt-4 tien-ich p-4">
+        <div class="col-md-10 col-12">
+            <h3 class="fw-bold mb-3">{{ c.name }}</h3>
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi bi-geo-alt me-3 fs-5 text-danger"></i>
+                <span class="fw-bold fs-5">{{ c.address.split(',') | last | trim }}</span>
+            </div>
+            <div class="mb-3" style="margin-left: 2.3rem;color:silver;">{{ c.address }}</div>
+            <div class="d-flex align-items-center mb-2 text-white">
+                <i class="bi bi-telephone me-3 fs-5 text-danger"></i>
+                <span style="color:silver;">{{ c.hotline[:4] }} {{c.hotline[4:]}}</span>
+            </div>
+            <div class="d-flex align-items-center mb-3 text-white">
+                <i class="bi bi-clock me-3 fs-5 text-danger"></i>
+                <span style="color:silver;">Mở cửa: 08.00 - 00.00</span>
+            </div>
+        </div>
+        <div class="col-md-2 col-12 d-flex flex-column justify-content-start gap-3 mt-3 mt-md-0">
+            <a href="#" class="btn btn-danger py-2 rounded-3">
+                <i class="bi bi-calendar-event me-2"></i> Lịch chiếu
+            </a>
+            <a href="{{ c.map_url }}"
+               class="btn ddn-glass p-2 rounded-3 text-white">
+                <i class="bi bi-box-arrow-up-right me-2 text-white"></i> Chỉ đường
+            </a>
+        </div>
+        <hr class="border-secondary my-4" style="opacity: 0.3;">
+        <div>
+            <div class="mb-3" style="color:silver;">Phòng chiếu:</div>
+            <div class="d-flex flex-wrap gap-3">
+                {%if c.rooms %}
+                {% for room in c.rooms %}
+                <span class="badge text-danger rounded-pill py-2 px-3"
+                      style="background-color: rgba(220, 53, 69, 0.15);">
+                        {{ room.room_name }} ({{ room.capacity }} ghế)
+                    </span>
+                {% endfor %}
+                {% else %}
+                <span class="text-secondary fst-italic" style="font-size: 0.9rem;">
+                    Đang cập nhật phòng chiếu...</span>
+                {%endif%}
+            </div>
+        </div>
+    </div>
+    {%endfor%}
+</div>
+
+{% endblock %}

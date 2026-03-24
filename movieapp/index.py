@@ -80,6 +80,12 @@ def movie():
     return render_template('movie.html', movies=movies, genres=genres,
                            pages=total_pages, page=page)
 
+#Trang rạp phim
+@app.route("/cinemas")
+def cinema():
+    keyword = request.args.get('keyword_cinema')
+    cinemas = dao.load_cinema(keyword=keyword)
+    return render_template('cinema.html', cinemas=cinemas)
 
 if __name__ == '__main__':
     app.run(debug=True)

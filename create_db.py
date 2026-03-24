@@ -96,4 +96,4 @@ if __name__ == "__main__":
 
         db.session.commit()
 
-        print("🎉 ĐÃ SEED DỮ LIỆU THÀNH CÔNG!")
+        print("ĐÃ SEED DỮ LIỆU THÀNH CÔNG!")

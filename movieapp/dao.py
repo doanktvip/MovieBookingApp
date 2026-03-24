@@ -1,8 +1,8 @@
 import hashlib
 import json
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User
-
+from movieapp.models import Movie, Genre, User, Cinema
+import unicodedata
 
 def auth_user(username, password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
@@ -49,3 +49,30 @@ def load_tien_ich():
     with open("data/tienich.json", encoding="utf-8") as f:
         tien_ich = json.load(f)
         return tien_ich
+
+# Hàm chuẩn hóa tiếng Việt: Xóa dấu và chuyển chữ Đ/đ
+def remove_accents(input_str):
+    if not input_str:
+        return ""
+    # Chuẩn hóa unicode, tách dấu ra khỏi chữ cái
+    s1 = unicodedata.normalize('NFD', input_str)
+    # Xóa các ký tự dấu
+    s2 = ''.join([c for c in s1 if unicodedata.category(c) != 'Mn'])
+    # Xử lý riêng chữ đ/Đ của tiếng Việt và chuyển về chữ thường
+    return s2.replace('đ', 'd').replace('Đ', 'D').lower()
+
+def load_cinema(keyword=None):
+    all_cinemas = Cinema.query.all()
+    query = Cinema.query
+    #tim kiem theo ten rap
+    if keyword:
+        keyword = remove_accents(keyword).strip()
+        result=[]
+        for c in all_cinemas:
+            name_clean=remove_accents(c.name)
+            address_clean=remove_accents(c.address)
+            if keyword in name_clean or keyword in address_clean:
+                result.append(c)
+        return result
+
+    return query.all()

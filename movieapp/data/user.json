@@ -2,7 +2,7 @@
   {
     "id": 1,
     "username": "admin",
-    "password": "pbkdf2:sha256:250000$dummyhash...",
+    "password": "202cb962ac59075b964b07152d234b70",
     "email": "admin@movieapp.com",
     "role": "admin",
     "active": true
@@ -10,7 +10,7 @@
   {
     "id": 2,
     "username": "nguyenvana",
-    "password": "pbkdf2:sha256:250000$dummyhash...",
+    "password": "202cb962ac59075b964b07152d234b70",
     "email": "vana@gmail.com",
     "role": "user",
     "active": true
