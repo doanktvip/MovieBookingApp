@@ -13,7 +13,7 @@ def index():
     movies = dao.load_movies()
     genres = dao.load_genres()
     tien_ich = dao.load_tien_ich()
-    return render_template('index.html', movies=movies, genres=genres,tien_ich=tien_ich)
+    return render_template('index.html', movies=movies, genres=genres, tien_ich=tien_ich)
 
 
 @app.route('/login', methods=['POST'])
@@ -79,6 +79,11 @@ def movie():
     total_pages = math.ceil(total_movies / app.config['PAGE_SIZE'])
     return render_template('movie.html', movies=movies, genres=genres,
                            pages=total_pages, page=page)
+
+
+@app.route('/movies/<int:movie_id>')
+def movie_detail(movie_id):
+    return render_template('movie-detail.html', movie=dao.get_movie_by_id(movie_id))
 
 
 if __name__ == '__main__':

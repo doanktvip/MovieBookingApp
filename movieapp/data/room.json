@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "room_name": "Phòng 1 (Standard)",
+    "capacity": 50,
+    "cinema_id": 1
+  },
+  {
+    "id": 2,
+    "room_name": "Phòng 2 (VIP)",
+    "capacity": 30,
+    "cinema_id": 1
+  }
+]

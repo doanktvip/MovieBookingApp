@@ -29,7 +29,7 @@
                             <div class="movie-meta text-light mb-3">
                                 <span class="rating text-warning fw-bold"><i class="bi bi-star-fill me-1"></i>{{movie.rate}}/10</span>
                                 <span class="separator mx-2">•</span>
-                                <span>{{ movie.duration }}p</span>
+                                <span>{% if movie.duration // 60 > 0 %}{{ movie.duration // 60 }}h {% endif %}{{ movie.duration % 60 }}m</span>
                                 <span class="separator mx-2">•</span>
                                 <span>{{ movie.release_date.strftime('%Y') if movie.release_date else '' }}</span>
                             </div>
@@ -52,14 +52,14 @@
                         </div>
                     </div>
                     <div class="text-white fw-bold rounded position-absolute top-0 end-0 mt-3 me-4">
-                        {%if movie.limited_age>=18%}
-                        <span class="badge bg-danger px-2 py-1 fs-6">T{{movie.limited_age}}</span>
-                        {%elif movie.limited_age>=16%}
-                        <span class="badge px-2 py-1 fs-6"
-                              style="background-color: #fc8403;">T{{movie.limited_age}}</span>
-                        {%else%}
-                        <span class="badge bg-warning px-2 py-1 fs-6">T{{movie.limited_age}}</span>
-                        {%endif%}
+                        <span class="badge text-white px-2 py-1 fs-6
+                        {% if movie.limited_age <= 13 %}
+                        bg-warning
+                        {% elif movie.limited_age <= 16 %}
+                        bg-orange
+                        {% else %}
+                        bg-danger
+                        {% endif %}">T{{ movie.limited_age }}</span>
                     </div>
                 </div>
             </div>

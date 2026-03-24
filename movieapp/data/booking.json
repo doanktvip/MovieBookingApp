@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "showtime_id": 1,
+    "total_price": 150000.0,
+    "status": "paid",
+    "payment_method": "MOMO",
+    "transaction_id": "MOMO123456789"
+  }
+]
