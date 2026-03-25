@@ -12,12 +12,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
+<body class="ddn-background">
 {%block header%}
 {%include 'layout/header.html'%}
 {%endblock%}
 
-<main class="flex-fill ddn-background">
+<main class="flex-fill">
     {%block content%}
     {%endblock%}
 </main>

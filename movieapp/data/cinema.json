@@ -4,40 +4,46 @@
     "name": "CGV Crescent Mall",
     "address": "Đường Nguyễn Văn Linh, Tân Phú, Quận 7, TP.HCM",
     "map_url": "https://maps.app.goo.gl/ykK5vJ7SJyK3qiEo9",
-    "hotline": "19001234"
+    "hotline": "19001234",
+    "province_id": 1
   },
   {
     "id": 2,
     "name": "CGV Aeon Tân Phú",
     "address": "30 Tân Thắng, Sơn Kỳ, Quận Tân Phú, TP.HCM",
     "map_url": "https://maps.app.goo.gl/AnvYFzyRVmwb9JEv5",
-    "hotline": "19001234"
+    "hotline": "19001234",
+    "province_id": 1
   },{
     "id": 3,
     "name": "CGV Lý Chính Thắng",
     "address": "83 Lý Chính Thắng, Phường 8, Quận 3, TP.HCM",
     "map_url": "https://maps.app.goo.gl/ySqDZM77BuN3LqVg9",
-    "hotline": "19001254"
+    "hotline": "19001254",
+    "province_id": 1
   },
   {
     "id": 4,
     "name": "CGV Satra Củ Chi",
     "address": "TTTM Satra Củ Chi, Tỉnh Lộ 8, Huyện Củ Chi, TP.HCM",
     "map_url": "https://maps.app.goo.gl/gNoSRvMdnA4sDg15A",
-    "hotline": "19006034"
+    "hotline": "19006034",
+    "province_id": 1
   },
   {
     "id": 5,
     "name": "CGV Hoàng Văn Thụ",
     "address": "415 Hoàng Văn Thụ, Phường 2, Tân Bình, TP.HCM",
     "map_url": "https://maps.app.goo.gl/U4UyzUU9tfDjLjDw8",
-    "hotline": "19006017"
+    "hotline": "19006017",
+    "province_id": 1
   },
   {
     "id": 6,
     "name": "CGV Vincom Gò Vấp",
     "address": "12 Phan Văn Trị, Phường 5, Gò Vấp, TP.HCM",
     "map_url": "https://maps.app.goo.gl/vSb96N62eXiL2WNv7",
-    "hotline": "19008090"
+    "hotline": "19008090",
+    "province_id": 1
   }
 ]

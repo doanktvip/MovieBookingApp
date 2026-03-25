@@ -1,7 +1,7 @@
 import hashlib
 import json
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User, Cinema
+from movieapp.models import Movie, Genre, User, Cinema, Province
 import unicodedata
 
 def auth_user(username, password):
@@ -61,10 +61,15 @@ def remove_accents(input_str):
     # Xử lý riêng chữ đ/Đ của tiếng Việt và chuyển về chữ thường
     return s2.replace('đ', 'd').replace('Đ', 'D').lower()
 
-def load_cinema(keyword=None,page=None):
-    all_cinemas = Cinema.query.all()
+def load_cinema(keyword=None,page=None,province_id=None):
     query = Cinema.query
     total=0
+
+    #Tìm kiếm theo khu vuc
+    if province_id:
+        query = query.filter(Cinema.province_id.__eq__(int(province_id)))
+
+    all_cinemas = query.all()
     #tim kiem theo ten rap
     if keyword:
         keyword = remove_accents(keyword).strip()
@@ -80,7 +85,7 @@ def load_cinema(keyword=None,page=None):
         if page:
             start = (int(page) - 1) * app.config["PAGE_SIZE"]
             end = start + app.config["PAGE_SIZE"]
-            query = query.slice(start, end)
+            result = result[start:end]
         return result,total
     else:
         total = query.count()
@@ -89,6 +94,9 @@ def load_cinema(keyword=None,page=None):
             end = start + app.config["PAGE_SIZE"]
             query = query.slice(start, end)
         return query.all(),total
+
+def load_provinces():
+    return Province.query.all()
 
 def get_movie_by_id(movie_id):
     return Movie.query.get(movie_id)

@@ -1,30 +1,56 @@
 {% extends 'layout/base.html' %}
 {% block content %}
 <div class="container">
-    <div class=" row">
-        <h1 class=" fw-bold mb-1">Hệ Thống Rạp DDN</h1>
+    <div class=" row mb-3">
+        <h1 class=" fw-bold mb-1 mt-5">Hệ Thống Rạp DDN</h1>
         <h5 class="mt-2 text-secondary">Tìm rạp DDN gần nhất</h5>
     </div>
-    <div class="row mb-3">
-        <form method="get">
-            <div class="input-group">
-                <input type="text"
-                       class="form-control text-white ddn-glass p-2"
-                       placeholder="Tìm kiếm rạp phim theo tên hoặc địa chỉ ..."
-                       name="keyword_cinema">
-                <button class="btn ddn-glass text-white px-4" type="submit">
-                    <i class="bi bi-search"></i>
-                </button>
+    <div class="mb-4">
+        <form action="{{ url_for('cinema') }}" method="GET" id="cinemaFilterForm">
+
+            <div class="col-md-5 mb-3">
+                <div class="input-group">
+                    <input type="text"
+                           class="form-control text-white ddn-glass p-2"
+                           placeholder="Tìm kiếm rạp phim theo tên hoặc địa chỉ ..."
+                           name="keyword_cinema"
+                           value="{{ request.args.get('keyword_cinema', '') }}">
+                    <button class="btn ddn-glass text-white px-4" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <div class="text-white p-2">Chọn khu vực:</div>
+                <select name="province_id"
+                        class="form-select text-white ddn-glass pe-1 py-2"
+                        style="background-color: rgba(255,255,255,0.1);max-width: 150px;"
+                        onchange="document.getElementById('cinemaFilterForm').submit();">
+
+                    <option value="" class="text-white" style="background-color: #2c1517 !important">Tất cả</option>
+
+                    {% for p in provinces %}
+                    <option value="{{ p.id }}" style="background-color: #2c1517 !important" class="text-white" {% if
+                            request.args.get(
+                    'province_id') == p.id|string %}selected{% endif %}>
+                    {{ p.name }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+
             </div>
         </form>
     </div>
+    {%if cinemas %}
     {%for c in cinemas%}
     <div class="row mt-4 tien-ich p-4">
         <div class="col-md-10 col-12">
             <h3 class="fw-bold mb-3">{{ c.name }}</h3>
             <div class="d-flex align-items-center mb-1">
                 <i class="bi bi-geo-alt me-3 fs-5 text-danger"></i>
-                <span class="fw-bold fs-5">{{ c.address.split(',') | last | trim }}</span>
+                <span class="fw-bold fs-5">{{ c.province.name}}</span>
             </div>
             <div class="mb-3" style="margin-left: 2.3rem;color:silver;">{{ c.address }}</div>
             <div class="d-flex align-items-center mb-2 text-white">
@@ -53,22 +79,42 @@
                 {% for room in c.rooms %}
                 <span class="badge text-danger rounded-pill py-2 px-3"
                       style="background-color: rgba(220, 53, 69, 0.15);">
-                        {{ room.room_name }} ({{ room.capacity }} ghế)
-                    </span>
+                            {{ room.room_name }} ({{ room.capacity }} ghế)
+                        </span>
                 {% endfor %}
                 {% else %}
                 <span class="text-secondary fst-italic" style="font-size: 0.9rem;">
-                    Đang cập nhật phòng chiếu...</span>
+                        Đang cập nhật phòng chiếu...</span>
                 {%endif%}
             </div>
         </div>
     </div>
     {%endfor%}
+    {%else%}
+    <div class="col-12 text-center mt-5 mb-5 py-5">
+        <i class="bi bi-search" style="font-size: 4rem; color: #4a4a4a;"></i>
+        <h4 class="text-white mt-4 fw-bold">Không tìm thấy rạp phim nào!</h4>
+        <p class="text-secondary fs-5 mt-2">
+            Chúng tôi không tìm thấy rạp hay địa chỉ nào khớp với từ khóa
+            <span class="text-danger fw-bold">"{{ request.args.get('keyword_cinema', '') }}"</span>
+        </p>
+        <p class="text-secondary">Vui lòng kiểm tra lại lỗi chính tả hoặc thử một từ khóa khác (Ví dụ: Tân Bình,
+            Quận
+            1...).</p>
+
+        <a href="{{ url_for('cinema') }}" class="btn btn-danger px-4 py-2 mt-3 rounded-3">
+            <i class="bi bi-arrow-left me-2"></i> Xem tất cả các rạp
+        </a>
+    </div>
+    {%endif%}
     {%if pages >1 %}
-    <div class="row mt-4">
-        <ul class="pagination justify-content-center">
+    <div class="row mt-4 d-flexr">
+        <ul class="pagination justify-content-center gap-2 border-0 mb-0">
             {%for i in range(1,(pages+1))%}
-            <li class="page-item"><a class="btn ddn-glass page-link text-white ms-1 me-1 rounded-3" href="{{url_for('cinema',page=i,keyword_cinema=keyword_cinema)}}">{{i}}</a></li>
+            <li class="page-item"><a
+                    class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                    href="{{url_for('cinema',page=i,keyword_cinema=request.args.get('keyword_cinema', ''),province_id=request.args.get('province_id', ''))}}">{{i}}</a>
+            </li>
             {%endfor%}
         </ul>
     </div>
