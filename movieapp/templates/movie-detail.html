@@ -2,25 +2,23 @@
 
 {% block content %}
 <div class="py-0">
-    <div class="position-relative w-100 overflow-hidden ddn-background" style="height: 65vh; min-height: 500px;">
-
+    <div class="position-relative w-100 overflow-hidden" id="heroCarousel">
         <div class="position-absolute top-0 start-0 w-100 h-100 z-0">
-            <img src="{{ movie.image }}" class="hero-img opacity-50">
+            <img src="{{ movie.image }}" class="hero-img opacity-50" alt="{{ movie.title }}">
             <div class="gradient-overlay"></div>
         </div>
 
         <div class="container h-100 position-relative z-2">
             <div class="row h-100 align-items-center">
-
                 <div class="col-md-4 col-lg-3 d-none d-md-block">
                     <div class="movie-card overflow-hidden border border-secondary border-opacity-25 position-relative">
                         <img src="{{ movie.image }}" class="w-100 h-100 object-fit-cover" style="aspect-ratio: 2/3;">
                         <span class="position-absolute top-0 end-0 m-2 badge
-                        {% if movie.limited_age <= 13 %} bg-warning text-dark
-                        {% elif movie.limited_age <= 16 %} bg-orange
-                        {% else %} bg-danger {% endif %}">
-                        T{{ movie.limited_age }}
-                    </span>
+                            {% if movie.limited_age <= 13 %} bg-warning text-dark
+                            {% elif movie.limited_age <= 16 %} bg-orange
+                            {% else %} bg-danger {% endif %}">
+                            T{{ movie.limited_age }}
+                        </span>
                     </div>
                 </div>
 
@@ -41,8 +39,8 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for genre in movie.genres %}
                         <span class="badge rounded-pill ddn-glass px-4 py-2 fs-6 fw-normal">
-                        {{ genre.name }}
-                    </span>
+                            {{ genre.name }}
+                        </span>
                         {% endfor %}
                     </div>
                 </div>
@@ -51,15 +49,15 @@
     </div>
 
     <div class="container pb-5">
-        <div class="d-flex mb-5">
+        <div class="d-flex my-5">
             <ul class="nav nav-pills gap-3 ddn-glass rounded-pill p-1 border-0" id="pills-tab" role="tablist">
                 <li class="nav-item">
                     <button class="nav-link active rounded-pill px-4 py-2 fw-bold" id="pills-showtime-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-showtime" type="button" role="tab">Lịch chiếu
                     </button>
                 </li>
-                <li class="nav-item border-0">
-                    <button class="nav-link rounded-pill text-white px-4 py-2 border-0" id="pills-overview-tab"
+                <li class="nav-item">
+                    <button class="nav-link rounded-pill px-4 py-2 border-0" id="pills-overview-tab"
                             data-bs-toggle="pill" data-bs-target="#pills-overview" type="button" role="tab">Tổng quan
                     </button>
                 </li>
@@ -67,62 +65,136 @@
         </div>
 
         <div class="tab-content" id="pills-tabContent">
+
             <div class="tab-pane fade show active" id="pills-showtime" role="tabpanel">
-                <div class="mb-5">
-                    <h5 class="fw-bold mb-4"><i class="bi bi-calendar3 me-2 text-danger"></i>Chọn ngày</h5>
-                    <div class="d-flex flex-wrap gap-2">
-                        <!--                        {% for d in sorted_dates %}-->
-                        <!--                        <button class="btn {% if loop.first %}btn-danger fw-bold shadow-lg{% else %}ddn-glass text-white{% endif %} rounded-3 px-4 py-2 border-0">-->
-                        <!--                            {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}-->
-                        <!--                        </button>-->
-                        <!--                        {% endfor %}-->
-                    </div>
-                </div>
 
-                <div class="row mb-5 g-4">
-                    <div class="col-md-6 col-lg-5">
-                        <h6 class="fw-bold mb-3">Định dạng</h6>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-danger btn-sm rounded-2 px-3 fw-bold border-0">Tất cả</button>
-                            <button class="btn ddn-glass btn-sm rounded-2 px-3 text-white border-0">2D</button>
-                            <button class="btn ddn-glass btn-sm rounded-2 px-3 text-white border-0">IMAX</button>
+                <div id="showtime-container">
+
+                    <form id="filterForm"
+                          hx-get="{{ request.path }}"
+                          hx-target="#showtime-container"
+                          hx-select="#showtime-container"
+                          hx-swap="outerHTML"
+                          hx-trigger="change">
+
+                        <div class="mb-5">
+                            <h5 class="fw-bold mb-4 text-white"><i class="bi bi-calendar3 me-2 text-danger"></i>Chọn
+                                ngày</h5>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for d in sorted_dates %}
+                                {% set date_str = d.strftime('%Y-%m-%d') %}
+                                {% set is_selected = (current_date == date_str) %}
+
+                                <input type="radio" class="btn-check" name="date" id="date-{{ date_str }}"
+                                       value="{{ date_str }}" {% if is_selected %}checked{% endif %}>
+                                <label class="btn {{ 'btn-danger fw-bold shadow-lg' if is_selected else 'ddn-glass' }} rounded-3 px-4 py-2 border-0"
+                                       for="date-{{ date_str }}">
+                                    {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}
+                                </label>
+                                {% endfor %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6 col-lg-5">
-                        <h6 class="fw-bold mb-3">Ngôn ngữ</h6>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-danger btn-sm rounded-2 px-3 fw-bold border-0">Tất cả</button>
-                            <button class="btn ddn-glass btn-sm rounded-2 px-3 text-white border-0">Phụ đề</button>
-                            <button class="btn ddn-glass btn-sm rounded-2 px-3 text-white border-0">Lồng tiếng</button>
+
+                        <div class="row mb-5 g-4 text-white">
+                            <div class="col-md-6 col-lg-5">
+                                <h6 class="fw-bold mb-3">Định dạng</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input type="radio" class="btn-check" name="format" id="format-all" value=""
+                                           {% if not current_format %}checked{% endif %}>
+                                    <label class="btn {{ 'btn-danger fw-bold' if not current_format else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
+                                           for="format-all">Tất cả</label>
+
+                                    {% for m in movie_format %}
+                                    <input type="radio" class="btn-check" name="format" id="format-{{ m.name }}"
+                                           value="{{ m.name }}" {% if current_format== m.name %}checked{% endif %}>
+                                    <label class="btn {{ 'btn-danger fw-bold' if current_format == m.name else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
+                                           for="format-{{ m.name }}">{{ m.name }}</label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-5">
+                                <h6 class="fw-bold mb-3">Ngôn ngữ</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <input type="radio" class="btn-check" name="language" id="lang-all" value=""
+                                           {% if not current_lang %}checked{% endif %}>
+                                    <label class="btn {{ 'btn-danger fw-bold' if not current_lang else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
+                                           for="lang-all">Tất cả</label>
+
+                                    {% for t in TranslationType %}
+                                    <input type="radio" class="btn-check" name="language" id="lang-{{ t.name }}"
+                                           value="{{ t.value }}" {% if current_lang== t.value %}checked{% endif %}>
+                                    <label class="btn {{ 'btn-danger fw-bold' if current_lang == t.value else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
+                                           for="lang-{{ t.name }}">{{ t.value }}</label>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
+                    </form>
+
+                    <div class="d-flex flex-column gap-4">
+                        {% for cinema, st_list in cinema_showtimes.items() %}
+                        <div class="card border-0 rounded-4 p-4 shadow tien-ich">
+                            <div class="mb-3">
+                                <h5 class="fw-bold text-white mb-1 d-flex align-items-center">
+                                    <i class="bi bi-geo-alt text-danger me-2 fs-5"></i>
+                                    {{ cinema.name }}
+                                </h5>
+                                <p class="text-white-50 mb-0 ps-4 small">
+                                    {{ cinema.address }}
+                                </p>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-3 ps-4">
+                                {% for st in st_list %}
+                                <a href="/booking/{{ st.id }}" class="btn ddn-glass text-decoration-none">
+                                    <div class="rounded-3 d-flex flex-column justify-content-center align-items-center p-1">
+                                        <span class="fw-bold fs-5 lh-1 mb-1 text-white">{{ st.start_time.strftime('%H:%M') }}</span>
+                                        <span class="text-white-50 fw-semibold" style="font-size: 0.65rem;">{{ st.movie_format.name }} • {{ st.translation.value }}</span>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if not cinema_showtimes %}
+                        <div class="text-center py-5 text-white-50">
+                            <i class="bi bi-calendar-x fs-1"></i>
+                            <p class="mt-2">Không tìm thấy suất chiếu nào phù hợp.</p>
+                        </div>
+                        {% endif %}
                     </div>
-                </div>
 
-                <div class="d-flex flex-column gap-4">
-
+                    {% if pagination and pagination.pages > 1 %}
+                    <div class="d-flex justify-content-center mt-5 mb-4">
+                        <ul class="pagination gap-2 border-0 mb-0">
+                            {% for p in range(1, pagination.pages + 1) %}
+                            <li class="page-item">
+                                <a class="page-link {% if p == pagination.page %}bg-danger shadow-none fw-bold{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                                   href="{{ url_for('movie_detail', movie_id=movie.id, page=p) }}"
+                                   hx-get="{{ url_for('movie_detail', movie_id=movie.id, page=p) }}"
+                                   hx-target="#showtime-container"
+                                   hx-select="#showtime-container"
+                                   hx-swap="outerHTML"> {{ p }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
             <div class="tab-pane fade" id="pills-overview" role="tabpanel">
                 <div class="card ddn-glass border-0 rounded-4 p-4 p-md-5">
                     <h4 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Nội dung phim</h4>
-                    <p class="fs-5 text-secondary-emphasis" style="line-height: 1.8; text-align: justify;">
+                    <p class="fs-5 text-white-50">
                         {{ movie.description }}
                     </p>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
-
-<style>
-    /* Ép class active của bootstrap nav-pills dùng màu đỏ của bạn */
-    .nav-pills .nav-link.active {
-        background-color: #dc3545 !important;
-        color: white !important;
-    }
-    .nav-pills .nav-link {
-        color: white;
-    }
-</style>
 {% endblock %}
