@@ -50,6 +50,16 @@ header, nav {
     background-color: #fd7e14 !important;
     color: white !important;
 }
+
+.nav-pills .nav-link.active {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.nav-pills .nav-link {
+    color: white;
+}
+
 /*Header*/
 .header-menu .nav-link {
     transition: color 0.3s ease;
@@ -63,7 +73,7 @@ header, nav {
 /* Tinh chỉnh lại chiều cao cho giống banner phim rạp (Màn hình rộng) */
 #heroCarousel, .carousel-inner, .carousel-item, .carousel-image-wrapper {
     height: 60vh;
-    min-height: 450px; /* Giảm min-height xuống cho cân đối */
+    min-height: 500px; /* Giảm min-height xuống cho cân đối */
     position: relative;
 
 }

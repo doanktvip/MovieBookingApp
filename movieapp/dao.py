@@ -1,8 +1,11 @@
 import hashlib
 import json
+from datetime import date
+from sqlalchemy import func
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User, Cinema, Province
+from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room
 import unicodedata
+
 
 def auth_user(username, password):
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
@@ -50,6 +53,7 @@ def load_tien_ich():
         tien_ich = json.load(f)
         return tien_ich
 
+
 # Hàm chuẩn hóa tiếng Việt: Xóa dấu và chuyển chữ Đ/đ
 def remove_accents(input_str):
     if not input_str:
@@ -73,10 +77,10 @@ def load_cinema(keyword=None,page=None,province_id=None):
     #tim kiem theo ten rap
     if keyword:
         keyword = remove_accents(keyword).strip()
-        result=[]
+        result = []
         for c in all_cinemas:
-            name_clean=remove_accents(c.name)
-            address_clean=remove_accents(c.address)
+            name_clean = remove_accents(c.name)
+            address_clean = remove_accents(c.address)
             if keyword in name_clean or keyword in address_clean:
                 result.append(c)
 
@@ -93,10 +97,65 @@ def load_cinema(keyword=None,page=None,province_id=None):
             start = (int(page) - 1) * app.config["PAGE_SIZE"]
             end = start + app.config["PAGE_SIZE"]
             query = query.slice(start, end)
-        return query.all(),total
+        return query.all(), total
+
 
 def load_provinces():
     return Province.query.all()
 
 def get_movie_by_id(movie_id):
     return Movie.query.get(movie_id)
+
+
+def get_movie_format_all():
+    return MovieFormat.query.all()
+
+
+def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, lang_str=None, page=1):
+    # 1. Khởi tạo truy vấn gốc: Kết nối Suất chiếu -> Phòng -> Rạp và lọc theo ID phim
+    base_query = Showtime.query.join(Room).join(Cinema).filter(Showtime.movie_id == movie_id)
+
+    # 2. Lọc theo ngày: Nếu có ngày truyền vào thì lọc, ngược lại mặc định lấy ngày hôm nay
+    if date_str:
+        base_query = base_query.filter(func.date(Showtime.start_time) == date_str)
+    else:
+        base_query = base_query.filter(func.date(Showtime.start_time) == date.today())
+
+    # 3. Lọc theo định dạng phim (ví dụ: 2D, IMAX)
+    if format_str:
+        base_query = base_query.join(MovieFormat).filter(MovieFormat.name == format_str)
+
+    # 4. Lọc theo ngôn ngữ (ví dụ: Phụ đề, Lồng tiếng)
+    if lang_str:
+        base_query = base_query.filter(Showtime.translation == TranslationType(lang_str))
+
+    # 5. Truy vấn lấy danh sách ID của các rạp (dùng distinct để loại bỏ ID trùng lặp)
+    cinema_ids_query = base_query.with_entities(Cinema.id).distinct().order_by(Cinema.id.asc())
+
+    # 6. Thực hiện phân trang trên danh sách ID rạp (dựa vào cấu hình PAGE_SIZE)
+    paginated_cinemas = cinema_ids_query.paginate(page=page, per_page=app.config["PAGE_SIZE"], error_out=False)
+
+    # 7. Trích xuất ID rạp từ kết quả phân trang (chuyển từ dạng tuple [(1,), (2,)] sang list [1, 2])
+    cinema_ids = [item[0] for item in paginated_cinemas.items]
+
+    # 8. Xử lý ngoại lệ: Nếu không có rạp nào thỏa mãn bộ lọc, trả về dữ liệu rỗng ngay lập tức
+    if not cinema_ids:
+        return {}, paginated_cinemas
+
+    # 9. Lấy danh sách suất chiếu chi tiết, giới hạn CHỈ TRONG CÁC RẠP của trang hiện tại
+    showtimes = base_query.filter(Cinema.id.in_(cinema_ids)).order_by(Cinema.id.asc(), Showtime.start_time.asc()).all()
+
+    # 10. Gom nhóm các suất chiếu vào dictionary theo cấu trúc: {<Cinema>: [<Showtime 1>, <Showtime 2>]}
+    cinema_dict = {}
+    for st in showtimes:
+        cinema = st.room.cinema  # Lấy thông tin rạp từ suất chiếu
+
+        # Nếu rạp chưa có trong từ điển, tạo một danh sách trống cho nó
+        if cinema not in cinema_dict:
+            cinema_dict[cinema] = []
+
+        # Thêm suất chiếu vào danh sách của rạp tương ứng
+        cinema_dict[cinema].append(st)
+
+    # 11. Trả về từ điển đã gom nhóm và đối tượng phân trang (để vẽ nút Next/Prev ở HTML)
+    return cinema_dict, paginated_cinemas
