@@ -2,20 +2,27 @@
 
 {% block content %}
 <div class="card bg-transparent text-white border-0 rounded-0 min-vh-100">
-    <div class="card-body container py-5">
+    <div class="card-body container py-5" id="movie-container">
 
         <h1 class="card-title display-6 fw-bold mb-1">Phim Đang Chiếu</h1>
         <h6 class="card-subtitle mb-4 text-secondary">Khám phá những bộ phim mới nhất và hấp dẫn nhất</h6>
 
         <div class="mb-4">
-            <form action="{{ url_for('movie') }}" method="GET" id="filterForm">
+            <form id="filterForm"
+                  action="{{ url_for('movie') }}" method="GET"
+                  hx-get="{{ url_for('movie') }}"
+                  hx-target="#movie-container"
+                  hx-select="#movie-container"
+                  hx-swap="outerHTML"
+                  hx-trigger="submit, change from:input[type='radio']">
+
                 <div class="col-md-5 mb-3">
                     <div class="input-group">
                         <input type="text"
                                class="form-control text-white ddn-glass"
                                placeholder="Tìm kiếm phim..."
                                name="keyword"
-                               value="{{ request.args.get('keyword', '') }}">
+                               value="{{ session.get('keyword', '') }}">
                         <button class="btn ddn-glass text-white px-4" type="submit">
                             <i class="bi bi-search"></i>
                         </button>
@@ -23,20 +30,17 @@
                 </div>
 
                 <div class="d-flex flex-wrap gap-2">
-
                     <input type="radio" class="btn-check" name="genre" id="genre-all" value=""
-                           onchange="document.getElementById('filterForm').submit();"
-                           {% if not request.args.get('genre') %}checked{% endif %}>
-                    <label class="btn {{ 'btn-danger' if not request.args.get('genre') else 'ddn-glass text-white' }} rounded-pill px-4"
+                           {% if not session.get('genre') %}checked{% endif %}>
+                    <label class="btn {{ 'btn-danger' if not session.get('genre') else 'ddn-glass text-white' }} rounded-pill px-4"
                            for="genre-all">
                         Tất cả
                     </label>
 
                     {% for g in genres %}
                     <input type="radio" class="btn-check" name="genre" id="genre-{{ g.id }}" value="{{ g.id }}"
-                           onchange="document.getElementById('filterForm').submit();"
-                           {% if request.args.get('genre') == g.id|string %}checked{% endif %}>
-                    <label class="btn {{ 'btn-danger' if request.args.get('genre') == g.id|string else 'ddn-glass text-white' }} rounded-pill px-4"
+                           {% if session.get('genre') == g.id|string %}checked{% endif %}>
+                    <label class="btn {{ 'btn-danger' if session.get('genre') == g.id|string else 'ddn-glass text-white' }} rounded-pill px-4"
                            for="genre-{{ g.id }}">
                         {{ g.name }}
                     </label>
@@ -45,7 +49,8 @@
                 </div>
             </form>
         </div>
-        {%if movies%}
+
+        {% if movies %}
         <div class="row g-4">
             {% for m in movies %}
             <div class="col-md-6 col-lg-3">
@@ -55,13 +60,9 @@
                             <img src="{{ m.image }}" class="card-img-top rounded-3 hero-img" alt="{{ m.name }}"
                                  style="aspect-ratio: 2/3; object-fit: cover;">
                             <span class="position-absolute top-0 end-0 m-2 badge text-white
-                        {% if m.limited_age <= 13 %}
-                        bg-warning
-                        {% elif m.limited_age <= 16 %}
-                        bg-orange
-                        {% else %}
-                        bg-danger
-                        {% endif %}">T{{ m.limited_age }}</span>
+                        {% if m.limited_age <= 13 %}bg-warning{% elif m.limited_age <= 16 %}bg-orange{% else %}bg-danger{% endif %}">
+                                T{{ m.limited_age }}
+                            </span>
                         </div>
 
                         <div class="card-body ddn-glass p-3">
@@ -84,27 +85,30 @@
                                 {% endif %}
                             </div>
                             <div class="btn btn-danger w-100 fw-bold">Đặt vé</div>
-
                         </div>
                     </div>
                 </a>
             </div>
             {% endfor %}
         </div>
+
+        {% if pages > 1 %}
         <div class="d-flex justify-content-center mt-5 mb-4">
             <ul class="pagination gap-2 border-0 mb-0">
                 {% for p in range(1, pages + 1) %}
-                {% if pages!=1 %}
                 <li class="page-item">
                     <a class="page-link {% if p == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
-                       href="{{ url_for('movie', **dict(request.args, page=p)) }}">
-                        {{ p }}
-                    </a>
+                       href="{{ url_for('movie', page=p) }}"
+                       hx-get="{{ url_for('movie', page=p) }}"
+                       hx-target="#movie-container"
+                       hx-select="#movie-container"
+                       hx-swap="outerHTML">{{ p }}</a>
                 </li>
-                {% endif %}
                 {% endfor %}
             </ul>
         </div>
+        {% endif %}
+
         {% else %}
         <div class="d-flex flex-column align-items-center justify-content-center py-5 my-5 text-center">
             <div class="mb-4">
@@ -117,7 +121,8 @@
                 Danh mục này hiện đang trống hoặc không tìm thấy phim phù hợp. <br>
                 Vui lòng quay lại sau hoặc chọn thể loại khác bạn nhé!
             </p>
-            <a href="{{ url_for('movie') }}" class="btn btn-danger rounded-pill px-5 py-3 fw-bold shadow-lg">
+            <a href="{{ url_for('movie', keyword='', genre='') }}"
+               class="btn btn-danger rounded-pill px-5 py-3 fw-bold shadow-lg">
                 <i class="bi bi-arrow-left-circle me-2"></i> Xem tất cả phim
             </a>
         </div>
