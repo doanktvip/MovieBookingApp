@@ -99,12 +99,14 @@ def movie():
 def cinema():
     keyword = request.args.get('keyword_cinema')
     page = request.args.get("page", default=1, type=int)
-    cinemas, total = dao.load_cinema(keyword=keyword, page=page)
+    province_id = request.args.get('province_id')
+    provinces = dao.load_provinces()
+    cinemas,total= dao.load_cinema(keyword=keyword,page=page,province_id=province_id)
     if total == 0:
         pages = 1
     else:
         pages = math.ceil(total / app.config['PAGE_SIZE'])
-    return render_template('cinema.html', cinemas=cinemas, page=page, pages=pages)
+    return render_template('cinema.html', cinemas=cinemas, page=page, pages=pages,provinces=provinces)
 
 
 def get_vn_weekday(d):
