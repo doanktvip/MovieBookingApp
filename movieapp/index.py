@@ -1,8 +1,10 @@
 import hashlib
 import math
+import re
+import unicodedata
 from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager
-from flask import Flask, render_template, request, url_for, redirect, flash, session
+from flask import Flask, render_template, request, url_for, redirect, flash, session, abort
 from flask_login import login_user, current_user, logout_user
 from movieapp.models import User, TranslationType
 
@@ -68,30 +70,20 @@ def register():
         return redirect(url_for('index', error='register'))
 
 
-import math
-from flask import request, session, render_template
-
-
 @app.route("/movies")
 def movie():
-    if 'keyword' in request.args or 'genre' in request.args:
-        session['keyword'] = request.args.get('keyword', '')
-        session['genre'] = request.args.get('genre', '')
-        session['page'] = 1
-
-    elif 'page' in request.args:
-        session['page'] = request.args.get('page', 1, type=int)
-
-    kw = session.get('keyword', '')
-    genre_id = session.get('genre', '')
-    page = session.get('page', 1)
+    kw = request.args.get('keyword', '')
+    genre_id = request.args.get('genre', '')
+    page = request.args.get('page', 1, type=int)
 
     movies = dao.load_movies(genre_id=genre_id, kw=kw, page=page)
     genres = dao.load_genres()
+
     total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
     total_pages = math.ceil(total_movies / app.config.get('PAGE_SIZE'))
 
-    return render_template('movie.html', movies=movies, genres=genres, pages=total_pages, page=page)
+    return render_template('movie.html', movies=movies, genres=genres, pages=total_pages, page=page, current_kw=kw,
+                           current_genre=genre_id)
 
 
 # Trang rạp phim
@@ -101,7 +93,7 @@ def cinema():
     page = request.args.get("page", default=1, type=int)
     province_id = request.args.get('province_id')
     provinces = dao.load_provinces()
-    cinemas,total= dao.load_cinema(keyword=keyword,page=page,province_id=province_id)
+    cinemas, total = dao.load_cinema(keyword=keyword, page=page, province_id=province_id)
     if total == 0:
         pages = 1
     else:
@@ -132,42 +124,56 @@ def movie_detail(movie_id):
     sorted_dates = [datetime.now() + timedelta(days=i) for i in range(7)]
     movie_format = dao.get_movie_format_all()
 
-    # Các khóa lưu trong session cho phim hiện tại
-    session_date_key = f'date_movie_{movie_id}'
-    session_format_key = f'format_movie_{movie_id}'
-    session_lang_key = f'lang_movie_{movie_id}'
-    session_page_key = f'page_movie_{movie_id}'  # THÊM KHÓA PAGE
+    default_date = sorted_dates[0].strftime('%Y-%m-%d')
+    date_filter = request.args.get('date', default_date)
+    format_filter = request.args.get('format', '')
+    lang_filter = request.args.get('language', '')
+    page = request.args.get('page', 1, type=int)
 
-    # Nếu người dùng thay đổi bộ lọc (ngày, định dạng, ngôn ngữ)
-    if any(k in request.args for k in ('date', 'format', 'language')):
-        if 'date' in request.args:
-            session[session_date_key] = request.args.get('date')
-        if 'format' in request.args:
-            session[session_format_key] = request.args.get('format')
-        if 'language' in request.args:
-            session[session_lang_key] = request.args.get('language')
-
-        # Đổi bộ lọc thì tự động reset trang về 1
-        session[session_page_key] = 1
-
-    # Nếu người dùng chỉ bấm chuyển trang
-    elif 'page' in request.args:
-        session[session_page_key] = request.args.get('page', 1, type=int)
-
-    # Rút dữ liệu từ session ra để đi lấy database
-    date_filter = session.get(session_date_key, sorted_dates[0].strftime('%Y-%m-%d'))
-    format_filter = session.get(session_format_key, '')
-    lang_filter = session.get(session_lang_key, '')
-    page = session.get(session_page_key, 1)  # Lấy page từ session, mặc định là 1
-
-    cinema_showtimes, pagination = dao.get_showtimes_grouped_by_cinema(
-        movie_id, date_filter, format_filter, lang_filter, page=page
-    )
+    cinema_showtimes, total_pages = dao.get_showtimes_grouped_by_cinema(movie_id, date_filter, format_filter,
+                                                                        lang_filter, page=page)
 
     return render_template('movie-detail.html', movie=movie_info, sorted_dates=sorted_dates,
                            get_vn_weekday=get_vn_weekday, movie_format=movie_format, TranslationType=TranslationType,
-                           cinema_showtimes=cinema_showtimes, pagination=pagination, current_date=date_filter,
-                           current_format=format_filter, current_lang=lang_filter)
+                           cinema_showtimes=cinema_showtimes, total_pages=total_pages, page=page,
+                           current_date=date_filter, current_format=format_filter, current_lang=lang_filter)
+
+
+def slugify(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+    text = re.sub(r'[-\s]+', '-', text)
+    return text
+
+
+@app.context_processor
+def common_attribute():
+    return {
+        "slugify": slugify
+    }
+
+
+@app.route('/booking/showtime-<int:showtime_id>-<string:cinema_slug>-room-<int:room_id>')
+def booking(showtime_id, cinema_slug, room_id):
+    showtime = dao.get_showtime_by_id(showtime_id)
+    if not showtime or showtime.room_id != room_id:
+        abort(404)
+
+    showtime_seats = dao.get_seats_by_showtime(showtime_id)
+
+    seat_map = {}
+    for st_seat in showtime_seats:
+        row = st_seat.seat.row
+        col = st_seat.seat.col
+        if row not in seat_map:
+            seat_map[row] = {}
+        seat_map[row][col] = st_seat
+
+    rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+    cols = list(range(1, 9))
+
+    return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
+                           room=showtime.room, seat_map=seat_map, rows=rows, cols=cols)
 
 
 if __name__ == '__main__':
