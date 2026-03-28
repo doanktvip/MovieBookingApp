@@ -68,5 +68,45 @@
     "end_time": "2026-03-29T00:46:00",
     "base_price": 95000.0,
     "translation": "Phụ đề"
+  },
+  {
+    "id": 8,
+    "movie_id": 1,
+    "room_id": 6,
+    "format_id": 2,
+    "start_time": "2026-03-28T21:45:00",
+    "end_time": "2026-03-28T00:46:00",
+    "base_price": 95000.0,
+    "translation": "Phụ đề"
+  },
+  {
+    "id": 9,
+    "movie_id": 1,
+    "room_id": 6,
+    "format_id": 2,
+    "start_time": "2026-03-29T21:45:00",
+    "end_time": "2026-03-29T00:46:00",
+    "base_price": 95000.0,
+    "translation": "Phụ đề"
+  },
+  {
+    "id": 10,
+    "movie_id": 1,
+    "room_id": 6,
+    "format_id": 2,
+    "start_time": "2026-03-29T19:45:00",
+    "end_time": "2026-03-29T00:46:00",
+    "base_price": 95000.0,
+    "translation": "Phụ đề"
+  },
+  {
+    "id": 11,
+    "movie_id": 2,
+    "room_id": 6,
+    "format_id": 2,
+    "start_time": "2026-03-29T21:45:00",
+    "end_time": "2026-03-29T00:46:00",
+    "base_price": 95000.0,
+    "translation": "Phụ đề"
   }
 ]

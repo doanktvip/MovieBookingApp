@@ -5,8 +5,7 @@ from datetime import date
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
-    ShowtimeSeat
+from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, ShowtimeSeat
 import unicodedata
 
 

@@ -98,7 +98,19 @@ def cinema():
         pages = 1
     else:
         pages = math.ceil(total / app.config['PAGE_SIZE'])
-    return render_template('cinema.html', cinemas=cinemas, page=page, pages=pages, provinces=provinces)
+
+    sorted_dates = [datetime.now() + timedelta(days=i) for i in range(7)]
+    # Lấy ngày hiện tại trên URL (nếu không có thì lấy ngày hôm nay làm mặc định)
+    current_date = request.args.get('date', sorted_dates[0].strftime('%Y-%m-%d'))
+    movies = dao.load_movies()
+    movie_showtimes={}
+    for c in cinemas:
+        movie_showtimes[c.id]={}
+        for d in sorted_dates:
+            date_str=d.strftime('%Y-%m-%d')
+            movie_showtimes[c.id][date_str]=dao.get_showtimes_by_movie_and_date(c.id, date_str)
+
+    return render_template('cinema.html', cinemas=cinemas, page=page, pages=pages,provinces=provinces,sorted_dates=sorted_dates, current_date=current_date,get_vn_weekday=get_vn_weekday,movies=movies,movie_showtimes=movie_showtimes)
 
 
 def get_vn_weekday(d):
