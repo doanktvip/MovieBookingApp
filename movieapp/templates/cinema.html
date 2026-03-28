@@ -1,124 +1,143 @@
 {% extends 'layout/base.html' %}
-{% block content %}
-<div class="container">
-    <div class=" row mb-3">
-        <h1 class=" fw-bold mb-1 mt-5">Hệ Thống Rạp DDN</h1>
-        <h5 class="mt-2 text-secondary">Tìm rạp DDN gần nhất</h5>
-    </div>
-    <div class="mb-4">
-        <form action="{{ url_for('cinema') }}" method="GET" id="cinemaFilterForm">
 
-            <div class="col-md-5 mb-3">
-                <div class="input-group">
-                    <input type="text"
-                           class="form-control text-white ddn-glass p-2"
-                           placeholder="Tìm kiếm rạp phim theo tên hoặc địa chỉ ..."
-                           name="keyword_cinema"
-                           value="{{ request.args.get('keyword_cinema', '') }}">
-                    <button class="btn ddn-glass text-white px-4" type="submit">
-                        <i class="bi bi-search"></i>
-                    </button>
+{% block content %}
+<div class="card bg-transparent text-white border-0 rounded-0 min-vh-100">
+    <div class="card-body container py-5" id="cinema-container">
+
+        <h1 class="card-title display-6 fw-bold mb-1">Hệ Thống Rạp DDN</h1>
+        <h6 class="card-subtitle mb-4 text-secondary">Tìm rạp DDN gần nhất để thưởng thức phim hay</h6>
+
+        <div class="mb-4">
+            <form action="{{ url_for('cinema') }}" method="GET" id="cinemaFilterForm">
+
+                <div class="col-md-5 mb-3">
+                    <div class="input-group">
+                        <input type="text"
+                               class="form-control text-white ddn-glass"
+                               placeholder="Tìm kiếm rạp phim theo tên hoặc địa chỉ..."
+                               name="keyword_cinema"
+                               value="{{ request.args.get('keyword_cinema', '') }}">
+                        <button class="btn ddn-glass text-white px-4" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <span class="text-white">Chọn khu vực:</span>
+                    <select name="province_id"
+                            class="form-select text-white ddn-glass px-3 py-2"
+                            style="width: auto; min-width: 180px; cursor: pointer;"
+                            onchange="document.getElementById('cinemaFilterForm').submit();">
+
+                        <option value="" class="text-white" style="background-color: #2c1517 !important">Tất cả khu
+                            vực
+                        </option>
+
+                        {% for p in provinces %}
+                        <option value="{{ p.id }}" style="background-color: #2c1517 !important" class="text-white"
+                                {% if request.args.get(
+                        'province_id') == p.id|string %}selected{% endif %}>
+                        {{ p.name }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        {% if cinemas %}
+        <div class="d-flex flex-column gap-4">
+            {% for c in cinemas %}
+            <div class="card border-0 rounded-4 p-4 shadow tien-ich text-white">
+                <div class="row">
+                    <div class="col-md-9 col-lg-10">
+                        <h3 class="fw-bold mb-3">{{ c.name }}</h3>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo-alt me-3 fs-5 text-danger"></i>
+                            <span class="fw-bold fs-5">{{ c.province.name }}</span>
+                        </div>
+                        <div class="mb-3 text-white-50" style="margin-left: 2.3rem;">{{ c.address }}</div>
+
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-telephone me-3 fs-5 text-danger"></i>
+                            <span class="text-white-50">{{ c.hotline[:4] }} {{ c.hotline[4:] }}</span>
+                        </div>
+
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-clock me-3 fs-5 text-danger"></i>
+                            <span class="text-white-50">Mở cửa: 08:00 - 00:00</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 col-lg-2 d-flex flex-column justify-content-start gap-3 mt-3 mt-md-0">
+                        <a href="#" class="btn btn-danger py-2 rounded-3 fw-bold shadow-sm">
+                            <i class="bi bi-calendar-event me-2"></i> Lịch chiếu
+                        </a>
+                        <a href="{{ c.map_url }}" target="_blank"
+                           class="btn ddn-glass py-2 rounded-3 text-white fw-bold">
+                            <i class="bi bi-box-arrow-up-right me-2"></i> Bản đồ
+                        </a>
+                    </div>
+                </div>
+
+                <hr class="border-secondary my-4" style="opacity: 0.3;">
+
+                <div>
+                    <div class="mb-3 text-white-50">Phòng chiếu:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if c.rooms %}
+                        {% for room in c.rooms %}
+                        <span class="badge text-danger fw-normal px-3 py-2"
+                              style="background-color: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.3);">
+                                {{ room.room_name }} ({{ room.capacity }} ghế)
+                            </span>
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-secondary small fst-italic">Đang cập nhật phòng chiếu...</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-
-            <div class="d-flex flex-wrap gap-2">
-                <div class="text-white p-2">Chọn khu vực:</div>
-                <select name="province_id"
-                        class="form-select text-white ddn-glass pe-1 py-2"
-                        style="background-color: rgba(255,255,255,0.1);max-width: 150px;"
-                        onchange="document.getElementById('cinemaFilterForm').submit();">
-
-                    <option value="" class="text-white" style="background-color: #2c1517 !important">Tất cả</option>
-
-                    {% for p in provinces %}
-                    <option value="{{ p.id }}" style="background-color: #2c1517 !important" class="text-white" {% if
-                            request.args.get(
-                    'province_id') == p.id|string %}selected{% endif %}>
-                    {{ p.name }}
-                    </option>
-                    {% endfor %}
-
-                </select>
-
-            </div>
-        </form>
-    </div>
-    {%if cinemas %}
-    {%for c in cinemas%}
-    <div class="row mt-4 tien-ich p-4">
-        <div class="col-md-10 col-12">
-            <h3 class="fw-bold mb-3">{{ c.name }}</h3>
-            <div class="d-flex align-items-center mb-1">
-                <i class="bi bi-geo-alt me-3 fs-5 text-danger"></i>
-                <span class="fw-bold fs-5">{{ c.province.name}}</span>
-            </div>
-            <div class="mb-3" style="margin-left: 2.3rem;color:silver;">{{ c.address }}</div>
-            <div class="d-flex align-items-center mb-2 text-white">
-                <i class="bi bi-telephone me-3 fs-5 text-danger"></i>
-                <span style="color:silver;">{{ c.hotline[:4] }} {{c.hotline[4:]}}</span>
-            </div>
-            <div class="d-flex align-items-center mb-3 text-white">
-                <i class="bi bi-clock me-3 fs-5 text-danger"></i>
-                <span style="color:silver;">Mở cửa: 08.00 - 00.00</span>
-            </div>
+            {% endfor %}
         </div>
-        <div class="col-md-2 col-12 d-flex flex-column justify-content-start gap-3 mt-3 mt-md-0">
-            <a href="#" class="btn btn-danger py-2 rounded-3">
-                <i class="bi bi-calendar-event me-2"></i> Lịch chiếu
-            </a>
-            <a href="{{ c.map_url }}"
-               class="btn ddn-glass p-2 rounded-3 text-white">
-                <i class="bi bi-box-arrow-up-right me-2 text-white"></i> Chỉ đường
-            </a>
-        </div>
-        <hr class="border-secondary my-4" style="opacity: 0.3;">
-        <div>
-            <div class="mb-3" style="color:silver;">Phòng chiếu:</div>
-            <div class="d-flex flex-wrap gap-3">
-                {%if c.rooms %}
-                {% for room in c.rooms %}
-                <span class="badge text-danger rounded-pill py-2 px-3"
-                      style="background-color: rgba(220, 53, 69, 0.15);">
-                            {{ room.room_name }} ({{ room.capacity }} ghế)
-                        </span>
+
+        {% if pages > 1 %}
+        <div class="d-flex justify-content-center mt-5 mb-4">
+            <ul class="pagination gap-2 border-0 mb-0">
+                {% for i in range(1, pages + 1) %}
+                <li class="page-item">
+                    <a class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('cinema', page=i, keyword_cinema=request.args.get('keyword_cinema', ''), province_id=request.args.get('province_id', '')) }}">
+                        {{ i }}
+                    </a>
+                </li>
                 {% endfor %}
-                {% else %}
-                <span class="text-secondary fst-italic" style="font-size: 0.9rem;">
-                        Đang cập nhật phòng chiếu...</span>
-                {%endif%}
-            </div>
+            </ul>
         </div>
-    </div>
-    {%endfor%}
-    {%else%}
-    <div class="col-12 text-center mt-5 mb-5 py-5">
-        <i class="bi bi-search" style="font-size: 4rem; color: #4a4a4a;"></i>
-        <h4 class="text-white mt-4 fw-bold">Không tìm thấy rạp phim nào!</h4>
-        <p class="text-secondary fs-5 mt-2">
-            Chúng tôi không tìm thấy rạp hay địa chỉ nào khớp với từ khóa
-            <span class="text-danger fw-bold">"{{ request.args.get('keyword_cinema', '') }}"</span>
-        </p>
-        <p class="text-secondary">Vui lòng kiểm tra lại lỗi chính tả hoặc thử một từ khóa khác (Ví dụ: Tân Bình,
-            Quận
-            1...).</p>
+        {% endif %}
 
-        <a href="{{ url_for('cinema') }}" class="btn btn-danger px-4 py-2 mt-3 rounded-3">
-            <i class="bi bi-arrow-left me-2"></i> Xem tất cả các rạp
-        </a>
+        {% else %}
+        <div class="d-flex flex-column align-items-center justify-content-center py-5 my-5 text-center">
+            <div class="mb-4">
+                <i class="bi bi-buildings text-secondary" style="font-size: 6rem; opacity: 0.2;"></i>
+            </div>
+            <h1 class="fw-bold text-white mb-3" style="letter-spacing: -1px;">
+                Không tìm thấy rạp phim nào!
+            </h1>
+            <p class="text-secondary fs-4 mb-5 mx-auto">
+                Chúng tôi không tìm thấy rạp hay địa chỉ nào khớp với từ khóa <br>
+                <span class="text-danger fw-bold">"{{ request.args.get('keyword_cinema', '') }}"</span>.
+            </p>
+            <a href="{{ url_for('cinema') }}"
+               class="btn btn-danger rounded-pill px-5 py-3 fw-bold shadow-lg">
+                <i class="bi bi-arrow-left-circle me-2"></i> Xem tất cả các rạp
+            </a>
+        </div>
+        {% endif %}
+
     </div>
-    {%endif%}
-    {%if pages >1 %}
-    <div class="row mt-4 d-flexr">
-        <ul class="pagination justify-content-center gap-2 border-0 mb-0">
-            {%for i in range(1,(pages+1))%}
-            <li class="page-item"><a
-                    class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
-                    href="{{url_for('cinema',page=i,keyword_cinema=request.args.get('keyword_cinema', ''),province_id=request.args.get('province_id', ''))}}">{{i}}</a>
-            </li>
-            {%endfor%}
-        </ul>
-    </div>
-    {%endif%}
 </div>
-
 {% endblock %}

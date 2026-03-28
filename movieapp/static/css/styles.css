@@ -1,7 +1,46 @@
+/* =========================================
+   HỆ THỐNG BIẾN (CSS VARIABLES)
+   ========================================= */
 :root {
+  /* Layout & Container */
   --header-height: 60px;
+  --container-max-width: 1400px;
+  --carousel-min-height: 500px;
+
+  /* Kích thước thành phần UI (Booking & Movies) */
+  --seat-size: 40px;
+  --legend-size: 20px;
+  --poster-width: 100px;
+  --poster-height: 150px;
+  --indicator-width: 30px;
+  --indicator-active-width: 45px;
+  --indicator-height: 4px;
+  --nav-icon-size: 45px;
+  --row-label-width: 30px;
+  --screen-line-height: 5px;
+
+  /* Spacing & Offsets */
+  --sticky-top: 20px;
+  --hover-translate-y: -10px;
+
+  /* Viền & Bo góc (Borders & Radius) */
+  --border-width: 1px;
+  --radius-md: 8px;
+  --radius-lg: 15px;
+
+  /* Hiệu ứng mờ & Đổ bóng (Blurs & Shadows) */
+  --blur-md: 8px;
+  --shadow-offset-sm: 2px;
+  --shadow-offset-md: 4px;
+  --shadow-offset-lg: 10px;
+  --shadow-blur-sm: 8px;
+  --shadow-blur-md: 15px;
+  --shadow-blur-lg: 20px;
 }
 
+/* =========================================
+   CÁC CSS CŨ (ĐÃ ÁP DỤNG BIẾN)
+   ========================================= */
 header, nav {
   height: var(--header-height);
 }
@@ -9,12 +48,12 @@ header, nav {
 .movie-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     background-color: #fff;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .movie-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2)
+    transform: translateY(var(--hover-translate-y));
+    box-shadow: 0 var(--shadow-offset-lg) var(--shadow-blur-lg) rgba(0, 0, 0, 0.2);
 }
 
 .ddn-background {
@@ -27,9 +66,9 @@ header, nav {
 
 .ddn-glass {
     background-color: rgba(255, 255, 255, 0.08) !important;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: var(--border-width) solid rgba(255, 255, 255, 0.1) !important;
     color: white !important;
     transition: all 0.3s ease;
 }
@@ -65,66 +104,56 @@ header, nav {
     transition: color 0.3s ease;
 }
 
-/* Đổi sang màu đỏ khi rê chuột vào */
 .header-menu .nav-link:hover {
     color: #f11429 !important;
 }
+
 /*Carousel*/
-/* Tinh chỉnh lại chiều cao cho giống banner phim rạp (Màn hình rộng) */
 #heroCarousel, .carousel-inner, .carousel-item, .carousel-image-wrapper {
     height: 60vh;
-    min-height: 500px; /* Giảm min-height xuống cho cân đối */
+    min-height: var(--carousel-min-height);
     position: relative;
-
 }
 
-/* Ép ảnh ngang lấp đầy màn hình */
 .hero-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center; /* Căn giữa hoàn toàn để giữ được nhiều chi tiết nhất ở 2 bên */
+    object-position: center;
 }
 
-/* LỚP PHỦ QUAN TRỌNG NHẤT: Làm tối nửa bên trái để chữ nổi bật */
 .gradient-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    /* Gradient: Trái đen xì -> Giữa đen mờ -> Phải trong suốt */
     background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%);
-
 }
 
-/* Định vị khối nội dung đè lên trên ảnh */
 .custom-hero-content {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    text-align: left; /* Đảm bảo chữ căn trái */
+    text-align: left;
 }
 
-/* Font chữ và cắt dòng mô tả */
 .movie-title {
     font-size: 3.5rem;
     font-weight: 800;
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    text-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) var(--shadow-blur-sm) rgba(0,0,0,0.8);
 }
 
-/* CSS cho thanh gạch ngang (Indicators) ở dưới cùng */
 .custom-indicators button {
-    width: 30px !important;
-    height: 4px !important;
+    width: var(--indicator-width) !important;
+    height: var(--indicator-height) !important;
     background-color: rgba(255,255,255,0.4) !important;
 }
 
 .custom-indicators button.active {
-    width: 45px !important;
-    background-color: #dc3545 !important; /* Màu đỏ */
+    width: var(--indicator-active-width) !important;
+    background-color: #dc3545 !important;
 }
 
-/* CSS cho nút Mũi tên Trái/Phải */
 .nav-icon-circle{
-    width: 45px;
-    height: 45px;
+    width: var(--nav-icon-size);
+    height: var(--nav-icon-size);
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 70%;
     display: flex;
@@ -136,46 +165,43 @@ header, nav {
 .nav-icon-circle:hover {
     background-color: rgba(220, 53, 69, 0.8);
 }
-/* Ẩn mũi tên chuyển slide trên màn hình Mobile */
+
+/* Biến CSS không thể dùng trực tiếp trong cấu trúc Media Query */
 @media (max-width: 767.98px) {
     .custom-nav-btn, .carousel-control-prev, .carousel-control-next{
         display: none !important;
     }
     .banner {
-        margin-top:0rem;
+        margin-top: 0rem;
     }
-
 }
 
 .film-showing a:hover {
     opacity:0.6;
 }
-/*Carousel thứ 2*/
-/* Giới hạn text hiển thị 2 dòng và thêm 3 chấm */
+
 .text-truncate-2 {
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Số dòng tối đa muốn hiển thị */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;/*gắn dấu 3 chấm*/
+    text-overflow: ellipsis;
 }
 
 .card-carousel {
-    border: 1px solid #ff0000;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+    border: var(--border-width) solid #ff0000;
+    box-shadow: 0 0 var(--shadow-blur-lg) rgba(255, 0, 0, 0.8);
 }
-
 
 /*Tien ich*/
 .tien-ich {
     background-color: #2c1517 !important;
-    border:1px solid #631e24;
-    border-radius: 15px;
+    border: var(--border-width) solid #631e24;
+    border-radius: var(--radius-lg);
 }
 .tien-ich:hover{
-    border: 1px solid red;
+    border: var(--border-width) solid red;
 }
-
 
 /*Footer*/
 .footer-link {
@@ -184,4 +210,56 @@ header, nav {
 }
 .footer-link:hover {
     color:red;
+}
+
+/* =========================================
+   CÁC CSS MỚI CHO TRANG BOOKING (CHỌN GHẾ)
+   ========================================= */
+
+.container-1400 {
+    max-width: var(--container-max-width);
+}
+
+.cinema-screen {
+    height: var(--screen-line-height);
+    background: linear-gradient(90deg, transparent, #dc3545, transparent);
+    box-shadow: 0 var(--shadow-offset-md) var(--shadow-blur-md) rgba(220, 53, 69, 0.6);
+}
+
+.seat-row-label {
+    width: var(--row-label-width);
+}
+
+.seat-box {
+    width: var(--seat-size);
+    height: var(--seat-size);
+}
+
+.seat-disabled {
+    cursor: not-allowed !important;
+}
+
+.seat-hidden {
+    opacity: 0.2 !important;
+}
+
+.seat-check:checked + .btn {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.legend-box {
+    width: var(--legend-size);
+    height: var(--legend-size);
+}
+
+.booking-poster {
+    width: var(--poster-width);
+    height: var(--poster-height);
+    object-fit: cover;
+}
+
+.sticky-offset-20 {
+    top: var(--sticky-top);
 }

@@ -1,0 +1,135 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-5 container-1400">
+
+    <form action="/checkout" method="POST">
+        <input type="hidden" name="showtime_id" value="{{ showtime.id }}">
+
+        <div class="row g-4">
+
+            <div class="col-lg-8">
+                <div class="card ddn-glass border-0 rounded-4 p-4 p-md-5 h-100 text-white">
+                    <h3 class="fw-bold mb-5">Chọn ghế</h3>
+
+                    <div class="text-center position-relative mb-5">
+                        <p class="text-white-50 mb-2">Màn hình</p>
+                        <div class="w-100 mx-auto rounded-pill cinema-screen"></div>
+                    </div>
+
+                    <div class="overflow-auto pb-4">
+                        {% for row_name in rows %}
+                        <div class="d-flex justify-content-center align-items-center mb-2 gap-1 gap-md-2">
+
+                            <div class="fw-bold text-secondary text-center seat-row-label">{{ row_name }}</div>
+
+                            {% for col_num in cols %}
+                            {% set st_seat = seat_map.get(row_name, {}).get(col_num) %}
+
+                            {% if st_seat %}
+                            {% set is_booked = st_seat.status.value != 'available' %}
+                            {% set is_vip = st_seat.seat.is_vip %}
+
+                            {% if is_booked %}
+                            <button type="button"
+                                    class="btn btn-dark border-secondary text-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-disabled"
+                                    disabled>
+                                {{ col_num }}
+                            </button>
+                            {% else %}
+                            {% set btn_class = 'btn-outline-warning' if is_vip else ('btn-outline-light' if is_sweetbox
+                            else 'btn-outline-secondary') %}
+
+                            <input type="checkbox" class="btn-check seat-check" name="seat_ids"
+                                   id="seat-{{ st_seat.id }}"
+                                   value="{{ st_seat.id }}" autocomplete="off">
+
+                            <label class="btn {{ btn_class }} p-0 d-flex align-items-center justify-content-center fw-bold seat-box"
+                                   for="seat-{{ st_seat.id }}">
+                                {{ col_num }}
+                            </label>
+                            {% endif %}
+
+                            {% else %}
+                            <button type="button"
+                                    class="btn btn-outline-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-hidden seat-disabled"
+                                    disabled title="Ghế không mở bán">
+                                {{ col_num }}
+                            </button>
+                            {% endif %}
+
+                            {% endfor %}
+
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top border-secondary border-opacity-50">
+                        <h5 class="fw-bold mb-4">Chú thích</h5>
+                        <div class="d-flex flex-wrap gap-4 small text-white-50">
+                            <div class="d-flex align-items-center">
+                                <div class="border border-secondary rounded me-2 legend-box"></div>
+                                Có thể chọn
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-danger rounded me-2 legend-box"></div>
+                                Đang chọn
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-dark border border-secondary rounded me-2 legend-box"></div>
+                                Đã đặt
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="border border-warning rounded me-2 legend-box"></div>
+                                VIP (+20.000 đ)
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="border border-secondary rounded me-2 legend-box seat-hidden"></div>
+                                Không mở bán
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card ddn-glass border-0 rounded-4 p-4 text-white position-sticky sticky-offset-20">
+                    <h4 class="fw-bold mb-4">Thông tin đặt vé</h4>
+
+                    <div class="d-flex gap-3 mb-4">
+                        <img src="{{ movie.image }}" class="rounded-3 shadow booking-poster" alt="Poster">
+                        <div>
+                            <h5 class="fw-bold text-white">{{ movie.title }}</h5>
+                            <p class="text-white-50 small mb-0">T{{ movie.limited_age }} •
+                                {% for g in movie.genres %}{{ g.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="border-top border-bottom border-secondary border-opacity-25 py-3 mb-4 small">
+                        <div class="mb-2"><span class="text-white-50">Rạp:</span> <br> <strong class="fs-6">{{
+                            cinema.name }}</strong></div>
+                        <div class="mb-2"><span class="text-white-50">Phòng:</span> <br> <strong class="fs-6">{{
+                            room.room_name }}</strong></div>
+                        <div class="mb-2"><span class="text-white-50">Suất chiếu:</span> <br> <strong class="fs-6">{{
+                            showtime.start_time.strftime('%H:%M - %d/%m/%Y') }}</strong></div>
+                        <div class="mb-0"><span class="text-white-50">Định dạng:</span> <br> <strong class="fs-6">{{
+                            showtime.movie_format.name }} • {{ showtime.translation.value }}</strong></div>
+                    </div>
+
+                    <div class="alert bg-dark border border-secondary text-white-50 small mb-4 rounded-3">
+                        <i class="bi bi-info-circle text-danger me-1"></i> Chi tiết ghế bạn chọn và Tổng tiền sẽ được
+                        tính toán tự động ở bước tiếp theo.
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold rounded-3 shadow-lg fs-5">
+                        Tiếp tục thanh toán <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

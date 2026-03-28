@@ -124,6 +124,7 @@ class ShowtimeSeat(BaseModel):
     price = Column(Float)
 
     ticket = relationship('Ticket', backref='showtime_seat', uselist=False, lazy=True)
+    seat = relationship('Seat', backref='showtime_seats', lazy=True)
 
 
 class Booking(BaseModel):

@@ -1,16 +1,32 @@
 [
   {
-    "id": 1,
     "showtime_id": 1,
     "seat_id": 1,
-    "status": "booked",
+    "status": "available",
     "price": 75000.0
   },
   {
-    "id": 2,
     "showtime_id": 1,
     "seat_id": 2,
     "status": "booked",
     "price": 75000.0
+  },
+  {
+    "showtime_id": 1,
+    "seat_id": 3,
+    "status": "available",
+    "price": 75000.0
+  },
+  {
+    "showtime_id": 1,
+    "seat_id": 4,
+    "status": "available",
+    "price": 95000.0
+  },
+  {
+    "showtime_id": 1,
+    "seat_id": 5,
+    "status": "available",
+    "price": 95000.0
   }
 ]
