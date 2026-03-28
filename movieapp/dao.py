@@ -5,7 +5,8 @@ from datetime import date
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, ShowtimeSeat
+from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
+    ShowtimeSeat
 import unicodedata
 
 
@@ -179,3 +180,24 @@ def get_seats_by_showtime(showtime_id):
     ).order_by(Seat.row.asc(), Seat.col.asc()).all()
 
     return seats
+
+
+def get_showtimes_by_movie_and_date(cinema_id, date_str=None):
+    query = Showtime.query.join(Room).join(Cinema).filter(
+        Cinema.id == cinema_id,
+        func.date(Showtime.start_time) == date_str
+    ).order_by(Showtime.start_time.asc()).all()
+
+    # gom nhóm suất chiếu theo từng bộ phim
+    movie_dict = {}
+    for st in query:
+        # lấy đối tượng phim của suất chiếu tương ứng
+        movie = st.movie
+        if not movie in movie_dict:
+            movie_dict[movie] = []
+        movie_dict[movie].append(st)
+    return movie_dict
+
+
+def get_seats_all():
+    return Seat.query.all()

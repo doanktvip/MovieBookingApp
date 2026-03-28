@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 
+import movieapp.dao
 from movieapp import app, db
 # Import đầy đủ Models, Enums và bảng movie_genre
 from movieapp.models import (
@@ -77,9 +78,13 @@ if __name__ == "__main__":
                 db.session.execute(stmt)
 
             # 2.9. Nạp Seats
-            for s in load_json("seat.json"):
-                db.session.add(Seat(**s))
-
+            name_row = ["A", "B", "C", "D", "E", "F", "G", "H"]
+            for i in name_row:
+                for j in range(1, 9):
+                    s = Seat(room_id=1, seat_number=f"{i}{j}", row=i, col=j)
+                    if i in ["G", "H"]:
+                        s.is_vip = True
+                    db.session.add(s)
             db.session.commit()
 
             # 2.10. Nạp Showtimes
@@ -92,11 +97,10 @@ if __name__ == "__main__":
             db.session.commit()
 
             # 2.11. Nạp ShowtimeSeats (Đảm bảo file tên là showtime_seat.json)
-            for ss in load_json("showtime_seat.json"):
-                # SỬA Ở ĐÂY: Dùng .lower() để tránh lỗi chữ HOA/thường
-                ss['status'] = SeatStatus(ss['status'].lower())
-                db.session.add(ShowtimeSeat(**ss))
-
+            seats = movieapp.dao.get_seats_all()
+            for s in seats:
+                showtime_seat = ShowtimeSeat(seat_id=s.id, showtime_id=1, price=50000)
+                db.session.add(showtime_seat)
             db.session.commit()
 
             # 2.12. Nạp Bookings
