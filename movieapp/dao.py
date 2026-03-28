@@ -3,7 +3,7 @@ import json
 from datetime import date
 from sqlalchemy import func
 from movieapp import db, app
-from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room
+from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room,Province
 import unicodedata
 
 
@@ -159,3 +159,20 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
 
     # 11. Trả về từ điển đã gom nhóm và đối tượng phân trang (để vẽ nút Next/Prev ở HTML)
     return cinema_dict, paginated_cinemas
+
+#Lấy danh sách các suất chiếu tương ứng theo từng phim trong ngày cụ thể
+def get_showtimes_by_movie_and_date(cinema_id, date_str=None):
+    query = Showtime.query.join(Room).join(Cinema).filter(
+        Cinema.id == cinema_id,
+        func.date(Showtime.start_time) == date_str
+    ).order_by(Showtime.start_time.asc()).all()
+
+    #gom nhóm suất chiếu theo từng bộ phim
+    movie_dict={}
+    for st in query:
+        # lấy đối tượng phim của suất chiếu tương ứng
+        movie = st.movie
+        if not movie in movie_dict:
+            movie_dict[movie] = []
+        movie_dict[movie].append(st)
+    return movie_dict

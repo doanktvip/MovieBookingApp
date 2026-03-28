@@ -63,9 +63,13 @@
             </div>
         </div>
         <div class="col-md-2 col-12 d-flex flex-column justify-content-start gap-3 mt-3 mt-md-0">
-            <a href="#" class="btn btn-danger py-2 rounded-3">
+            <button type="button"
+                    class="btn btn-danger py-2 rounded-3"
+                    data-bs-toggle="modal"
+                    data-bs-target="#exampleModalCenter{{c.id}}"
+                    name="cinema_calendar" value="{{c.id}}">
                 <i class="bi bi-calendar-event me-2"></i> Lịch chiếu
-            </a>
+            </button>
             <a href="{{ c.map_url }}"
                class="btn ddn-glass p-2 rounded-3 text-white">
                 <i class="bi bi-box-arrow-up-right me-2 text-white"></i> Chỉ đường
@@ -89,36 +93,167 @@
             </div>
         </div>
     </div>
-    {%endfor%}
-    {%else%}
-    <div class="col-12 text-center mt-5 mb-5 py-5">
-        <i class="bi bi-search" style="font-size: 4rem; color: #4a4a4a;"></i>
-        <h4 class="text-white mt-4 fw-bold">Không tìm thấy rạp phim nào!</h4>
-        <p class="text-secondary fs-5 mt-2">
-            Chúng tôi không tìm thấy rạp hay địa chỉ nào khớp với từ khóa
-            <span class="text-danger fw-bold">"{{ request.args.get('keyword_cinema', '') }}"</span>
-        </p>
-        <p class="text-secondary">Vui lòng kiểm tra lại lỗi chính tả hoặc thử một từ khóa khác (Ví dụ: Tân Bình,
-            Quận
-            1...).</p>
+    <div class="modal fade" id="exampleModalCenter{{c.id}}" tabindex="-1" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl" style="">
+            <div class="modal-content" style="background-color:black;">
+                <div class="modal-header border-0 position-relative">
+                    <div>
+                        <h1 class="fs-5 fw-bold " id="exampleModalCenterTitle">
+                            Lịch chiếu phim - <span class="text-danger">{{ c.name }}</span>
+                        </h1>
+                        <span style="color:silver;">{{c.address}}</span>
+                    </div>
+                    <button type="button"
+                            class="btn btn-outline-danger rounded-circle position-absolute top-0 end-0 mt-1 me-1"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">X
+                    </button>
+                </div>
+                <div class="modal-body border-0">
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3 text-white">Chọn ngày:</h6>
+                        <div class="d-flex flex-nowrap gap-2 overflow-x-auto pb-2">
+                            {% for d in sorted_dates %}
+                            {% set date_str = d.strftime('%Y-%m-%d') %}
+                            {% set is_selected = (current_date == date_str) %}
 
-        <a href="{{ url_for('cinema') }}" class="btn btn-danger px-4 py-2 mt-3 rounded-3">
-            <i class="bi bi-arrow-left me-2"></i> Xem tất cả các rạp
-        </a>
-    </div>
-    {%endif%}
-    {%if pages >1 %}
-    <div class="row mt-4 d-flexr">
-        <ul class="pagination justify-content-center gap-2 border-0 mb-0">
-            {%for i in range(1,(pages+1))%}
-            <li class="page-item"><a
-                    class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
-                    href="{{url_for('cinema',page=i,keyword_cinema=request.args.get('keyword_cinema', ''),province_id=request.args.get('province_id', ''))}}">{{i}}</a>
-            </li>
-            {%endfor%}
-        </ul>
-    </div>
-    {%endif%}
-</div>
+                            <input type="radio" class="btn-check" name="date_{{ c.id }}"
+                                   id="date-{{ c.id }}-{{ date_str }}"
+                                   value="{{ date_str }}" {% if is_selected %}checked{% endif %}
+                                   onchange="changeDateColor(this, '{{ c.id }}')">
 
-{% endblock %}
+                            <label id="label-date-{{ c.id }}-{{ date_str }}"
+                                   class="btn date-label-{{ c.id }} {{ 'btn-danger fw-bold shadow-lg' if is_selected else 'ddn-glass text-white' }} rounded-3 px-4 py-2 border-0 flex-shrink-0"
+                                   for="date-{{ c.id }}-{{ date_str }}"
+                                   style="cursor: pointer; transition: none !important;">
+                                {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <hr class="border-secondary opacity-25">
+                    <div class="movies-container mt-4">
+                        {% for d in sorted_dates %}
+                        {% set date_str = d.strftime('%Y-%m-%d') %}
+                        {% set is_selected = (current_date == date_str) %}
+
+                        <div id="showtime-content-{{ c.id }}-{{ date_str }}"
+                             class="date-showtime-group-{{ c.id }}"
+                             style="display: {{ 'block' if is_selected else 'none' }};">
+
+                            {% set movie_dict = movie_showtimes[c.id][date_str] %}
+
+                            {% if movie_dict %}
+                            {% for movie, showtimes in movie_dict.items() %}
+                            <div class="movie-item d-flex align-items-start mb-4">
+                                <img src="{{ movie.image }}" alt="Poster" class="img-fluid rounded-4 me-3"
+                                     style="width: 80px; height: 120px; object-fit: cover;">
+                                <div class="movie-info flex-grow-1">
+                                    <h6 class="fw-bold text-uppercase text-white mb-1">{{ movie.title }}</h6>
+                                    <p class="text-secondary mb-2" style="font-size: 0.8rem;">Thời lượng: {{
+                                        movie.duration }} phút | Tỉ lệ 16:9</p>
+                                    <p class="text-secondary mb-3" style="font-size: 0.8rem;">
+                                        <span class="badge bg-warning text-dark">T{{ movie.limited_age }}</span>
+                                    </p>
+
+                                    <div class="showtimes d-flex flex-wrap gap-2">
+                                        {% for st in showtimes %}
+                                        <a href="/booking/{{ st.id }}" class="text-decoration-none">
+                                            <div class="time-btn ddn-glass p-2 rounded-3 text-center border border-secondary border-opacity-25"
+                                                 style="min-width: 80px;">
+                                                <div class="fw-bold text-white">{{ st.start_time.strftime('%H:%M') }}
+                                                </div>
+                                                <div style="font-size: 0.7rem;" class="text-secondary mt-1">
+                                                    {{ st.movie_format.name if st.movie_format else '2D' }} •
+                                                    {{ st.translation.value if st.translation else 'Phụ đề' }}
+                                                </div>
+                                            </div>
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if not loop.last %}
+                            <hr class="opacity-25 border-secondary">
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-calendar-x fs-1 text-secondary mb-3"></i>
+                                <h6 class="text-white">Không có suất chiếu nào</h6>
+                                <p class="text-secondary" style="font-size: 0.9rem;">Vui lòng chọn một ngày khác.</p>
+                            </div>
+                            {% endif %}
+
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+        {%endfor%}
+        {%else%}
+        <div class="col-12 text-center mt-5 mb-5 py-5">
+            <i class="bi bi-search" style="font-size: 4rem; color: #4a4a4a;"></i>
+            <h4 class="text-white mt-4 fw-bold">Không tìm thấy rạp phim nào!</h4>
+            <p class="text-secondary fs-5 mt-2">
+                Chúng tôi không tìm thấy rạp hay địa chỉ nào khớp với từ khóa
+                <span class="text-danger fw-bold">"{{ request.args.get('keyword_cinema', '') }}"</span>
+            </p>
+            <p class="text-secondary">Vui lòng kiểm tra lại lỗi chính tả hoặc thử một từ khóa khác (Ví dụ: Tân Bình,
+                Quận
+                1...).</p>
+
+            <a href="{{ url_for('cinema') }}" class="btn btn-danger px-4 py-2 mt-3 rounded-3">
+                <i class="bi bi-arrow-left me-2"></i> Xem tất cả các rạp
+            </a>
+        </div>
+        {%endif%}
+        {%if pages >1 %}
+        <div class="row mt-4 d-flexr">
+            <ul class="pagination justify-content-center gap-2 border-0 mb-0">
+                {%for i in range(1,(pages+1))%}
+                <li class="page-item"><a
+                        class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                        href="{{url_for('cinema',page=i,keyword_cinema=request.args.get('keyword_cinema', ''),province_id=request.args.get('province_id', ''))}}">{{i}}</a>
+                </li>
+                {%endfor%}
+            </ul>
+        </div>
+        {%endif%}
+    </div>
+    <script>
+        // Hàm này sẽ tự động chạy mỗi khi bạn click chọn ngày khác
+        function changeDateColor(radioBtn, cinemaId) {
+        // --- LOGIC 1: ĐỔI MÀU NÚT NHƯ CŨ ---
+        let allLabels = document.querySelectorAll('.date-label-' + cinemaId);
+        allLabels.forEach(function(label) {
+            label.classList.remove('btn-danger', 'fw-bold', 'shadow-lg');
+            label.classList.add('ddn-glass', 'text-white');
+        });
+
+        let selectedLabel = document.getElementById('label-' + radioBtn.id);
+        selectedLabel.classList.remove('ddn-glass', 'text-white');
+        selectedLabel.classList.add('btn-danger', 'fw-bold', 'shadow-lg');
+
+        // --- LOGIC 2: ẨN/HIỆN KHUNG LỊCH CHIẾU ---
+        // B1: Tìm tất cả các khung lịch chiếu của riêng rạp này và ẩn nó đi
+        let allShowtimeGroups = document.querySelectorAll('.date-showtime-group-' + cinemaId);
+        allShowtimeGroups.forEach(function(group) {
+            group.style.display = 'none';
+        });
+
+        // B2: Lấy ngày vừa click (vd: "2026-03-25")
+        let selectedDateStr = radioBtn.value;
+
+        // B3: Tìm đúng cái khung div của ngày đó và cho nó hiện lên (block)
+        let targetGroup = document.getElementById('showtime-content-' + cinemaId + '-' + selectedDateStr);
+        if (targetGroup) {
+            targetGroup.style.display = 'block';
+        }
+    }
+    </script>
+    {% endblock %}
