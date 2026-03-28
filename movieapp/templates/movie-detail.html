@@ -70,12 +70,7 @@
 
                 <div id="showtime-container">
 
-                    <form id="filterForm"
-                          hx-get="{{ request.path }}"
-                          hx-target="#showtime-container"
-                          hx-select="#showtime-container"
-                          hx-swap="outerHTML"
-                          hx-trigger="change">
+                    <form id="filterForm" action="{{ url_for('movie_detail', movie_id=movie.id) }}" method="GET">
 
                         <div class="mb-5">
                             <h5 class="fw-bold mb-4 text-white"><i class="bi bi-calendar3 me-2 text-danger"></i>Chọn
@@ -86,7 +81,8 @@
                                 {% set is_selected = (current_date == date_str) %}
 
                                 <input type="radio" class="btn-check" name="date" id="date-{{ date_str }}"
-                                       value="{{ date_str }}" {% if is_selected %}checked{% endif %}>
+                                       value="{{ date_str }}" onchange="this.form.submit()" {% if is_selected
+                                       %}checked{% endif %}>
                                 <label class="btn {{ 'btn-danger fw-bold shadow-lg' if is_selected else 'ddn-glass' }} rounded-3 px-4 py-2 border-0"
                                        for="date-{{ date_str }}">
                                     {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}
@@ -100,13 +96,14 @@
                                 <h6 class="fw-bold mb-3">Định dạng</h6>
                                 <div class="d-flex flex-wrap gap-2">
                                     <input type="radio" class="btn-check" name="format" id="format-all" value=""
-                                           {% if not current_format %}checked{% endif %}>
+                                           onchange="this.form.submit()" {% if not current_format %}checked{% endif %}>
                                     <label class="btn {{ 'btn-danger fw-bold' if not current_format else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
                                            for="format-all">Tất cả</label>
 
                                     {% for m in movie_format %}
                                     <input type="radio" class="btn-check" name="format" id="format-{{ m.name }}"
-                                           value="{{ m.name }}" {% if current_format== m.name %}checked{% endif %}>
+                                           value="{{ m.name }}" onchange="this.form.submit()" {% if current_format==
+                                           m.name %}checked{% endif %}>
                                     <label class="btn {{ 'btn-danger fw-bold' if current_format == m.name else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
                                            for="format-{{ m.name }}">{{ m.name }}</label>
                                     {% endfor %}
@@ -117,13 +114,14 @@
                                 <h6 class="fw-bold mb-3">Ngôn ngữ</h6>
                                 <div class="d-flex flex-wrap gap-2">
                                     <input type="radio" class="btn-check" name="language" id="lang-all" value=""
-                                           {% if not current_lang %}checked{% endif %}>
+                                           onchange="this.form.submit()" {% if not current_lang %}checked{% endif %}>
                                     <label class="btn {{ 'btn-danger fw-bold' if not current_lang else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
                                            for="lang-all">Tất cả</label>
 
                                     {% for t in TranslationType %}
                                     <input type="radio" class="btn-check" name="language" id="lang-{{ t.name }}"
-                                           value="{{ t.value }}" {% if current_lang== t.value %}checked{% endif %}>
+                                           value="{{ t.value }}" onchange="this.form.submit()" {% if current_lang==
+                                           t.value %}checked{% endif %}>
                                     <label class="btn {{ 'btn-danger fw-bold' if current_lang == t.value else 'ddn-glass' }} btn-sm rounded-2 px-3 border-0"
                                            for="lang-{{ t.name }}">{{ t.value }}</label>
                                     {% endfor %}
@@ -147,7 +145,8 @@
 
                             <div class="d-flex flex-wrap gap-3 ps-4">
                                 {% for st in st_list %}
-                                <a href="/booking/{{ st.id }}" class="btn ddn-glass text-decoration-none">
+                                <a href="/booking/showtime-{{ st.id }}-{{ slugify(cinema.name) }}-room-{{ st.room.id }}"
+                                   class="btn ddn-glass text-decoration-none">
                                     <div class="rounded-3 d-flex flex-column justify-content-center align-items-center p-1">
                                         <span class="fw-bold fs-5 lh-1 mb-1 text-white">{{ st.start_time.strftime('%H:%M') }}</span>
                                         <span class="text-white-50 fw-semibold" style="font-size: 0.65rem;">{{ st.movie_format.name }} • {{ st.translation.value }}</span>
@@ -166,25 +165,23 @@
                         {% endif %}
                     </div>
 
-                    {% if pagination and pagination.pages > 1 %}
+                    {% if total_pages > 1 %}
                     <div class="d-flex justify-content-center mt-5 mb-4">
                         <ul class="pagination gap-2 border-0 mb-0">
-                            {% for p in range(1, pagination.pages + 1) %}
+                            {% for p in range(1, total_pages + 1) %}
                             <li class="page-item">
-                                <a class="page-link {% if p == pagination.page %}bg-danger shadow-none fw-bold{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
-                                   href="{{ url_for('movie_detail', movie_id=movie.id, page=p) }}"
-                                   hx-get="{{ url_for('movie_detail', movie_id=movie.id, page=p) }}"
-                                   hx-target="#showtime-container"
-                                   hx-select="#showtime-container"
-                                   hx-swap="outerHTML"> {{ p }}</a>
+                                <a class="page-link {% if p == page %}bg-danger shadow-none fw-bold{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                                   href="{{ url_for('movie_detail', movie_id=movie.id, page=p, date=current_date, format=current_format, language=current_lang) }}">
+                                    {{ p }}
+                                </a>
                             </li>
                             {% endfor %}
                         </ul>
                     </div>
                     {% endif %}
+
                 </div>
             </div>
-
             <div class="tab-pane fade" id="pills-overview" role="tabpanel">
                 <div class="card ddn-glass border-0 rounded-4 p-4 p-md-5">
                     <h4 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Nội dung phim</h4>
@@ -193,8 +190,6 @@
                     </p>
                 </div>
             </div>
-
         </div>
     </div>
-</div>
-{% endblock %}
+</div> {% endblock %}
