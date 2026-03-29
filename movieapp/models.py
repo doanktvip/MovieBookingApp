@@ -94,6 +94,16 @@ class Seat(BaseModel):
     col = Column(Integer)
     is_vip = Column(Boolean, default=False)
 
+    seat_type_id = Column(Integer, ForeignKey('seat_type.id'), nullable=False)
+
+
+class SeatType(BaseModel):
+    __tablename__ = 'seat_type'
+    name = Column(String(50), nullable=False)
+    surcharge = Column(Float, default=0.0)
+
+    seats = relationship('Seat', backref='seat_type', lazy=True)
+
 
 class MovieFormat(BaseModel):
     __tablename__ = 'movie_format'
@@ -122,6 +132,8 @@ class ShowtimeSeat(BaseModel):
     seat_id = Column(Integer, ForeignKey('seat.id'), nullable=False)
     status = Column(Enum(SeatStatus), default=SeatStatus.AVAILABLE)
     price = Column(Float)
+    hold_until = Column(DateTime, nullable=True)
+    hold_session_id = Column(String(255), nullable=True)
 
     ticket = relationship('Ticket', backref='showtime_seat', uselist=False, lazy=True)
     seat = relationship('Seat', backref='showtime_seats', lazy=True)

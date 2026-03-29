@@ -5,6 +5,7 @@
 
     <form action="/checkout" method="POST">
         <input type="hidden" name="showtime_id" value="{{ showtime.id }}">
+        <input type="hidden" name="total_amount_hidden" id="total_amount_hidden" value="0">
 
         <div class="row g-4">
 
@@ -27,22 +28,42 @@
                             {% set st_seat = seat_map.get(row_name, {}).get(col_num) %}
 
                             {% if st_seat %}
-                            {% set is_booked = st_seat.status.value != 'available' %}
-                            {% set is_vip = st_seat.seat.is_vip %}
+                            {# --- BƯỚC 1: LẤY THÔNG TIN ĐỂ SO SÁNH --- #}
+                            {% set current_sid = session.get('user_session_id') | string %}
+                            {% set seat_sid = st_seat.hold_session_id | string %}
 
-                            {% if is_booked %}
+                            {# --- BƯỚC 2: PHÂN LOẠI TRẠNG THÁI --- #}
+                            {# Ghế mình đang giữ #}
+                            {% set is_mine = (st_seat.status.name == 'RESERVED' and seat_sid == current_sid) %}
+                            {# Ghế người khác đang giữ hoặc đã bán #}
+                            {% set is_locked = (st_seat.status.name == 'RESERVED' and seat_sid != current_sid) or
+                            st_seat.status.name == 'BOOKED' %}
+
+                            {% set is_vip = st_seat.seat.is_vip %}
+                            {% set seat_price = st_seat.price | default(115000 if is_vip else 95000) %}
+
+                            {% if is_locked %}
+                            {# TRẠNG THÁI 1: Ghế bị khóa (Người khác đang giữ/đã mua) #}
                             <button type="button"
                                     class="btn btn-dark border-secondary text-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-disabled"
-                                    disabled>
+                                    disabled title="Ghế đã có người chọn">
                                 {{ col_num }}
                             </button>
                             {% else %}
-                            {% set btn_class = 'btn-outline-warning' if is_vip else ('btn-outline-light' if is_sweetbox
-                            else 'btn-outline-secondary') %}
+                            {# TRẠNG THÁI 2: Ghế có thể chọn (Trống HOẶC của mình) #}
+                            {% set btn_class = 'btn-outline-warning' if is_vip else 'btn-outline-light' %}
 
                             <input type="checkbox" class="btn-check seat-check" name="seat_ids"
                                    id="seat-{{ st_seat.id }}"
-                                   value="{{ st_seat.id }}" autocomplete="off">
+                                   value="{{ st_seat.id }}"
+                                   data-seat-name="{{ row_name }}{{ col_num }}"
+                                   data-price="{{ seat_price }}"
+                                   onchange="updateBookingSummary(this)"
+                                   autocomplete="off"
+                                   {% if st_seat.status.name== 'RESERVED' and st_seat.hold_session_id | string ==
+                            current_sid | string %}
+                            checked
+                            {% endif %}>
 
                             <label class="btn {{ btn_class }} p-0 d-flex align-items-center justify-content-center fw-bold seat-box"
                                    for="seat-{{ st_seat.id }}">
@@ -51,13 +72,13 @@
                             {% endif %}
 
                             {% else %}
+                            {# TRẠNG THÁI 3: Ghế không tồn tại/không mở bán #}
                             <button type="button"
                                     class="btn btn-outline-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-hidden seat-disabled"
-                                    disabled title="Ghế không mở bán">
+                                    disabled>
                                 {{ col_num }}
                             </button>
                             {% endif %}
-
                             {% endfor %}
 
                         </div>
@@ -68,23 +89,27 @@
                         <h5 class="fw-bold mb-4">Chú thích</h5>
                         <div class="d-flex flex-wrap gap-4 small text-white-50">
                             <div class="d-flex align-items-center">
-                                <div class="border border-secondary rounded me-2 legend-box"></div>
-                                Có thể chọn
+                                <div class="border border-light rounded me-2 legend-box"
+                                     style="width: 20px; height: 20px;"></div>
+                                Thường (Trống)
                             </div>
                             <div class="d-flex align-items-center">
-                                <div class="bg-danger rounded me-2 legend-box"></div>
-                                Đang chọn
+                                <div class="border border-warning rounded me-2 legend-box"
+                                     style="width: 20px; height: 20px;"></div>
+                                VIP (+{{ "{:,.0f}".format(seat_type_vip.surcharge).replace(',', '.') }}đ)
                             </div>
                             <div class="d-flex align-items-center">
-                                <div class="bg-dark border border-secondary rounded me-2 legend-box"></div>
+                                <div class="bg-danger rounded me-2 legend-box" style="width: 20px; height: 20px;"></div>
+                                Bạn đang chọn
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-dark border border-secondary rounded me-2 legend-box"
+                                     style="width: 20px; height: 20px;"></div>
                                 Đã đặt
                             </div>
                             <div class="d-flex align-items-center">
-                                <div class="border border-warning rounded me-2 legend-box"></div>
-                                VIP (+20.000 đ)
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <div class="border border-secondary rounded me-2 legend-box seat-hidden"></div>
+                                <div class="border border-secondary rounded me-2 legend-box seat-hidden"
+                                     style="width: 20px; height: 20px; opacity: 0.3;"></div>
                                 Không mở bán
                             </div>
                         </div>
@@ -95,6 +120,13 @@
             <div class="col-lg-4">
                 <div class="card ddn-glass border-0 rounded-4 p-4 text-white position-sticky sticky-offset-20">
                     <h4 class="fw-bold mb-4">Thông tin đặt vé</h4>
+
+                    <div id="timer-container" class="mb-4 text-center" style="display: none;">
+                        <div class="d-flex flex-column align-items-center">
+                            <span class="small fw-bold mb-1">Thời gian giữ ghế còn lại</span>
+                            <span id="countdown-timer" class="fs-3">--:--</span>
+                        </div>
+                    </div>
 
                     <div class="d-flex gap-3 mb-4">
                         <img src="{{ movie.image }}" class="rounded-3 shadow booking-poster" alt="Poster">
@@ -117,13 +149,33 @@
                             showtime.movie_format.name }} • {{ showtime.translation.value }}</strong></div>
                     </div>
 
-                    <div class="alert bg-dark border border-secondary text-white-50 small mb-4 rounded-3">
-                        <i class="bi bi-info-circle text-danger me-1"></i> Chi tiết ghế bạn chọn và Tổng tiền sẽ được
-                        tính toán tự động ở bước tiếp theo.
+                    <div class="mb-4">
+                        <h5 class="fw-bold text-white mb-3">Ghế đã chọn</h5>
+                        <div id="selected-seats-list" class="d-flex flex-wrap gap-2">
+                            <span class="text-white-50">Chưa chọn ghế</span>
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold rounded-3 shadow-lg fs-5">
-                        Tiếp tục thanh toán <i class="bi bi-arrow-right ms-2"></i>
+                    <div id="booking-details"
+                         class="d-none border-bottom border-secondary border-opacity-25 pb-3 mb-3">
+                        <div class="d-flex justify-content-between mb-2 text-white-50 small">
+                            <span>Số lượng ghế:</span>
+                            <span id="seat-count" class="text-white">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-white-50 small">
+                            <span>Giá vé:</span>
+                            <span id="ticket-price" class="text-white">0 đ</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-white mb-0">Tổng cộng:</h5>
+                        <span id="total-price" class="fs-2 fw-bold text-danger">0 đ</span>
+                    </div>
+
+                    <button type="submit" id="btn-checkout"
+                            class="btn btn-danger w-100 py-3 fw-bold rounded-3 mt-4 opacity-50" disabled>
+                        Thanh toán
                     </button>
 
                 </div>

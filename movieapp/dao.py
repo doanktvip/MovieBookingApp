@@ -1,12 +1,12 @@
 import hashlib
 import json
 import math
-from datetime import date
+from datetime import date, datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
 from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
-    ShowtimeSeat
+    ShowtimeSeat, SeatType, SeatStatus
 import unicodedata
 
 
@@ -165,16 +165,35 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
     return cinema_dict, total_pages
 
 
+def release_expired_seats(showtime_id=None):
+    try:
+        now = datetime.utcnow()
+        query = ShowtimeSeat.query.filter(ShowtimeSeat.status == SeatStatus.RESERVED,
+                                          ShowtimeSeat.hold_until < now)
+
+        # Nếu có truyền showtime_id thì lọc chính xác, không thì dọn toàn bộ hệ thống
+        if showtime_id:
+            query = query.filter(ShowtimeSeat.showtime_id == showtime_id)
+
+        expired_seats = query.all()
+
+        for st_seat in expired_seats:
+            st_seat.status = SeatStatus.AVAILABLE
+            st_seat.hold_until = None
+            st_seat.hold_session_id = None
+
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"LỖI DỌN GHẾ: {e}")
+
+
 def get_showtime_by_id(showtime_id):
     return Showtime.query.get(showtime_id)
 
 
 def get_seats_by_showtime(showtime_id):
-    """
-    Hàm này lấy tất cả các ghế của một suất chiếu,
-    kết nối với bảng Seat để lấy số ghế và hàng,
-    sau đó sắp xếp gọn gàng theo thứ tự A->Z, 1->10.
-    """
+    release_expired_seats(showtime_id)
     seats = ShowtimeSeat.query.join(Seat).filter(
         ShowtimeSeat.showtime_id == showtime_id
     ).order_by(Seat.row.asc(), Seat.col.asc()).all()
@@ -201,3 +220,137 @@ def get_showtimes_by_movie_and_date(cinema_id, date_str=None):
 
 def get_seats_all():
     return Seat.query.all()
+
+
+def get_seat_type(seat_type_id):
+    return SeatType.query.get(seat_type_id)
+
+
+def get_seat_by_id(seat_id):
+    return Seat.query.get(seat_id)
+
+
+def get_or_create_expire_time(session_id, selected_seat_ids):
+    now = datetime.utcnow()
+
+    # Nếu không chọn ghế nào -> Xóa sạch ngay
+    if not selected_seat_ids:
+        ShowtimeSeat.query.filter_by(hold_session_id=session_id).update({
+            "status": SeatStatus.AVAILABLE,
+            "hold_until": None,
+            "hold_session_id": None
+        })
+        return None
+
+    # Tìm ghế đang giữ
+    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=session_id).all()
+
+    # KIỂM TRA HẾT HẠN: Nếu có ghế nhưng đã quá giờ -> XÓA SẠCH VÀ TRẢ VỀ NONE
+    for st in user_held_seats:
+        if st.hold_until and st.hold_until < now:
+            # Xóa dấu vết của session này trong DB
+            ShowtimeSeat.query.filter_by(hold_session_id=session_id).update({
+                "status": SeatStatus.AVAILABLE,
+                "hold_until": None,
+                "hold_session_id": None
+            })
+            return None  # Trả về None để báo hiệu hết hạn thật sự
+
+        if st.hold_until and st.hold_until > now:
+            return st.hold_until
+
+    # Nếu chọn ghế mới hoàn toàn
+    hold_minutes = app.config.get("HOLD_TIME_MINUTES", 10)
+    return now + timedelta(minutes=hold_minutes)
+
+
+# ---  DỌN DẸP GHẾ BỎ TICK ---
+def release_unselected_seats(session_id, selected_seat_ids):
+    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=session_id).all()
+
+    for st_seat in user_held_seats:
+        # Nếu ghế cũ không có mặt trong danh sách mới -> Nhả ra
+        if str(st_seat.id) not in selected_seat_ids:
+            st_seat.status = SeatStatus.AVAILABLE
+            st_seat.hold_until = None
+            st_seat.hold_session_id = None
+
+
+# ---  KHÓA GHẾ MỚI VÀ TÍNH TIỀN ---
+def reserve_and_calculate_seats(session_id, selected_seats, expire_time):
+    booking_dict = {}
+
+    for seat_data in selected_seats:
+        st_seat_id = str(seat_data.get('id'))
+        st_seat = ShowtimeSeat.query.get(st_seat_id)
+
+        if st_seat:
+            if st_seat.status == SeatStatus.AVAILABLE or str(st_seat.hold_session_id) == str(session_id):
+                # Khóa ghế trong Database
+                st_seat.status = SeatStatus.RESERVED
+                st_seat.hold_until = expire_time
+                st_seat.hold_session_id = str(session_id)
+
+                # --- BẮT ĐẦU TÍNH TOÁN GIÁ ---
+                # 1. Lấy giá gốc (ưu tiên giá lẻ của ghế, nếu không lấy giá chung của suất chiếu)
+                base_price = float(st_seat.price or (st_seat.showtime.base_price if st_seat.showtime else 0) or 0)
+
+                # 2. Lấy phụ phí từ Model Seat (thông qua SeatType)
+                current_surcharge = 0
+                if st_seat.seat and st_seat.seat.seat_type:
+                    current_surcharge = float(st_seat.seat.seat_type.surcharge or 0)
+
+                # 3. Tính tổng giá cho ghế này
+                booking_dict[st_seat_id] = {
+                    "id": st_seat_id,
+                    "name": seat_data.get('name'),
+                    "price": base_price,
+                    "surcharge": current_surcharge
+                }
+
+    return booking_dict
+
+
+# --- HÀM QUẢN LÝ: LƯU DATABASE ---
+def process_seat_reservations(session_id, selected_seats):
+    selected_st_ids = [str(s.get('id')) for s in selected_seats]
+
+    # 1. Tính thời gian (Hàm này giờ kiêm luôn việc dọn dẹp nếu selected_st_ids rỗng)
+    expire_time = get_or_create_expire_time(session_id, selected_st_ids)
+
+    # 2. Nhả những ghế cũ mà không nằm trong danh sách mới chọn
+    # (Chỉ chạy nếu có expire_time, nếu không thì hàm trên đã dọn sạch rồi)
+    if expire_time:
+        release_unselected_seats(session_id, selected_st_ids)
+        # 3. Khóa ghế mới
+        booking_dict = reserve_and_calculate_seats(session_id, selected_seats, expire_time)
+    else:
+        booking_dict = {}
+
+    db.session.commit()
+    return booking_dict, expire_time
+
+
+def check_active_reservations(session_id):
+    if not session_id:
+        return False
+    now = datetime.utcnow()
+    return ShowtimeSeat.query.filter(
+        ShowtimeSeat.hold_session_id == str(session_id),
+        ShowtimeSeat.status == SeatStatus.RESERVED,
+        ShowtimeSeat.hold_until > now
+    ).first() is not None
+
+
+def clear_db_booking_by_session(session_id):
+    if not session_id: return
+    try:
+        ShowtimeSeat.query.filter_by(hold_session_id=str(session_id)).update({
+            "status": SeatStatus.AVAILABLE,
+            "hold_until": None,
+            "hold_session_id": None
+        })
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(e)

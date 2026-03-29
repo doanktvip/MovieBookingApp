@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from datetime import datetime
+from tkinter.font import names
 
 import movieapp.dao
 from movieapp import app, db
@@ -10,7 +11,7 @@ from movieapp.models import (
     User, Genre, Movie, movie_genre, Cinema, Room,
     Seat, Showtime, ShowtimeSeat, Booking, Ticket,
     UserRole, SeatStatus, BookingStatus, TranslationType,
-    Province, MovieFormat
+    Province, MovieFormat, SeatType
 )
 
 
@@ -77,17 +78,24 @@ if __name__ == "__main__":
                 stmt = movie_genre.insert().values(movie_id=mg['movie_id'], genre_id=mg['genre_id'])
                 db.session.execute(stmt)
 
-            # 2.9. Nạp Seats
+            # 2.9. Nạp Seat Type
+            seat_type_normal = SeatType(name="Normal", surcharge=0)
+            seat_type_vip = SeatType(name="Vip", surcharge=20000)
+            db.session.add_all([seat_type_normal, seat_type_vip])
+            db.session.commit()
+
+            # 2.10. Nạp Seats
             name_row = ["A", "B", "C", "D", "E", "F", "G", "H"]
             for i in name_row:
                 for j in range(1, 9):
-                    s = Seat(room_id=1, seat_number=f"{i}{j}", row=i, col=j)
+                    s = Seat(room_id=1, seat_number=f"{i}{j}", row=i, col=j, seat_type_id=1)
                     if i in ["G", "H"]:
                         s.is_vip = True
+                        s.seat_type_id = 2
                     db.session.add(s)
             db.session.commit()
 
-            # 2.10. Nạp Showtimes
+            # 2.11. Nạp Showtimes
             for st in load_json("showtime.json"):
                 st['start_time'] = datetime.strptime(st['start_time'], "%Y-%m-%dT%H:%M:%S")
                 st['end_time'] = datetime.strptime(st['end_time'], "%Y-%m-%dT%H:%M:%S")
@@ -96,21 +104,21 @@ if __name__ == "__main__":
 
             db.session.commit()
 
-            # 2.11. Nạp ShowtimeSeats (Đảm bảo file tên là showtime_seat.json)
+            # 2.12. Nạp ShowtimeSeats (Đảm bảo file tên là showtime_seat.json)
             seats = movieapp.dao.get_seats_all()
             for s in seats:
                 showtime_seat = ShowtimeSeat(seat_id=s.id, showtime_id=1, price=50000)
                 db.session.add(showtime_seat)
             db.session.commit()
 
-            # 2.12. Nạp Bookings
+            # 2.13. Nạp Bookings
             if os.path.exists(os.path.join(os.path.dirname(__file__), 'movieapp', 'data', 'booking.json')):
                 for b in load_json("booking.json"):
                     b['status'] = BookingStatus(b['status'].lower())
                     db.session.add(Booking(**b))
                 db.session.commit()
 
-            # 2.13. Nạp Tickets
+            # 2.14. Nạp Tickets
             if os.path.exists(os.path.join(os.path.dirname(__file__), 'movieapp', 'data', 'ticket.json')):
                 for t in load_json("ticket.json"):
                     db.session.add(Ticket(**t))
