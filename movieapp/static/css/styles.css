@@ -45,6 +45,11 @@ header, nav {
   height: var(--header-height);
 }
 
+.custom-alert-wrapper {
+    top: var(--header-height, 60px);
+    z-index: 1060;
+}
+
 .movie-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     background-color: #fff;
@@ -262,4 +267,45 @@ header, nav {
 
 .sticky-offset-20 {
     top: var(--sticky-top);
+}
+
+/* =========================================
+   THIẾT KẾ ĐỒNG HỒ ĐẾM NGƯỢC ĐỒNG BỘ
+   ========================================= */
+#timer-container {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+
+    border: 1px solid rgba(220, 53, 69, 0.3) !important;
+    border-radius: var(--radius-md);
+
+    box-shadow: 0 0 var(--shadow-blur-md) rgba(220, 53, 69, 0.2);
+
+    color: white !important;
+    padding: 15px !important;
+    transition: all 0.5s ease;
+}
+
+#timer-container .small {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#countdown-timer {
+    color: #ff4d5d !important;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255, 77, 93, 0.5);
+}
+
+.timer-danger {
+    animation: timer-pulse 1s infinite;
+}
+
+@keyframes timer-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; transform: scale(1.02); }
+    100% { opacity: 1; }
 }

@@ -168,7 +168,19 @@
                     {% if total_pages > 1 %}
                     <div class="d-flex justify-content-center mt-5 mb-4">
                         <ul class="pagination gap-2 border-0 mb-0">
-                            {% for p in range(1, total_pages + 1) %}
+
+                            {# Nút Sang trái #}
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                                   href="{{ url_for('movie_detail', movie_id=movie.id, page=page-1, date=current_date, format=current_format, language=current_lang) }}">
+                                    &laquo;
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {# Hiển thị các số trang từ page_range #}
+                            {% for p in page_range %}
                             <li class="page-item">
                                 <a class="page-link {% if p == page %}bg-danger shadow-none fw-bold{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
                                    href="{{ url_for('movie_detail', movie_id=movie.id, page=p, date=current_date, format=current_format, language=current_lang) }}">
@@ -176,6 +188,17 @@
                                 </a>
                             </li>
                             {% endfor %}
+
+                            {# Nút Sang phải #}
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                                   href="{{ url_for('movie_detail', movie_id=movie.id, page=page+1, date=current_date, format=current_format, language=current_lang) }}">
+                                    &raquo;
+                                </a>
+                            </li>
+                            {% endif %}
+
                         </ul>
                     </div>
                     {% endif %}

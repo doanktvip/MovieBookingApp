@@ -91,7 +91,19 @@
         {% if pages > 1 %}
         <div class="d-flex justify-content-center mt-5 mb-4">
             <ul class="pagination gap-2 border-0 mb-0">
-                {% for p in range(1, pages + 1) %}
+
+                {# Nút Sang trái (Previous) #}
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('movie', page=page-1, keyword=current_kw, genre=current_genre) }}">
+                        &laquo;
+                    </a>
+                </li>
+                {% endif %}
+
+                {# Hiển thị các số trang dựa trên list page_range từ Python truyền sang #}
+                {% for p in page_range %}
                 <li class="page-item">
                     <a class="page-link {% if p == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
                        href="{{ url_for('movie', page=p, keyword=current_kw, genre=current_genre) }}">
@@ -99,6 +111,17 @@
                     </a>
                 </li>
                 {% endfor %}
+
+                {# Nút Sang phải (Next) #}
+                {% if page < pages %}
+                <li class="page-item">
+                    <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('movie', page=page+1, keyword=current_kw, genre=current_genre) }}">
+                        &raquo;
+                    </a>
+                </li>
+                {% endif %}
+
             </ul>
         </div>
         {% endif %}
