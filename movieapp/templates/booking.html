@@ -33,24 +33,21 @@
                             {% set seat_sid = st_seat.hold_session_id | string %}
 
                             {# --- BƯỚC 2: PHÂN LOẠI TRẠNG THÁI --- #}
-                            {# Ghế mình đang giữ #}
-                            {% set is_mine = (st_seat.status.name == 'RESERVED' and seat_sid == current_sid) %}
                             {# Ghế người khác đang giữ hoặc đã bán #}
                             {% set is_locked = (st_seat.status.name == 'RESERVED' and seat_sid != current_sid) or
                             st_seat.status.name == 'BOOKED' %}
-
                             {% set is_vip = st_seat.seat.is_vip %}
                             {% set seat_price = st_seat.price | default(115000 if is_vip else 95000) %}
 
                             {% if is_locked %}
-                            {# TRẠNG THÁI 1: Ghế bị khóa (Người khác đang giữ/đã mua) #}
+                            {# TRẠNG THÁI 1: Ghế bị khóa #}
                             <button type="button"
                                     class="btn btn-dark border-secondary text-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-disabled"
                                     disabled title="Ghế đã có người chọn">
                                 {{ col_num }}
                             </button>
                             {% else %}
-                            {# TRẠNG THÁI 2: Ghế có thể chọn (Trống HOẶC của mình) #}
+                            {# TRẠNG THÁI 2: Ghế có thể chọn #}
                             {% set btn_class = 'btn-outline-warning' if is_vip else 'btn-outline-light' %}
 
                             <input type="checkbox" class="btn-check seat-check" name="seat_ids"
@@ -60,10 +57,9 @@
                                    data-price="{{ seat_price }}"
                                    onchange="updateBookingSummary(this)"
                                    autocomplete="off"
-                                   {% if st_seat.status.name== 'RESERVED' and st_seat.hold_session_id | string ==
-                            current_sid | string %}
-                            checked
-                            {% endif %}>
+                                   {% if st_seat.id | string in booking_session %}
+                                   checked
+                                   {% endif %}>
 
                             <label class="btn {{ btn_class }} p-0 d-flex align-items-center justify-content-center fw-bold seat-box"
                                    for="seat-{{ st_seat.id }}">
@@ -72,7 +68,7 @@
                             {% endif %}
 
                             {% else %}
-                            {# TRẠNG THÁI 3: Ghế không tồn tại/không mở bán #}
+                            {# TRẠNG THÁI 3: Ghế không mở bán #}
                             <button type="button"
                                     class="btn btn-outline-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-hidden seat-disabled"
                                     disabled>
@@ -121,7 +117,8 @@
                 <div class="card ddn-glass border-0 rounded-4 p-4 text-white position-sticky sticky-offset-20">
                     <h4 class="fw-bold mb-4">Thông tin đặt vé</h4>
 
-                    <div id="timer-container" class="mb-4 text-center" style="display: none;">
+                    <div id="timer-container" class="mb-4 text-center" data-time-remaining="{{ time_remaining }}"
+                         style="display: {% if time_remaining and time_remaining > 0 %}block{% else %}none{% endif %};">
                         <div class="d-flex flex-column align-items-center">
                             <span class="small fw-bold mb-1">Thời gian giữ ghế còn lại</span>
                             <span id="countdown-timer" class="fs-3">--:--</span>
@@ -156,8 +153,7 @@
                         </div>
                     </div>
 
-                    <div id="booking-details"
-                         class="d-none border-bottom border-secondary border-opacity-25 pb-3 mb-3">
+                    <div id="booking-details" class="d-none border-bottom border-secondary border-opacity-25 pb-3 mb-3">
                         <div class="d-flex justify-content-between mb-2 text-white-50 small">
                             <span>Số lượng ghế:</span>
                             <span id="seat-count" class="text-white">0</span>

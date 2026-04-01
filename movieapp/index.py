@@ -1,11 +1,20 @@
 import math
 import re
+import uuid
+
 import unicodedata
 from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user
 from movieapp.models import User, TranslationType
+
+
+@app.before_request
+def assign_session_id():
+    if 'user_session_id' not in session:
+        session['user_session_id'] = str(uuid.uuid4())
+        session.modified = True
 
 
 # Trang chủ
@@ -80,9 +89,9 @@ def movie():
 
     total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
     total_pages = math.ceil(total_movies / app.config.get('PAGE_SIZE'))
-
+    page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
     return render_template('movie.html', movies=movies, genres=genres, pages=total_pages, page=page, current_kw=kw,
-                           current_genre=genre_id)
+                           current_genre=genre_id, page_range=page_range)
 
 
 # Trang rạp phim
@@ -97,7 +106,7 @@ def cinema():
         pages = 1
     else:
         pages = math.ceil(total / app.config['PAGE_SIZE'])
-
+    page_range = dao.get_page_range(current_page=page, total_pages=pages)
     sorted_dates = [datetime.now() + timedelta(days=i) for i in range(7)]
     # Lấy ngày hiện tại trên URL (nếu không có thì lấy ngày hôm nay làm mặc định)
     current_date = request.args.get('date', sorted_dates[0].strftime('%Y-%m-%d'))
@@ -111,7 +120,7 @@ def cinema():
 
     return render_template('cinema.html', cinemas=cinemas, page=page, pages=pages, provinces=provinces,
                            sorted_dates=sorted_dates, current_date=current_date, get_vn_weekday=get_vn_weekday,
-                           movies=movies, movie_showtimes=movie_showtimes)
+                           movies=movies, movie_showtimes=movie_showtimes, page_range=page_range)
 
 
 def get_vn_weekday(d):
@@ -133,10 +142,10 @@ def movie_detail(movie_id):
 
     cinema_showtimes, total_pages = dao.get_showtimes_grouped_by_cinema(movie_id, date_filter, format_filter,
                                                                         lang_filter, page=page)
-
+    page_range = dao.get_page_range(page, total_pages)
     return render_template('movie-detail.html', movie=movie_info, sorted_dates=sorted_dates,
                            get_vn_weekday=get_vn_weekday, movie_format=movie_format, TranslationType=TranslationType,
-                           cinema_showtimes=cinema_showtimes, total_pages=total_pages, page=page,
+                           cinema_showtimes=cinema_showtimes, total_pages=total_pages, page=page, page_range=page_range,
                            current_date=date_filter, current_format=format_filter, current_lang=lang_filter)
 
 
@@ -160,13 +169,29 @@ def booking(showtime_id, cinema_slug, room_id):
     if not showtime or showtime.room_id != room_id:
         abort(404)
 
+    # Dọn rác của suất chiếu này
     dao.release_expired_seats(showtime_id)
 
     current_sid = session.get('user_session_id')
-    if current_sid and not dao.check_active_reservations(current_sid):
-        session.pop('booking', None)
-        session.modified = True
+    time_remaining = 0
+    booking_session = session.get('booking', {})
 
+    if current_sid:
+        # GỌI HÀM DAO ĐỂ LẤY THỜI GIAN (Thay vì query trực tiếp như trước)
+        expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
+
+        if expire_time:
+            # Vẫn còn hạn -> Tính ra số giây để truyền xuống giao diện
+            now = datetime.utcnow()
+            time_remaining = int((expire_time - now).total_seconds())
+        else:
+            # Hết hạn hoặc không có ghế -> Báo DAO dọn dẹp DB và clear Session
+            dao.clear_db_booking_by_session(current_sid)
+            session.pop('booking', None)
+            session.modified = True
+            booking_session = {}
+
+    # Lấy map ghế từ DAO
     showtime_seats = dao.get_seats_by_showtime(showtime_id)
     seat_map = {}
     for st_seat in showtime_seats:
@@ -178,29 +203,34 @@ def booking(showtime_id, cinema_slug, room_id):
 
     rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     cols = list(range(1, 9))
-    seat_type_vip = dao.get_seat_type(2)  # ID 2 là ghế VIP
+    seat_type_vip = dao.get_seat_type(2)
 
-    return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
-                           room=showtime.room, seat_map=seat_map, rows=rows, cols=cols, seat_type_vip=seat_type_vip)
+    return render_template('booking.html',
+                           showtime=showtime,
+                           movie=showtime.movie,
+                           cinema=showtime.room.cinema,
+                           room=showtime.room,
+                           seat_map=seat_map,
+                           rows=rows,
+                           cols=cols,
+                           seat_type_vip=seat_type_vip,
+                           time_remaining=time_remaining,
+                           booking_session=booking_session)
 
 
 @app.route('/api/booking', methods=['POST'])
 def api_booking():
-    dao.release_expired_seats()  # Dọn rác toàn hệ thống
-
     data = request.json
     selected_seats = data.get('seats', [])
     current_session_id = session.get('user_session_id')
 
-    # Gọi DAO xử lý
     booking_dict, expire_time = dao.process_seat_reservations(current_session_id, selected_seats)
 
     time_remaining = 0
     now = datetime.utcnow()
 
-    # TÍNH TOÁN LẠI: Nếu expire_time là None hoặc đã qua -> Xóa sạch Session
     if expire_time is None or expire_time <= now:
-        session['booking'] = {}  # XÓA GIỎ HÀNG
+        session['booking'] = {}
         time_remaining = 0
         is_expired = True if selected_seats else False
     else:
@@ -219,12 +249,10 @@ def api_booking():
 
 @app.route('/api/clear-booking-session', methods=['POST'])
 def clear_booking_session():
-    # 1. Nhả ghế trong DB (Dùng session_id hiện tại)
     current_sid = session.get('user_session_id')
     if current_sid:
-        dao.clear_db_booking_by_session(current_sid)  # Hàm này bạn đã viết trong dao
+        dao.clear_db_booking_by_session(current_sid)
 
-    # 2. Xóa sạch giỏ hàng trong Session Flask
     session.pop('booking', None)
     session.modified = True
 

@@ -156,6 +156,7 @@ class Ticket(BaseModel):
     booking_id = Column(Integer, ForeignKey('booking.id'), nullable=False)
     showtime_seat_id = Column(Integer, ForeignKey('showtime_seat.id'), nullable=False)
     final_price = Column(Float, nullable=False)
+    is_checked_in = Column(Boolean, default=False)
 
 
 class Cinema(BaseModel):

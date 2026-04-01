@@ -1,8 +1,41 @@
 let countdownInterval = null;
 
 document.addEventListener("DOMContentLoaded", function () {
-    updateBookingSummary();
+    const timerContainer = document.getElementById('timer-container');
+
+    // Đọc thời gian do Flask cấp từ HTML
+    let initialTime = parseInt(timerContainer.getAttribute('data-time-remaining')) || 0;
+
+    if (initialTime > 0) {
+        startHoldTimer(initialTime);
+        renderUIFromExistingSelection(); // Chỉ dựng lại UI, KHÔNG GỌI API FETCH
+    } else {
+        // Nếu load trang mà time = 0 nhưng có ghế đang tick -> Lỗi đồng bộ -> Bỏ tick hết
+        document.querySelectorAll('.seat-check:checked').forEach(el => el.checked = false);
+    }
 });
+
+function renderUIFromExistingSelection() {
+    let selectedSeats = document.querySelectorAll('.seat-check:checked');
+    let data = {
+        seats: [],
+        total_amount: 0
+    };
+
+    selectedSeats.forEach(seat => {
+        let price = parseFloat(seat.getAttribute('data-price')) || 0;
+        data.seats.push({
+            "id": seat.value,
+            "name": seat.getAttribute('data-seat-name'),
+            "price": price
+        });
+        data.total_amount += price;
+    });
+
+    if (data.seats.length > 0) {
+        renderBookingDetails(data);
+    }
+}
 
 function startHoldTimer(initialSeconds) {
     let timeRemaining = initialSeconds;
