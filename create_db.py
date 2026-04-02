@@ -77,9 +77,11 @@ if __name__ == "__main__":
                 db.session.execute(stmt)
 
             # 2.9. Nạp Seats
-            for s in load_json("seat.json"):
-                db.session.add(Seat(**s))
-
+            name_row=["A","B","C","D","E","F","G","H"]
+            for i in name_row:
+                for j in range(1,9):
+                    s=Seat(room_id=1,seat_number=f"{i}{j}",row=i,col=j)
+                    db.session.add(s)
             db.session.commit()
 
             # 2.10. Nạp Showtimes
