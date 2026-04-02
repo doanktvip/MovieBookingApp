@@ -224,16 +224,15 @@ def get_seats_by_showtime(showtime_id):
     ).order_by(Seat.row.asc(), Seat.col.asc()).all()
 
     return seats
-
-
+#Lấy danh sách các suất chiếu tương ứng theo từng phim trong ngày cụ thể
 def get_showtimes_by_movie_and_date(cinema_id, date_str=None):
     query = Showtime.query.join(Room).join(Cinema).filter(
         Cinema.id == cinema_id,
         func.date(Showtime.start_time) == date_str
     ).order_by(Showtime.start_time.asc()).all()
 
-    # gom nhóm suất chiếu theo từng bộ phim
-    movie_dict = {}
+    #gom nhóm suất chiếu theo từng bộ phim
+    movie_dict={}
     for st in query:
         # lấy đối tượng phim của suất chiếu tương ứng
         movie = st.movie
