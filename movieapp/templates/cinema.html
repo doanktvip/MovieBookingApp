@@ -93,7 +93,7 @@
                         {% for room in c.rooms %}
                         <span class="badge text-danger fw-normal px-3 py-2"
                               style="background-color: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.3);">
-                                {{ room.room_name }} ({{ room.capacity }} ghế)
+                                {{ room.name }} ({{ room.capacity }} ghế)
                             </span>
                         {% endfor %}
                         {% else %}
@@ -161,7 +161,7 @@
                                             <img src="{{ movie.image }}" alt="Poster" class="img-fluid rounded-4 me-3"
                                                  style="width: 80px; height: 120px; object-fit: cover;">
                                             <div class="movie-info flex-grow-1">
-                                                <h6 class="fw-bold text-uppercase text-white mb-1">{{ movie.title
+                                                <h6 class="fw-bold text-uppercase text-white mb-1">{{ movie.name
                                                     }}</h6>
                                                 <p class="text-secondary mb-2" style="font-size: 0.8rem;">Thời lượng: {{
                                                     movie.duration }} phút | Tỉ lệ 16:9</p>

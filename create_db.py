@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 from tkinter.font import names
 
+from sqlalchemy.orm import joinedload
+
 import movieapp.dao
 from movieapp import app, db
 # Import đầy đủ Models, Enums và bảng movie_genre
@@ -90,7 +92,6 @@ if __name__ == "__main__":
                 for j in range(1, 9):
                     s = Seat(room_id=1, seat_number=f"{i}{j}", row=i, col=j, seat_type_id=1)
                     if i in ["G", "H"]:
-                        s.is_vip = True
                         s.seat_type_id = 2
                     db.session.add(s)
             db.session.commit()
@@ -104,11 +105,27 @@ if __name__ == "__main__":
 
             db.session.commit()
 
-            # 2.12. Nạp ShowtimeSeats (Đảm bảo file tên là showtime_seat.json)
-            seats = movieapp.dao.get_seats_all()
-            for s in seats:
-                showtime_seat = ShowtimeSeat(seat_id=s.id, showtime_id=1, price=50000)
-                db.session.add(showtime_seat)
+            # 2.12. Nạp ShowtimeSeats (Đã được tối ưu hiệu suất và tự động hóa)
+            showtimes = db.session.query(Showtime).all()
+            showtime_seats_list = []
+
+            for st in showtimes:
+                seats_in_room = db.session.query(Seat).options(
+                    joinedload(Seat.seat_type)
+                ).filter(Seat.room_id == st.room_id).all()
+
+                for seat in seats_in_room:
+                    calculated_price = st.base_price + seat.seat_type.surcharge
+
+                    showtime_seats_list.append(
+                        ShowtimeSeat(
+                            showtime_id=st.id,
+                            seat_id=seat.id,
+                            price=calculated_price
+                        )
+                    )
+
+            db.session.add_all(showtime_seats_list)
             db.session.commit()
 
             # 2.13. Nạp Bookings
