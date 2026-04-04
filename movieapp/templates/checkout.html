@@ -1,0 +1,131 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-5 container-1400">
+    <div class="row g-4">
+
+        <div class="col-lg-8">
+            <div class="card ddn-glass border-0 rounded-4 p-4 p-md-5 h-100 text-white">
+                <h3 class="fw-bold mb-4 text-danger border-bottom border-secondary pb-3">Thanh Toán Đặt Vé</h3>
+
+                <form action="/process_payment" method="POST">
+                    <input type="hidden" name="showtime_id" value="{{ showtime.id }}">
+
+                    <h5 class="fw-bold mb-3 mt-4">Thông tin khách hàng</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Họ và tên *</label>
+                            <input type="text" class="form-control bg-dark text-white border-secondary" name="fullname"
+                                   value="{% if current_user.is_authenticated %}{{ current_user.username }}{% endif %}" required disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50">Email nhận vé *</label>
+                            <input type="email" class="form-control bg-dark text-white border-secondary" name="email"
+                                   value="{% if current_user.is_authenticated %}{{ current_user.email }}{% endif %}" required disabled>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mb-3 mt-5">Phương thức thanh toán</h5>
+                    <div class="d-flex flex-column gap-3">
+                        <label class="border border-secondary rounded-3 p-3 d-flex align-items-center" style="cursor: pointer;">
+                            <input class="form-check-input me-3" type="radio" name="payment_method" value="momo" required checked>
+                            <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1775118258/momo_oqlxim.webp" width="30" class="me-3 rounded">
+                            <span>Ví điện tử MoMo</span>
+                        </label>
+                        <label class="border border-secondary rounded-3 p-3 d-flex align-items-center" style="cursor: pointer;">
+                            <input class="form-check-input me-3" type="radio" name="payment_method" value="vnpay">
+                            <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1775118343/vnpay_qgsnhf.webp" width="30" class="me-3 bg-white rounded p-1">
+                            <span>Cổng thanh toán VNPay</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100 py-3 fw-bold rounded-3 mt-5 fs-5 shadow">
+                        Thanh toán ngay
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card ddn-glass border-0 rounded-4 p-4 text-white position-sticky sticky-offset-20">
+
+                <div id="timer-container" class="mb-4 text-center bg-dark border border-danger border-opacity-50 rounded-3 py-2"
+                     data-time-remaining="{{ time_remaining }}">
+                    <span class="small fw-bold text-white-50">Thời gian giữ ghế: </span>
+                    <span id="countdown-timer" class="fs-4 text-warning fw-bold">--:--</span>
+                </div>
+
+                <h4 class="fw-bold mb-4">Đơn hàng của bạn</h4>
+
+                <div class="d-flex gap-3 mb-4">
+                    <img src="{{ movie.image }}" class="rounded-3 shadow" alt="Poster" style="width: 90px; object-fit: cover;">
+                    <div>
+                        <h5 class="fw-bold text-white mb-1">{{ movie.title }}</h5>
+                        {%if movie.limited_age>=18%}
+                        <span class="badge bg-danger px-2 py-1 fs-6">T{{movie.limited_age}}</span>
+                        {%elif movie.limited_age>=16%}
+                        <span class="badge px-2 py-1 fs-6" style="background-color: #fc8403;">T{{movie.limited_age}}</span>
+                        {%else%}
+                        <span class="badge bg-warning px-2 py-1 fs-6">T{{movie.limited_age}}</span>
+                        {%endif%}
+                    </div>
+                </div>
+
+                <div class="border-top border-bottom border-secondary border-opacity-25 py-3 mb-4 small">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Rạp:</span> <strong>{{ cinema.name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-white-50">Phòng chiếu:</span> <strong>{{ room.room_name }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-0">
+                        <span class="text-white-50">Suất chiếu:</span> <strong class="text-warning">{{ showtime.start_time.strftime('%H:%M - %d/%m/%Y') }}</strong>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6 class="fw-bold text-white mb-2">Ghế đã chọn ({{ stats.total_quantity }} ghế):</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for seat_id, seat_info in booking_session.items() %}
+                            <span class="btn btn-danger fw-bold text-white p-2 fs-6">{{ seat_info.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center border-top border-secondary border-opacity-25 pt-4 mt-2">
+                    <h5 class="fw-bold text-white mb-0">Tổng tiền:</h5>
+                    <span class="fs-2 fw-bold text-danger">{{ "{:,.0f}".format(stats.total_amount).replace(',', '.') }} đ</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let timerElement = document.getElementById("countdown-timer");
+        let container = document.getElementById("timer-container");
+        let timeRemaining = parseInt(container.getAttribute("data-time-remaining"), 10);
+
+        if (timeRemaining > 0) {
+            let interval = setInterval(function() {
+                let minutes = Math.floor(timeRemaining / 60);
+                let seconds = timeRemaining % 60;
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                timerElement.textContent = minutes + ":" + seconds;
+                timeRemaining--;
+
+                if (timeRemaining < 0) {
+                    clearInterval(interval);
+                    timerElement.textContent = "00:00";
+                    alert("Đã hết thời gian giữ ghế. Hệ thống sẽ quay lại trang chọn ghế!");
+                    window.location.href = "{{ url_for('booking', showtime_id=showtime.id, cinema_slug=slugify(cinema.name), room_id=room.id) }}";
+                }
+            }, 1000);
+        }
+    });
+</script>
+{% endblock %}

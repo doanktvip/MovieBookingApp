@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
 from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
-    ShowtimeSeat, SeatType, SeatStatus
+    ShowtimeSeat, SeatType, SeatStatus, Ticket, Booking, BookingStatus
 import unicodedata
 
 
@@ -376,3 +376,45 @@ def get_reservation_expiry_time(session_id, showtime_id):
             return active_seat.hold_until
 
     return None
+
+# thêm vé sau khi thanh toán thành công
+def add_ticket(user_id, showtime_id, total_amount, booking_session):
+    try:
+        #Tạo hóa đơn tổng
+        new_booking = Booking(
+            user_id=user_id,
+            showtime_id=showtime_id,
+            total_price=total_amount,
+            payment_method='MoMo',
+            status=BookingStatus.PAID
+        )
+        db.session.add(new_booking)
+        db.session.flush()  # Đẩy tạm xuống DB để lấy new_booking.id
+
+        # 2. TẠO VÉ CHO TỪNG GHẾ (Bảng Ticket) VÀ ĐỔI TRẠNG THÁI
+        for st_seat_id, seat_data in booking_session.items():
+            st_seat = ShowtimeSeat.query.get(st_seat_id)
+            if st_seat:
+                # Đổi trạng thái ghế thành Đã Bán
+                st_seat.status = SeatStatus.BOOKED
+                st_seat.hold_until = None
+                st_seat.hold_session_id = None
+
+                # Tạo vé lẻ cho cái ghế này
+                new_ticket = Ticket(
+                    user_id=user_id,
+                    booking_id=new_booking.id,  # Nối vào Hóa đơn tổng ở bước 1
+                    showtime_seat_id=st_seat.id,  # Nối vào đúng cái ghế này
+                    final_price=seat_data['price'] + seat_data.get('surcharge', 0)
+                )
+                db.session.add(new_ticket)
+
+        # 3. CHỐT GIAO DỊCH
+        db.session.commit()
+        return new_booking
+
+    except Exception as e:
+        # Nếu có bất kỳ lỗi gì (mất mạng, trùng ID...), hoàn tác toàn bộ!
+        db.session.rollback()
+        print(f"Lỗi khi lưu DB (add_ticket): {e}")
+        raise e # Ném lỗi ngược lại cho index.py xử lý để báo cho người dùng
