@@ -4,8 +4,8 @@
     "movie_id": 1,
     "room_id": 1,
     "format_id": 1,
-    "start_time": "2026-04-04T17:30:00",
-    "end_time": "2026-04-04T20:31:00",
+    "start_time": "2026-04-05T17:30:00",
+    "end_time": "2026-04-05T20:31:00",
     "base_price": 75000.0,
     "translation": "Phụ đề"
   },
@@ -14,7 +14,7 @@
     "movie_id": 1,
     "room_id": 1,
     "format_id": 2,
-    "start_time": "2026-04-0  4T19:00:00",
+    "start_time": "2026-04-04T19:00:00",
     "end_time": "2026-04-04T22:01:00",
     "base_price": 95000.0,
     "translation": "Phụ đề"

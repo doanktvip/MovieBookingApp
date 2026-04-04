@@ -59,8 +59,8 @@ def load_movies(genre_id=None, kw=None, page=1):
     if kw:
         query = query.filter(Movie.name.contains(kw))
     if page:
-        start = (page - 1) * app.config['PAGE_SIZE']
-        query = query.slice(start, start + app.config['PAGE_SIZE'])
+        start = (page - 1) * app.config.get('PAGE_SIZE')
+        query = query.slice(start, start + app.config.get('PAGE_SIZE'))
     return query.all()
 
 
@@ -374,10 +374,11 @@ def get_reservation_expiry_time(session_id, showtime_id):
 
     return None
 
+
 # thêm vé sau khi thanh toán thành công
 def add_ticket(user_id, showtime_id, total_amount, booking_session):
     try:
-        #Tạo hóa đơn tổng
+        # Tạo hóa đơn tổng
         new_booking = Booking(
             user_id=user_id,
             showtime_id=showtime_id,
@@ -413,7 +414,8 @@ def add_ticket(user_id, showtime_id, total_amount, booking_session):
         # Nếu có bất kỳ lỗi gì (mất mạng, trùng ID...), hoàn tác toàn bộ!
         db.session.rollback()
         print(f"Lỗi khi lưu DB (add_ticket): {e}")
-        raise e # Ném lỗi ngược lại cho index.py xử lý để báo cho người dùng
+        raise e  # Ném lỗi ngược lại cho index.py xử lý để báo cho người dùng
+
 
 def get_or_create_province(name):
     name = name.strip()
@@ -519,3 +521,38 @@ def change_password(user_id, old_password, new_password):
     except Exception as e:
         db.session.rollback()
         return False, str(e)
+
+
+def count_bookings_by_user(user_id):
+    return Booking.query.filter_by(user_id=user_id).count()
+
+
+def get_bookings_by_user(user_id, page=1):
+    query = Booking.query.filter_by(user_id=user_id).order_by(Booking.created_at.desc())
+    if page:
+        page_size = app.config.get('PAGE_SIZE')
+        start = (page - 1) * page_size
+        query = query.slice(start, start + page_size)
+
+    return query.all()
+
+
+def cancel_booking(booking_id, user_id):
+    booking = Booking.query.filter_by(
+        id=booking_id,
+        user_id=user_id,
+    ).first()
+
+    if booking:
+        booking.status = BookingStatus.CANCELLED
+
+        for ticket in booking.tickets:
+            if ticket.showtime_seat:
+                ticket.showtime_seat.status = SeatStatus.AVAILABLE
+
+            db.session.delete(ticket)
+
+        db.session.commit()
+        return True
+
+    return False
