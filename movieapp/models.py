@@ -54,7 +54,7 @@ class User(BaseModel, UserMixin):
     email = Column(String(100), nullable=False, unique=True)
     role = Column(Enum(UserRole), default=UserRole.USER)
     active = Column(Boolean, default=True)
-    tickets=relationship('Ticket', backref='user', lazy=True)
+
     avatar = Column(String(255), nullable=False,
                     default="https://res.cloudinary.com/db4bjqp4f/image/upload/v1765436438/shtnr60mecp057e2uctk.jpg")
     bookings = relationship('Booking', backref='user', lazy=True)
@@ -182,7 +182,6 @@ class Booking(BaseModel):
 
 class Ticket(BaseModel):
     __tablename__ = 'ticket'
-    user_id=Column(Integer, ForeignKey('user.id'), nullable=False)
     booking_id = Column(Integer, ForeignKey('booking.id'), nullable=False)
     showtime_seat_id = Column(Integer, ForeignKey('showtime_seat.id'), nullable=False)
     final_price = Column(Float, nullable=False)

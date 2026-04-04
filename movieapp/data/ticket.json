@@ -1,14 +1,12 @@
 [
   {
     "id": 1,
-    "user_id": 2,
     "booking_id": 1,
     "showtime_seat_id": 1,
     "final_price": 75000.0
   },
   {
     "id": 2,
-    "user_id": 2,
     "booking_id": 1,
     "showtime_seat_id": 2,
     "final_price": 75000.0
