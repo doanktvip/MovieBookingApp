@@ -14,5 +14,13 @@
     "email": "vana@gmail.com",
     "role": "user",
     "active": true
+  },
+  {
+    "id": 3,
+    "username": "hodat",
+    "password": "123",
+    "email": "vandat@gmail.com",
+    "role": "staff",
+    "active": true
   }
 ]
