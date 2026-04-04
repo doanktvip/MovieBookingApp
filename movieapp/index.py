@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils,db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
-from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus
+from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus,Booking
 
 
 @app.before_request
@@ -244,6 +244,7 @@ def clear_booking_session():
 
     return jsonify({"status": "cleared"})
 
+#Thanh toán
 @app.route("/checkout",methods=['GET','POST'])
 def pay():
     showtime_id = request.form.get('showtime_id')
@@ -278,6 +279,7 @@ def pay():
                            stats=stats,
                            time_remaining=time_remaining)
 
+
 from momo_payment import create_momo_payment, ACCESS_KEY, SECRET_KEY, PARTNER_CODE
 import hmac,hashlib
 
@@ -296,17 +298,26 @@ def process_payment():
     if expire_time and expire_time > now:
         time_remaining_seconds = int((expire_time - now).total_seconds())
         expire_minutes = math.ceil(time_remaining_seconds / 60)
-        expire_minutes=max(16,expire_minutes)
+
     else:
         flash("Phiên giữ ghế đã hết hạn, vui lòng chọn lại!", "danger")
         return redirect(url_for('index'))
-
     stats = utils.stats_seats(booking_session)
     total_amount = stats['total_amount']
+
+    #Tạo booking pending trc khi qua Momo
+    user_id = current_user.id if current_user.is_authenticated else None
+    try:
+        booking_id = dao.create_pending_booking(user_id, showtime_id, total_amount, booking_session)
+    except Exception as e:
+        flash("Lỗi hệ thống khi tạo đơn hàng, vui lòng thử lại!", "danger")
+        return redirect(url_for('checkout'))
+
     # Tạo mã đơn hàng duy nhất (Ví dụ: DDN-12345678)
     order_id = f"DDN-{uuid.uuid4().hex[:8].upper()}"
     session['customer_info'] = {
         'order_id': order_id,
+        "booking_id": booking_id,
         'name': current_user.username,
         'email': current_user.email,
         'showtime_id': showtime_id,
@@ -342,34 +353,26 @@ def momo_return():
     order_id = request.args.get('orderId')
     message = request.args.get('message')
 
+    customer_info = session.get('customer_info')
+    current_sid = session.get('user_session_id')
+
+    if not customer_info:
+        flash("Lỗi: Phiên giao dịch đã hết hạn hoặc không tồn tại!", "danger")
+        return redirect(url_for('index'))
+
+    booking_id = customer_info.get('booking_id')
+
     # 2. Xử lý kết quả
     if result_code == "0":  # Code '0' của MoMo nghĩa là thanh toán THÀNH CÔNG
-        booking_session = session.get('booking')
-        customer_info = session.get('customer_info')
-        current_sid = session.get('user_session_id')
-
-        if not booking_session or not customer_info:
-            flash("Lỗi: Không tìm thấy dữ liệu đặt vé trên hệ thống!", "danger")
-            return redirect(url_for('index'))
-
         try:
-            # Lấy user_id nếu khách đã đăng nhập
-            user_id = current_user.id if current_user.is_authenticated else None
-
-            # GỌI HÀM DAO ĐỂ LƯU VÉ
-            dao.add_ticket(
-                user_id=user_id,
-                showtime_id=customer_info['showtime_id'],
-                total_amount=customer_info['total_amount'],
-                booking_session=booking_session
-            )
+            dao.update_status_booking(booking_id,BookingStatus.PAID,current_sid)
 
             # Dọn dẹp session
             session.pop('booking', None)
             session.pop('customer_info', None)
             dao.clear_db_booking_by_session(current_sid)
 
-            flash(f"Thanh toán MoMo thành công! Mã đơn hàng: {order_id}", "success")
+            flash(f"Thanh toán MoMo thành công! Mã đơn hàng: {booking_id}", "success")
             return redirect(url_for('index'))
 
         except Exception as e:
@@ -378,6 +381,8 @@ def momo_return():
 
     else:
         # Code khác '0' nghĩa là thất bại (Khách hủy giao dịch, không đủ tiền...)
+        dao.update_status_booking(booking_id, BookingStatus.PENDING, current_sid)
+
         flash(f"Giao dịch thất bại hoặc đã bị hủy. Lỗi: {message}", "danger")
         return redirect(url_for('index'))
 
@@ -415,6 +420,30 @@ def change_password_route():
     flash(message, "success" if success else "danger")
     return redirect(url_for('userinfo'))
 
+#Trang quản lý đặt vé(nhân viên)
+@app.route('/check_in',methods=['POST','GET'])
+def check_in():
+    # Bảo mật user
+    if current_user.role.name not in ['STAFF', 'ADMIN']:
+        flash("Bạn không có quyền truy cập trang này!", "danger")
+        return redirect(url_for('index'))
+    bookings=dao.load_bookings_for_checkin()
+    if request.method == 'POST':
+        booking=request.form.get('submit_checkin')
+        if booking:
+            b=Booking.query.get(booking)
+            if b:
+                for ticket in b.tickets:
+                    ticket.is_checked_in = True
+                try:
+                    db.session.commit()
+                    mess = "Cập nhật thành công"
+                    return redirect("/check_in")
+                except:
+                    db.session.rollback()
+                    mess = "Hệ thống bị lỗi!"
+                    return redirect("/check_in")
+    return render_template("staff_check_in.html",bookings=bookings)
 
 if __name__ == '__main__':
     app.run(debug=True)

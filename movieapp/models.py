@@ -20,6 +20,7 @@ class BaseModel(db.Model):
 # --- 2. Các Enum ---
 class UserRole(enum.Enum):
     USER = "user"
+    STAFF = "staff"
     ADMIN = "admin"
 
 
