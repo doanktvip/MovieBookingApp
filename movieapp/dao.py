@@ -399,7 +399,6 @@ def add_ticket(user_id, showtime_id, total_amount, booking_session):
 
                 # Tạo vé lẻ cho cái ghế này
                 new_ticket = Ticket(
-                    user_id=user_id,
                     booking_id=new_booking.id,  # Nối vào Hóa đơn tổng ở bước 1
                     showtime_seat_id=st_seat.id,  # Nối vào đúng cái ghế này
                     final_price=seat_data['price'] + seat_data.get('surcharge', 0)
