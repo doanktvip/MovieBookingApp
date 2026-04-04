@@ -59,8 +59,8 @@ def load_movies(genre_id=None, kw=None, page=1):
     if kw:
         query = query.filter(Movie.name.contains(kw))
     if page:
-        start = (page - 1) * app.config['PAGE_SIZE']
-        query = query.slice(start, start + app.config['PAGE_SIZE'])
+        start = (page - 1) * app.config.get('PAGE_SIZE')
+        query = query.slice(start, start + app.config.get('PAGE_SIZE'))
     return query.all()
 
 
@@ -574,6 +574,40 @@ def change_password(user_id, old_password, new_password):
         db.session.rollback()
         return False, str(e)
 
+
+def count_bookings_by_user(user_id):
+    return Booking.query.filter_by(user_id=user_id).count()
+
+
+def get_bookings_by_user(user_id, page=1):
+    query = Booking.query.filter_by(user_id=user_id).order_by(Booking.created_at.desc())
+    if page:
+        page_size = app.config.get('PAGE_SIZE')
+        start = (page - 1) * page_size
+        query = query.slice(start, start + page_size)
+
+    return query.all()
+
+
+def cancel_booking(booking_id, user_id):
+    booking = Booking.query.filter_by(
+        id=booking_id,
+        user_id=user_id,
+    ).first()
+
+    if booking:
+        booking.status = BookingStatus.CANCELLED
+
+        for ticket in booking.tickets:
+            if ticket.showtime_seat:
+                ticket.showtime_seat.status = SeatStatus.AVAILABLE
+
+            db.session.delete(ticket)
+
+        db.session.commit()
+        return True
+
+    return False
 #Ticket
 def load_bookings_for_checkin():
     query=Booking.query.filter(Booking.status==BookingStatus.PAID)

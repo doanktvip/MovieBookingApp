@@ -4,7 +4,7 @@ import uuid
 
 import unicodedata
 from datetime import datetime, timedelta
-from movieapp import app, dao, login_manager, utils,db
+from movieapp import app, dao, login_manager, utils, db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
 from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus,Booking
@@ -265,7 +265,7 @@ def pay():
         cinema_slug = slugify(showtime.room.cinema.name)
         return redirect(url_for('booking', showtime_id=showtime.id, cinema_slug=cinema_slug, room_id=showtime.room_id))
 
-    #Tính toán thời gian còn lại & Tổng tiền (dùng hàm utils bạn đã import sẵn)
+    # Tính toán thời gian còn lại & Tổng tiền (dùng hàm utils bạn đã import sẵn)
     time_remaining = int((expire_time - now).total_seconds())
     stats = utils.stats_seats(booking_session)
 
@@ -281,24 +281,24 @@ def pay():
 
 
 from momo_payment import create_momo_payment, ACCESS_KEY, SECRET_KEY, PARTNER_CODE
-import hmac,hashlib
+import hmac, hashlib
 
-@app.route("/process_payment",methods=['POST','GET'])
+
+@app.route("/process_payment", methods=['POST', 'GET'])
 def process_payment():
     showtime_id = request.form.get('showtime_id')
-    payment_method=request.form.get('payment_method')
+    payment_method = request.form.get('payment_method')
     booking_session = session.get('booking')
     current_sid = session.get('user_session_id')
 
     if not booking_session:
         abort(404)
-    #Tính thời gian hết hạn phụ thuộc giữ ghế
+    # Tính thời gian hết hạn phụ thuộc giữ ghế
     expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
     now = datetime.utcnow()
     if expire_time and expire_time > now:
         time_remaining_seconds = int((expire_time - now).total_seconds())
         expire_minutes = math.ceil(time_remaining_seconds / 60)
-
     else:
         flash("Phiên giữ ghế đã hết hạn, vui lòng chọn lại!", "danger")
         return redirect(url_for('index'))
@@ -334,7 +334,7 @@ def process_payment():
         ipn_url = url_for('momo_return', _external=True)  # (Tạm dùng chung cho môi trường test)
 
         # Gọi API MoMo
-        momo_response = create_momo_payment(order_id, total_amount, order_info, redirect_url, ipn_url,expire_minutes)
+        momo_response = create_momo_payment(order_id, total_amount, order_info, redirect_url, ipn_url, expire_minutes)
 
         # Nếu MoMo trả về link thanh toán thành công
         if 'payUrl' in momo_response:
@@ -385,6 +385,7 @@ def momo_return():
 
         flash(f"Giao dịch thất bại hoặc đã bị hủy. Lỗi: {message}", "danger")
         return redirect(url_for('index'))
+
 
 @app.route('/userinfo', methods=['GET'])
 def userinfo():
@@ -444,6 +445,35 @@ def check_in():
                     mess = "Hệ thống bị lỗi!"
                     return redirect("/check_in")
     return render_template("staff_check_in.html",bookings=bookings)
+
+@app.route('/tickets')
+@login_required
+def my_tickets():
+    page = request.args.get('page', 1, type=int)
+
+    user_bookings = dao.get_bookings_by_user(user_id=current_user.id, page=page)
+
+    total_bookings = dao.count_bookings_by_user(current_user.id)
+    page_size = app.config.get('PAGE_SIZE', 5)
+    total_pages = math.ceil(total_bookings / page_size)
+
+    page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
+
+    return render_template('ticket.html', bookings=user_bookings, pages=total_pages, page=page, page_range=page_range)
+
+
+@app.route('/cancel-booking/<int:booking_id>', methods=['POST'])
+@login_required
+def cancel_ticket(booking_id):
+    success = dao.cancel_booking(booking_id=booking_id, user_id=current_user.id)
+
+    if success:
+        flash("Đã hủy vé thành công!", "success")
+    else:
+        flash("Không thể hủy vé. Đơn hàng không tồn tại hoặc đã được xử lý!", "danger")
+
+    return redirect(url_for('my_tickets'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
