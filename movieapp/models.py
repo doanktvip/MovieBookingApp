@@ -4,7 +4,6 @@ from movieapp import db, app
 from flask_login import UserMixin
 from datetime import datetime
 import enum
-from datetime import timedelta
 
 
 # --- 1. Lớp Base ---
@@ -13,6 +12,9 @@ class BaseModel(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, default=datetime.utcnow)  # Dùng utcnow để đồng bộ
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __str__(self):
+        return self.name
 
 
 # --- 2. Các Enum ---
@@ -53,7 +55,12 @@ class User(BaseModel, UserMixin):
     role = Column(Enum(UserRole), default=UserRole.USER)
     active = Column(Boolean, default=True)
     tickets=relationship('Ticket', backref='user', lazy=True)
+    avatar = Column(String(255), nullable=False,
+                    default="https://res.cloudinary.com/db4bjqp4f/image/upload/v1765436438/shtnr60mecp057e2uctk.jpg")
     bookings = relationship('Booking', backref='user', lazy=True)
+
+    def __str__(self):
+        return self.username
 
 
 class Genre(BaseModel):
@@ -64,7 +71,7 @@ class Genre(BaseModel):
 
 class Movie(BaseModel):
     __tablename__ = 'movie'
-    title = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
     duration = Column(Integer)
     image = Column(String(255))
     description = Column(Text)
@@ -78,7 +85,7 @@ class Movie(BaseModel):
 
 class Room(BaseModel):
     __tablename__ = 'room'
-    room_name = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False)
     capacity = Column(Integer)
     cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
 
@@ -92,7 +99,6 @@ class Seat(BaseModel):
     seat_number = Column(String(10), nullable=False)
     row = Column(String(2))
     col = Column(Integer)
-    is_vip = Column(Boolean, default=False)
 
     seat_type_id = Column(Integer, ForeignKey('seat_type.id'), nullable=False)
 
@@ -125,6 +131,14 @@ class Showtime(BaseModel):
     bookings = relationship('Booking', backref='showtime', lazy=True)
     showtime_seats = relationship('ShowtimeSeat', backref='showtime', cascade="all, delete-orphan", lazy=True)
 
+    def __str__(self):
+        if self.start_time:
+            time_str = self.start_time.strftime("%H:%M %d/%m/%Y")
+        else:
+            time_str = "Chưa xác định"
+
+        return f"Suất chiếu {time_str} - Phim {self.movie.name}"
+
 
 class ShowtimeSeat(BaseModel):
     __tablename__ = 'showtime_seat'
@@ -138,6 +152,16 @@ class ShowtimeSeat(BaseModel):
     ticket = relationship('Ticket', backref='showtime_seat', uselist=False, lazy=True)
     seat = relationship('Seat', backref='showtime_seats', lazy=True)
 
+    def __str__(self):
+        if self.showtime and self.showtime.start_time:
+            time_str = self.showtime.start_time.strftime("%H:%M %d/%m/%Y")
+        else:
+            time_str = "Chưa xác định"
+
+        seat_num = self.seat.seat_number if self.seat else "Trống"
+
+        return f"Ghế {seat_num} - Suất {time_str}"
+
 
 class Booking(BaseModel):
     __tablename__ = 'booking'
@@ -149,6 +173,11 @@ class Booking(BaseModel):
     transaction_id = Column(String(100), nullable=True)
 
     tickets = relationship('Ticket', backref='booking', cascade="all, delete-orphan", lazy=True)
+
+    def __str__(self):
+        if self.user:
+            return f"Đơn #{self.id} - Khách: {self.user.username}"
+        return f"Đơn #{self.id}"
 
 
 class Ticket(BaseModel):

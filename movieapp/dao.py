@@ -2,12 +2,13 @@ import hashlib
 import json
 import math
 from datetime import date, datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, update
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
 from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
     ShowtimeSeat, SeatType, SeatStatus, Ticket, Booking, BookingStatus
 import unicodedata
+import cloudinary.uploader
 
 
 def get_page_range(current_page, total_pages, max_visible=3):
@@ -56,7 +57,7 @@ def load_movies(genre_id=None, kw=None, page=1):
     if genre_id:
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
     if kw:
-        query = query.filter(Movie.title.contains(kw))
+        query = query.filter(Movie.name.contains(kw))
     if page:
         start = (page - 1) * app.config['PAGE_SIZE']
         query = query.slice(start, start + app.config['PAGE_SIZE'])
@@ -72,7 +73,7 @@ def count_movies(genre_id=None, kw=None):
     if genre_id:
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
     if kw:
-        query = query.filter(Movie.title.contains(kw))
+        query = query.filter(Movie.name.contains(kw))
     return query.count()
 
 
@@ -224,15 +225,16 @@ def get_seats_by_showtime(showtime_id):
     ).order_by(Seat.row.asc(), Seat.col.asc()).all()
 
     return seats
-#Lấy danh sách các suất chiếu tương ứng theo từng phim trong ngày cụ thể
+
+
 def get_showtimes_by_movie_and_date(cinema_id, date_str=None):
     query = Showtime.query.join(Room).join(Cinema).filter(
         Cinema.id == cinema_id,
         func.date(Showtime.start_time) == date_str
     ).order_by(Showtime.start_time.asc()).all()
 
-    #gom nhóm suất chiếu theo từng bộ phim
-    movie_dict={}
+    # gom nhóm suất chiếu theo từng bộ phim
+    movie_dict = {}
     for st in query:
         # lấy đối tượng phim của suất chiếu tương ứng
         movie = st.movie
@@ -309,17 +311,12 @@ def reserve_and_calculate_seats(session_id, selected_seats, expire_time):
                 st_seat.status = SeatStatus.RESERVED
                 st_seat.hold_until = expire_time
                 st_seat.hold_session_id = str(session_id)
-
-                base_price = float(st_seat.price or (st_seat.showtime.base_price if st_seat.showtime else 0) or 0)
-                current_surcharge = 0
-                if st_seat.seat and st_seat.seat.seat_type:
-                    current_surcharge = float(st_seat.seat.seat_type.surcharge or 0)
+                final_price = float(st_seat.price or 0)
 
                 booking_dict[st_seat_id] = {
                     "id": st_seat_id,
                     "name": seat_data.get('name'),
-                    "price": base_price,
-                    "surcharge": current_surcharge
+                    "price": final_price
                 }
             else:
                 pass
@@ -418,3 +415,108 @@ def add_ticket(user_id, showtime_id, total_amount, booking_session):
         db.session.rollback()
         print(f"Lỗi khi lưu DB (add_ticket): {e}")
         raise e # Ném lỗi ngược lại cho index.py xử lý để báo cho người dùng
+
+def get_or_create_province(name):
+    name = name.strip()
+    if not name:
+        return None
+
+    province = Province.query.filter_by(name=name).first()
+
+    if not province:
+        try:
+            province = Province(name=name)
+            db.session.add(province)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            raise e
+
+    return province
+
+
+def upload_image(image_file, folder_name="movieapp"):
+    if not image_file:
+        return None
+
+    try:
+        upload_result = cloudinary.uploader.upload(image_file, folder=folder_name)
+        return upload_result.get('secure_url')
+    except Exception as e:
+        print(f"Lỗi upload Cloudinary: {e}")
+        return None
+
+
+def update_future_showtime_seats_price(seat_type_id, new_surcharge):
+    try:
+        stmt = update(ShowtimeSeat).where(
+            # 1. Lọc theo loại ghế
+            ShowtimeSeat.seat_id.in_(
+                db.session.query(Seat.id).filter(Seat.seat_type_id == seat_type_id)
+            )
+        ).where(
+            # 2. Lọc suất chiếu tương lai
+            ShowtimeSeat.showtime_id.in_(
+                db.session.query(Showtime.id).filter(Showtime.start_time > datetime.now())
+            )
+        ).values(
+            price=db.session.query(Showtime.base_price).filter(
+                Showtime.id == ShowtimeSeat.showtime_id
+            ).scalar_subquery() + new_surcharge
+        )
+
+        db.session.execute(stmt)
+        db.session.commit()
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"DAO Error - Lỗi cập nhật giá ghế hàng loạt: {e}")
+        return False
+
+
+# Chỉnh sửa thông tin user
+def update_user_profile(user_id, email, avatar_file=None):
+    user = User.query.get(user_id)
+    if not user:
+        return False, "Không tìm thấy người dùng!"
+
+    email_check = User.query.filter(User.id != user_id, User.email == email).first()
+    if email_check:
+        return False, "Email này đã được sử dụng!"
+
+    if avatar_file and avatar_file.filename != '':
+        new_avatar_url = upload_image(avatar_file)
+        if new_avatar_url:
+            user.avatar = new_avatar_url
+        else:
+            return False, "Lỗi khi tải ảnh lên hệ thống!"
+
+    user.email = email
+
+    try:
+        db.session.commit()
+        return True, "Cập nhật thông tin thành công!"
+    except Exception as e:
+        db.session.rollback()
+        return False, str(e)
+
+
+# Đổi mật khẩu
+def change_password(user_id, old_password, new_password):
+    user = User.query.get(user_id)
+    if not user:
+        return False, "Người dùng không tồn tại!"
+    hashed_old = str(hashlib.md5(old_password.strip().encode('utf-8')).hexdigest())
+
+    if user.password != hashed_old:
+        return False, "Mật khẩu cũ không chính xác!"
+
+    user.password = str(hashlib.md5(new_password.strip().encode('utf-8')).hexdigest())
+
+    try:
+        db.session.commit()
+        return True, "Đổi mật khẩu thành công!"
+    except Exception as e:
+        db.session.rollback()
+        return False, str(e)

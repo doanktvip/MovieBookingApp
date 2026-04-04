@@ -3,14 +3,12 @@ let countdownInterval = null;
 document.addEventListener("DOMContentLoaded", function () {
     const timerContainer = document.getElementById('timer-container');
 
-    // Đọc thời gian do Flask cấp từ HTML
     let initialTime = parseInt(timerContainer.getAttribute('data-time-remaining')) || 0;
 
     if (initialTime > 0) {
         startHoldTimer(initialTime);
-        renderUIFromExistingSelection(); // Chỉ dựng lại UI, KHÔNG GỌI API FETCH
+        renderUIFromExistingSelection();
     } else {
-        // Nếu load trang mà time = 0 nhưng có ghế đang tick -> Lỗi đồng bộ -> Bỏ tick hết
         document.querySelectorAll('.seat-check:checked').forEach(el => el.checked = false);
     }
 });
@@ -153,18 +151,16 @@ function handleExpiredSession() {
     if (countdownInterval) clearInterval(countdownInterval);
     const timerContainer = document.getElementById('timer-container');
     if (timerContainer) timerContainer.style.display = 'none';
-
-    // Bỏ tick và reset UI ngay lập tức để người dùng thấy kết quả
     document.querySelectorAll('.seat-check').forEach(el => el.checked = false);
     resetBookingUI();
 
-    showCustomAlert("Hết thời gian giữ ghế!", "warning");
+    showCustomAlert("Hết thời gian giữ ghế!", "danger");
 
     // Gọi API xóa và reload
     fetch("/api/clear-booking-session", { method: "POST" })
         .then(() => {
             setTimeout(() => {
                 location.reload();
-            }, 3000); // Chờ 2s để đọc Alert
+            }, 3000);
         });
 }
