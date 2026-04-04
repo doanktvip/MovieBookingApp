@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "title": "Avengers: Endgame",
+    "name": "Avengers: Endgame",
     "duration": 181,
     "image": "https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774076800/avatar_square_hjndtd.jpg",
     "description": "Biệt đội siêu anh hùng tập hợp lại để đảo ngược cái búng tay của Thanos.",
@@ -11,7 +11,7 @@
   },
   {
     "id": 2,
-    "title": "Spider-Man: No Way Home",
+    "name": "Spider-Man: No Way Home",
     "duration": 148,
     "image": "https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774076800/avatar_square_hjndtd.jpg",
     "description": "Danh tính của Spider-Man bị tiết lộ, khiến anh phải nhờ đến sự giúp đỡ của Doctor Strange. Tuy nhiên, phép thuật bị lỗi đã mở ra đa vũ trụ.",
@@ -21,7 +21,7 @@
   },
   {
     "id": 3,
-    "title": "Inception",
+    "name": "Inception",
     "duration": 148,
     "image": "https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774076800/avatar_square_hjndtd.jpg",
     "description": "Một đạo chích xuất sắc trong nghệ thuật trích xuất, đánh cắp những bí mật giá trị từ sâu trong tiềm thức con người khi họ đang mơ.",
@@ -31,7 +31,7 @@
   },
   {
     "id": 4,
-    "title": "Avatar: The Way of Water",
+    "name": "Avatar: The Way of Water",
     "duration": 192,
     "image": "https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774076800/avatar_square_hjndtd.jpg",
     "description": "Jake Sully sống cùng gia đình mới trên hành tinh Pandora. Khi một mối đe dọa cũ quay trở lại, Jake phải hợp tác với Neytiri và quân đội của chủng tộc Na'vi để bảo vệ hành tinh.",
@@ -41,7 +41,7 @@
   },
   {
     "id": 5,
-    "title": "Parasite",
+    "name": "Parasite",
     "duration": 132,
     "image": "https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774076800/avatar_square_hjndtd.jpg",
     "description": "Lòng tham và sự phân biệt giai cấp đe dọa mối quan hệ cộng sinh mới được hình thành giữa gia đình Park giàu có và gia đình Kim nghèo khó.",

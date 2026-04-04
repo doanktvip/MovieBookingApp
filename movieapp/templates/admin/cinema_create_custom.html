@@ -1,0 +1,53 @@
+{% extends 'admin/model/create.html' %}
+
+{% block body %}
+{{ super() }}
+
+<div class="modal fade" id="addProvinceModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Thêm Tỉnh / Thành phố mới</h4>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="new_province_name" class="form-control"
+                       placeholder="Nhập tên tỉnh">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewProvince()">Lưu lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showAddProvince() {
+        $('#addProvinceModal').modal('show');
+    }
+
+    function saveNewProvince() {
+        var name = $('#new_province_name').val();
+        if (!name) return alert("Vui lòng nhập tên!");
+
+        // Gọi API tạo tỉnh (bạn cần tạo Route này ở Bước 3)
+        fetch('/api/add_province_quick', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.id) {
+                // Thêm tỉnh mới vào ô Select2 và chọn luôn nó
+                var newOption = new Option(data.name, data.id, true, true);
+                $('#province').append(newOption).trigger('change');
+                $('#addProvinceModal').modal('hide');
+                $('#new_province_name').val('');
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        });
+    }
+</script>
+{% endblock %}

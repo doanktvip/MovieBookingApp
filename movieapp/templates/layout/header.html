@@ -15,7 +15,8 @@
                 <div class="dropdown">
                     <a class="p-1 fw-bold d-flex align-items-center text-decoration-none"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="https://res.cloudinary.com/db4bjqp4f/image/upload/v1765436438/shtnr60mecp057e2uctk.jpg"
+                        <img src="{{ current_user.avatar }}"
+                             alt="Avatar của {{ current_user.username }}"
                              width="36" height="36" class="rounded-circle border border-2 border-secondary">
                     </a>
 
@@ -25,7 +26,7 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center text-white" href="">
+                            <a class="dropdown-item d-flex align-items-center text-white" href="/userinfo">
                                 <i class="bi bi-person-circle me-2"></i> Tài khoản của tôi
                             </a>
                         </li>
@@ -53,22 +54,27 @@
                  id="mynavbar">
                 <ul class="navbar-nav header-menu mx-auto">
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
-                        <a class="nav-link active" href="/">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                             <i class="bi bi-house-door me-1"></i> Trang chủ
                         </a>
                     </li>
+
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
-                        <a class="nav-link text-white" href="/movies">
+                        <a class="nav-link {% if request.path.startswith('/movies') %}active{% endif %}" href="/movies">
                             <i class="bi bi-film me-1"></i> Phim
                         </a>
                     </li>
+
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
-                        <a class="nav-link text-white" href="/cinemas">
+                        <a class="nav-link {% if request.path.startswith('/cinemas') %}active{% endif %}"
+                           href="/cinemas">
                             <i class="bi bi-camera-reels me-1"></i> Rạp
                         </a>
                     </li>
+
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
-                        <a class="nav-link text-white" href="">
+                        <a class="nav-link {% if request.path.startswith('/tickets') %}active{% endif %}"
+                           href="/tickets">
                             <i class="bi bi-ticket me-1"></i> Vé của tôi
                         </a>
                     </li>

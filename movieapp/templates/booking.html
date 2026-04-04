@@ -33,11 +33,13 @@
                             {% set seat_sid = st_seat.hold_session_id | string %}
 
                             {# --- BƯỚC 2: PHÂN LOẠI TRẠNG THÁI --- #}
-                            {# Ghế người khác đang giữ hoặc đã bán #}
                             {% set is_locked = (st_seat.status.name == 'RESERVED' and seat_sid != current_sid) or
                             st_seat.status.name == 'BOOKED' %}
-                            {% set is_vip = st_seat.seat.is_vip %}
-                            {% set seat_price = st_seat.price | default(115000 if is_vip else 95000) %}
+
+                            {% set is_vip = (st_seat.seat.seat_type.name | lower == 'vip') %}
+
+                            {% set seat_price = st_seat.price | default(showtime.base_price +
+                            st_seat.seat.seat_type.surcharge) %}
 
                             {% if is_locked %}
                             {# TRẠNG THÁI 1: Ghế bị khóa #}
@@ -128,7 +130,7 @@
                     <div class="d-flex gap-3 mb-4">
                         <img src="{{ movie.image }}" class="rounded-3 shadow booking-poster" alt="Poster">
                         <div>
-                            <h5 class="fw-bold text-white">{{ movie.title }}</h5>
+                            <h5 class="fw-bold text-white">{{ movie.name }}</h5>
                             <p class="text-white-50 small mb-0">T{{ movie.limited_age }} •
                                 {% for g in movie.genres %}{{ g.name }}{% if not loop.last %}, {% endif %}{% endfor %}
                             </p>
@@ -180,4 +182,5 @@
 
     </form>
 </div>
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}

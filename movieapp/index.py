@@ -6,7 +6,7 @@ import unicodedata
 from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
-from flask_login import login_user, current_user, logout_user
+from flask_login import login_user, current_user, logout_user, login_required
 from movieapp.models import User, TranslationType
 
 
@@ -169,7 +169,6 @@ def booking(showtime_id, cinema_slug, room_id):
     if not showtime or showtime.room_id != room_id:
         abort(404)
 
-    # Dọn rác của suất chiếu này
     dao.release_expired_seats(showtime_id)
 
     current_sid = session.get('user_session_id')
@@ -177,21 +176,17 @@ def booking(showtime_id, cinema_slug, room_id):
     booking_session = session.get('booking', {})
 
     if current_sid:
-        # GỌI HÀM DAO ĐỂ LẤY THỜI GIAN (Thay vì query trực tiếp như trước)
         expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
 
         if expire_time:
-            # Vẫn còn hạn -> Tính ra số giây để truyền xuống giao diện
             now = datetime.utcnow()
-            time_remaining = int((expire_time - now).total_seconds())
+            time_remaining = math.ceil((expire_time - now).total_seconds())
         else:
-            # Hết hạn hoặc không có ghế -> Báo DAO dọn dẹp DB và clear Session
             dao.clear_db_booking_by_session(current_sid)
             session.pop('booking', None)
             session.modified = True
             booking_session = {}
 
-    # Lấy map ghế từ DAO
     showtime_seats = dao.get_seats_by_showtime(showtime_id)
     seat_map = {}
     for st_seat in showtime_seats:
@@ -205,17 +200,9 @@ def booking(showtime_id, cinema_slug, room_id):
     cols = list(range(1, 9))
     seat_type_vip = dao.get_seat_type(2)
 
-    return render_template('booking.html',
-                           showtime=showtime,
-                           movie=showtime.movie,
-                           cinema=showtime.room.cinema,
-                           room=showtime.room,
-                           seat_map=seat_map,
-                           rows=rows,
-                           cols=cols,
-                           seat_type_vip=seat_type_vip,
-                           time_remaining=time_remaining,
-                           booking_session=booking_session)
+    return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
+                           room=showtime.room, seat_map=seat_map, rows=rows, cols=cols, seat_type_vip=seat_type_vip,
+                           time_remaining=time_remaining, booking_session=booking_session)
 
 
 @app.route('/api/booking', methods=['POST'])
@@ -226,7 +213,6 @@ def api_booking():
 
     booking_dict, expire_time = dao.process_seat_reservations(current_session_id, selected_seats)
 
-    time_remaining = 0
     now = datetime.utcnow()
 
     if expire_time is None or expire_time <= now:
@@ -235,7 +221,7 @@ def api_booking():
         is_expired = True if selected_seats else False
     else:
         session['booking'] = booking_dict
-        time_remaining = int((expire_time - now).total_seconds())
+        time_remaining = math.ceil((expire_time - now).total_seconds())
         is_expired = False
 
     session.modified = True
@@ -243,7 +229,7 @@ def api_booking():
     response_data = utils.stats_seats(session['booking'])
     response_data['time_remaining'] = time_remaining
     response_data['expired'] = is_expired
-
+    print(response_data)
     return jsonify(response_data)
 
 
@@ -257,6 +243,41 @@ def clear_booking_session():
     session.modified = True
 
     return jsonify({"status": "cleared"})
+
+
+@app.route('/userinfo', methods=['GET'])
+def userinfo():
+    return render_template("userinfo.html")
+
+
+@app.route('/edit-profile', methods=['POST'])
+@login_required
+def edit_profile():
+    email = request.form.get('email')
+    avatar_file = request.files.get('avatar')
+
+    success, message = dao.update_user_profile(user_id=current_user.id, email=email, avatar_file=avatar_file)
+
+    flash(message, "success" if success else "danger")
+    return redirect(url_for('userinfo'))
+
+
+@app.route('/change-password', methods=['POST'])
+@login_required
+def change_password_route():
+    old_pw = request.form.get('old_password')
+    new_pw = request.form.get('new_password')
+    confirm_pw = request.form.get('confirm_password')
+
+    # Kiểm tra khớp mật khẩu mới ngay tại server
+    if new_pw != confirm_pw:
+        flash("Xác nhận mật khẩu mới không khớp!", "danger")
+        return redirect(url_for('userinfo'))
+
+    success, message = dao.change_password(current_user.id, old_pw, new_pw)
+
+    flash(message, "success" if success else "danger")
+    return redirect(url_for('userinfo'))
 
 
 if __name__ == '__main__':
