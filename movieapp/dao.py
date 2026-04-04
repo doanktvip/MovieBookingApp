@@ -374,48 +374,100 @@ def get_reservation_expiry_time(session_id, showtime_id):
 
     return None
 
-
-# thêm vé sau khi thanh toán thành công
-def add_ticket(user_id, showtime_id, total_amount, booking_session):
+#Tạo booking(Pending)
+def create_pending_booking(user_id, showtime_id,total_amount,booking_session):
     try:
-        # Tạo hóa đơn tổng
+        st_seat_ids=list(booking_session.keys())
+        if not st_seat_ids:
+            raise Exception("Đơn hàng trống!")
+
+        first_st_seat_id = st_seat_ids[0]
+        #Tìm ghế đầu có trong Ticket của Booking nào không
+        existing_ticket = Ticket.query.join(Booking).filter(
+            Ticket.showtime_seat_id==first_st_seat_id,
+            Booking.status==BookingStatus.PENDING
+        ).first()
+
+        #Nếu tìm thấy
+        if existing_ticket:
+            existing_booking=existing_ticket.booking
+            #DS ghế cũ
+            old_seat_ids=[str(t.showtime_seat_id) for t in existing_booking.tickets]
+            #TH1: Khách giữ ghế thanh toán lại
+            if set(old_seat_ids)==set(st_seat_ids):
+                existing_booking.total_price=total_amount
+
+                db.session.commit()
+                return existing_booking.id
+            # TH 2: Khách đã đổi ý (quay lại chọn thêm hoặc bỏ bớt ghế) -> XÓA CŨ
+            else:
+                db.session.delete(existing_booking)
+                db.session.flush()
+
+        # Nếu chưa có thì tạo Hóa đơn tổng mới(Trạng thái PENDING)
         new_booking = Booking(
             user_id=user_id,
             showtime_id=showtime_id,
             total_price=total_amount,
             payment_method='MoMo',
-            status=BookingStatus.PAID
+            status=BookingStatus.PENDING
         )
         db.session.add(new_booking)
-        db.session.flush()  # Đẩy tạm xuống DB để lấy new_booking.id
+        db.session.flush()  # Lấy ID của booking vừa tạo
 
-        # 2. TẠO VÉ CHO TỪNG GHẾ (Bảng Ticket) VÀ ĐỔI TRẠNG THÁI
+        # Tạo Vé lẻ cho từng ghế (nhưng ghế vẫn giữ nguyên trạng thái RESERVED)
         for st_seat_id, seat_data in booking_session.items():
             st_seat = ShowtimeSeat.query.get(st_seat_id)
             if st_seat:
-                # Đổi trạng thái ghế thành Đã Bán
-                st_seat.status = SeatStatus.BOOKED
-                st_seat.hold_until = None
-                st_seat.hold_session_id = None
-
-                # Tạo vé lẻ cho cái ghế này
                 new_ticket = Ticket(
-                    booking_id=new_booking.id,  # Nối vào Hóa đơn tổng ở bước 1
-                    showtime_seat_id=st_seat.id,  # Nối vào đúng cái ghế này
+                    booking_id=new_booking.id,
+                    showtime_seat_id=st_seat.id,
                     final_price=seat_data['price'] + seat_data.get('surcharge', 0)
                 )
                 db.session.add(new_ticket)
 
-        # 3. CHỐT GIAO DỊCH
         db.session.commit()
-        return new_booking
+        return new_booking.id  # Trả về mã đơn hàng để truyền qua MoMo
 
     except Exception as e:
-        # Nếu có bất kỳ lỗi gì (mất mạng, trùng ID...), hoàn tác toàn bộ!
         db.session.rollback()
-        print(f"Lỗi khi lưu DB (add_ticket): {e}")
-        raise e  # Ném lỗi ngược lại cho index.py xử lý để báo cho người dùng
+        print(f"Lỗi tạo Booking PENDING: {e}")
+        raise e
 
+#Cập nhật trạng thái booking
+def update_status_booking(booking_id, status, current_sid=None):
+    try:
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            raise Exception("Không tìm thấy đơn hàng!")
+        booking.status = status
+
+        if status == BookingStatus.PAID:
+            #Thanh toán thành công
+            for ticket in booking.tickets:
+                st_seat=ticket.showtime_seat
+                if st_seat:
+                    # Kiểm tra bảo mật: Ghế có còn thuộc về người này không?
+                    if current_sid and str(st_seat.hold_session_id) != str(current_sid):
+                        raise Exception(
+                            f"Ghế {st_seat.seat.row}{st_seat.seat.col} đã hết thời gian giữ và bị người khác lấy!")
+                    st_seat.status = SeatStatus.BOOKED
+                    st_seat.hold_until = None
+                    st_seat.hold_session_id = None
+        elif status == BookingStatus.PENDING :
+            #Nếu hủy thanh toán
+
+            for ticket in booking.tickets:
+                st_seat=ticket.showtime_seat
+                if st_seat and current_sid and str(st_seat.hold_session_id) == str(current_sid):
+                    st_seat.status=SeatStatus.RESERVED
+
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi cập nhật Booking: {e}")
+        raise e
 
 def get_or_create_province(name):
     name = name.strip()
@@ -556,3 +608,21 @@ def cancel_booking(booking_id, user_id):
         return True
 
     return False
+#Ticket
+def load_bookings_for_checkin():
+    query=Booking.query.filter(Booking.status==BookingStatus.PAID)
+    return query.join(Showtime).order_by(Showtime.start_time.asc()).all()
+
+def confirm_booking_checkin(booking_id):
+    try:
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return False, "Không tìm thấy đơn hàng"
+        for ticket in booking.tickets:
+            ticket.is_checked_in = True
+
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        return False, str(e)
