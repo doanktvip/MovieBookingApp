@@ -93,7 +93,7 @@
                         {% for room in c.rooms %}
                         <span class="badge text-danger fw-normal px-3 py-2"
                               style="background-color: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.3);">
-                                {{ room.name }} ({{ room.capacity }} ghế)
+                                {{ room.room_name }}
                             </span>
                         {% endfor %}
                         {% else %}
@@ -171,7 +171,7 @@
 
                                                 <div class="showtimes d-flex flex-wrap gap-2">
                                                     {% for st in showtimes %}
-                                                    <a href="/booking/{{ st.id }}" class="text-decoration-none">
+                                                    <a href="/booking/showtime-{{ st.id }}-{{ slugify(c.name) }}-room-{{ st.room.id }}" class="text-decoration-none">
                                                         <div class="time-btn ddn-glass p-2 rounded-3 text-center border border-secondary border-opacity-25"
                                                              style="min-width: 80px;">
                                                             <div class="fw-bold text-white">{{

@@ -4,10 +4,10 @@ import uuid
 
 import unicodedata
 from datetime import datetime, timedelta
-from movieapp import app, dao, login_manager, utils
+from movieapp import app, dao, login_manager, utils,db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
-from movieapp.models import User, TranslationType
+from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus
 
 
 @app.before_request
@@ -244,6 +244,142 @@ def clear_booking_session():
 
     return jsonify({"status": "cleared"})
 
+@app.route("/checkout",methods=['GET','POST'])
+def pay():
+    showtime_id = request.form.get('showtime_id')
+    showtime = dao.get_showtime_by_id(showtime_id)
+
+    if not showtime:
+        abort(404)
+
+    # Lấy thông tin giỏ hàng và thời gian giữ ghế từ Session
+    booking_session = session.get('booking')
+    current_sid = session.get('user_session_id')
+    expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
+    now = datetime.utcnow()
+
+    # 1. BẢO MẬT: Kiểm tra xem user có lách luật vào thẳng link không, hoặc hết giờ giữ ghế
+    if not booking_session or not expire_time or now >= expire_time:
+        flash("Phiên giữ ghế đã hết hạn hoặc bạn chưa chọn ghế!", "danger")
+        cinema_slug = slugify(showtime.room.cinema.name)
+        return redirect(url_for('booking', showtime_id=showtime.id, cinema_slug=cinema_slug, room_id=showtime.room_id))
+
+    #Tính toán thời gian còn lại & Tổng tiền (dùng hàm utils bạn đã import sẵn)
+    time_remaining = int((expire_time - now).total_seconds())
+    stats = utils.stats_seats(booking_session)
+
+    # 3. Đẩy sang trang thanh toán
+    return render_template('checkout.html',
+                           showtime=showtime,
+                           movie=showtime.movie,
+                           cinema=showtime.room.cinema,
+                           room=showtime.room,
+                           booking_session=booking_session,
+                           stats=stats,
+                           time_remaining=time_remaining)
+
+from momo_payment import create_momo_payment, ACCESS_KEY, SECRET_KEY, PARTNER_CODE
+import hmac,hashlib
+
+@app.route("/process_payment",methods=['POST','GET'])
+def process_payment():
+    showtime_id = request.form.get('showtime_id')
+    payment_method=request.form.get('payment_method')
+    booking_session = session.get('booking')
+    current_sid = session.get('user_session_id')
+
+    if not booking_session:
+        abort(404)
+    #Tính thời gian hết hạn phụ thuộc giữ ghế
+    expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
+    now = datetime.utcnow()
+    if expire_time and expire_time > now:
+        time_remaining_seconds = int((expire_time - now).total_seconds())
+        expire_minutes = math.ceil(time_remaining_seconds / 60)
+        expire_minutes=max(16,expire_minutes)
+    else:
+        flash("Phiên giữ ghế đã hết hạn, vui lòng chọn lại!", "danger")
+        return redirect(url_for('index'))
+
+    stats = utils.stats_seats(booking_session)
+    total_amount = stats['total_amount']
+    # Tạo mã đơn hàng duy nhất (Ví dụ: DDN-12345678)
+    order_id = f"DDN-{uuid.uuid4().hex[:8].upper()}"
+    session['customer_info'] = {
+        'order_id': order_id,
+        'name': current_user.username,
+        'email': current_user.email,
+        'showtime_id': showtime_id,
+        'payment_method': payment_method,
+        'total_amount': total_amount
+    }
+    session.modified = True
+
+    if payment_method == 'momo':
+        order_info = f"Thanh toan ve xem phim"
+
+        # Đường dẫn MoMo sẽ đá khách về sau khi quét QR xong (Ta sẽ tạo ở Bước 3)
+        redirect_url = url_for('momo_return', _external=True)
+        ipn_url = url_for('momo_return', _external=True)  # (Tạm dùng chung cho môi trường test)
+
+        # Gọi API MoMo
+        momo_response = create_momo_payment(order_id, total_amount, order_info, redirect_url, ipn_url,expire_minutes)
+
+        # Nếu MoMo trả về link thanh toán thành công
+        if 'payUrl' in momo_response:
+            return redirect(momo_response['payUrl'])  # CHUYỂN HƯỚNG KHÁCH SANG MOMO
+        else:
+            flash(f"Lỗi khởi tạo MoMo: {momo_response.get('message')}", "danger")
+            return redirect(url_for('checkout'))
+
+    return "Chức năng thanh toán khác đang cập nhật"
+
+
+@app.route('/momo_return')
+def momo_return():
+    # 1. MoMo trả về một đống dữ liệu qua thanh URL (GET request)
+    result_code = request.args.get('resultCode')
+    order_id = request.args.get('orderId')
+    message = request.args.get('message')
+
+    # 2. Xử lý kết quả
+    if result_code == "0":  # Code '0' của MoMo nghĩa là thanh toán THÀNH CÔNG
+        booking_session = session.get('booking')
+        customer_info = session.get('customer_info')
+        current_sid = session.get('user_session_id')
+
+        if not booking_session or not customer_info:
+            flash("Lỗi: Không tìm thấy dữ liệu đặt vé trên hệ thống!", "danger")
+            return redirect(url_for('index'))
+
+        try:
+            # Lấy user_id nếu khách đã đăng nhập
+            user_id = current_user.id if current_user.is_authenticated else None
+
+            # GỌI HÀM DAO ĐỂ LƯU VÉ
+            dao.add_ticket(
+                user_id=user_id,
+                showtime_id=customer_info['showtime_id'],
+                total_amount=customer_info['total_amount'],
+                booking_session=booking_session
+            )
+
+            # Dọn dẹp session
+            session.pop('booking', None)
+            session.pop('customer_info', None)
+            dao.clear_db_booking_by_session(current_sid)
+
+            flash(f"Thanh toán MoMo thành công! Mã đơn hàng: {order_id}", "success")
+            return redirect(url_for('index'))
+
+        except Exception as e:
+            flash("Đã thanh toán nhưng lỗi lưu vé, vui lòng liên hệ CSKH!", "danger")
+            return redirect(url_for('index'))
+
+    else:
+        # Code khác '0' nghĩa là thất bại (Khách hủy giao dịch, không đủ tiền...)
+        flash(f"Giao dịch thất bại hoặc đã bị hủy. Lỗi: {message}", "danger")
+        return redirect(url_for('index'))
 
 @app.route('/userinfo', methods=['GET'])
 def userinfo():
