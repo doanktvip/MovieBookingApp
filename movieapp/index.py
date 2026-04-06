@@ -1,13 +1,14 @@
 import math
 import re
 import uuid
-
 import unicodedata
 from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils, db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
-from flask_login import login_user, current_user, logout_user, login_required
-from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus,Booking
+from flask_login import login_user, current_user, logout_user
+from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required
+from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus, Booking
+from momo_payment import create_momo_payment
 
 
 @app.before_request
@@ -30,16 +31,19 @@ def index():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
+    next_url = request.form.get('next')
 
     user = dao.auth_user(username=username, password=password)
 
     if user:
         login_user(user)
         flash("Đăng nhập thành công", "success")
-        return redirect(url_for('index'))
+
+        return redirect(next_url or url_for('index'))
     else:
         flash("Username hoặc password không đúng", "danger")
-        return redirect(url_for('index', error='login'))
+
+        return redirect(request.referrer or url_for('index', error='login'))
 
 
 @login_manager.user_loader
@@ -88,6 +92,7 @@ def movie():
     genres = dao.load_genres()
 
     total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
+    print(total_movies)
     total_pages = math.ceil(total_movies / app.config.get('PAGE_SIZE'))
     page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
     return render_template('movie.html', movies=movies, genres=genres, pages=total_pages, page=page, current_kw=kw,
@@ -150,8 +155,11 @@ def movie_detail(movie_id):
 
 
 def slugify(text):
+    # Loại bỏ dấu tiếng Việt và dấu câu
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    # Xóa ký tự đặc biệt và viết thường
     text = re.sub(r'[^\w\s-]', '', text).strip().lower()
+    # Gắn kết các từ bằng dấu gạch ngang
     text = re.sub(r'[-\s]+', '-', text)
     return text
 
@@ -164,6 +172,7 @@ def common_attribute():
 
 
 @app.route('/booking/showtime-<int:showtime_id>-<string:cinema_slug>-room-<int:room_id>')
+@user_required
 def booking(showtime_id, cinema_slug, room_id):
     showtime = dao.get_showtime_by_id(showtime_id)
     if not showtime or showtime.room_id != room_id:
@@ -244,8 +253,10 @@ def clear_booking_session():
 
     return jsonify({"status": "cleared"})
 
-#Thanh toán
-@app.route("/checkout",methods=['GET','POST'])
+
+# Thanh toán
+@app.route("/checkout", methods=['GET', 'POST'])
+@login_user_required
 def pay():
     showtime_id = request.form.get('showtime_id')
     showtime = dao.get_showtime_by_id(showtime_id)
@@ -280,10 +291,6 @@ def pay():
                            time_remaining=time_remaining)
 
 
-from momo_payment import create_momo_payment, ACCESS_KEY, SECRET_KEY, PARTNER_CODE
-import hmac, hashlib
-
-
 @app.route("/process_payment", methods=['POST', 'GET'])
 def process_payment():
     showtime_id = request.form.get('showtime_id')
@@ -305,7 +312,7 @@ def process_payment():
     stats = utils.stats_seats(booking_session)
     total_amount = stats['total_amount']
 
-    #Tạo booking pending trc khi qua Momo
+    # Tạo booking pending trc khi qua Momo
     user_id = current_user.id if current_user.is_authenticated else None
     try:
         booking_id = dao.create_pending_booking(user_id, showtime_id, total_amount, booking_session)
@@ -365,7 +372,7 @@ def momo_return():
     # 2. Xử lý kết quả
     if result_code == "0":  # Code '0' của MoMo nghĩa là thanh toán THÀNH CÔNG
         try:
-            dao.update_status_booking(booking_id,BookingStatus.PAID,current_sid)
+            dao.update_status_booking(booking_id, BookingStatus.PAID, current_sid)
 
             # Dọn dẹp session
             session.pop('booking', None)
@@ -388,12 +395,13 @@ def momo_return():
 
 
 @app.route('/userinfo', methods=['GET'])
+@login_user_required
 def userinfo():
     return render_template("userinfo.html")
 
 
 @app.route('/edit-profile', methods=['POST'])
-@login_required
+@login_user_required
 def edit_profile():
     email = request.form.get('email')
     avatar_file = request.files.get('avatar')
@@ -405,7 +413,7 @@ def edit_profile():
 
 
 @app.route('/change-password', methods=['POST'])
-@login_required
+@login_user_required
 def change_password_route():
     old_pw = request.form.get('old_password')
     new_pw = request.form.get('new_password')
@@ -421,18 +429,21 @@ def change_password_route():
     flash(message, "success" if success else "danger")
     return redirect(url_for('userinfo'))
 
-#Trang quản lý đặt vé(nhân viên)
-@app.route('/check_in',methods=['POST','GET'])
+
+# Trang quản lý đặt vé(nhân viên)
+@app.route('/check_in', methods=['POST', 'GET'])
+@login_user_required
+@staff_required
 def check_in():
     # Bảo mật user
     if current_user.role.name not in ['STAFF', 'ADMIN']:
         flash("Bạn không có quyền truy cập trang này!", "danger")
         return redirect(url_for('index'))
-    bookings=dao.load_bookings_for_checkin()
+    bookings = dao.load_bookings_for_checkin()
     if request.method == 'POST':
-        booking=request.form.get('submit_checkin')
+        booking = request.form.get('submit_checkin')
         if booking:
-            b=Booking.query.get(booking)
+            b = Booking.query.get(booking)
             if b:
                 for ticket in b.tickets:
                     ticket.is_checked_in = True
@@ -444,10 +455,11 @@ def check_in():
                     db.session.rollback()
                     mess = "Hệ thống bị lỗi!"
                     return redirect("/check_in")
-    return render_template("staff_check_in.html",bookings=bookings)
+    return render_template("staff_check_in.html", bookings=bookings)
+
 
 @app.route('/tickets')
-@login_required
+@login_user_required
 def my_tickets():
     page = request.args.get('page', 1, type=int)
 
@@ -463,7 +475,7 @@ def my_tickets():
 
 
 @app.route('/cancel-booking/<int:booking_id>', methods=['POST'])
-@login_required
+@login_user_required
 def cancel_ticket(booking_id):
     success = dao.cancel_booking(booking_id=booking_id, user_id=current_user.id)
 

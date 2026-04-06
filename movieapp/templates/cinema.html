@@ -30,8 +30,8 @@
                             style="width: auto; min-width: 180px; cursor: pointer;"
                             onchange="document.getElementById('cinemaFilterForm').submit();">
 
-                        <option value="" class="text-white" style="background-color: #2c1517 !important">Tất cả khu
-                            vực
+                        <option value="" class="text-white" style="background-color: #2c1517 !important">
+                            Tất cả khu vực
                         </option>
 
                         {% for p in provinces %}
@@ -105,21 +105,18 @@
                 <div class="modal fade" id="exampleModalCenter{{c.id}}" tabindex="-1"
                      aria-labelledby="exampleModalLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-xl">
-                        <div class="modal-content" style="background-color:black;">
-                            <div class="modal-header border-0 position-relative">
+
+                        <div class="modal-content bg-dark text-white rounded-4 border border-secondary shadow-lg">
+                            <div class="modal-header border-0 position-relative pt-4 px-4">
                                 <div>
                                     <h1 class="fs-5 fw-bold" id="exampleModalCenterTitle">
                                         Lịch chiếu phim - <span class="text-danger">{{ c.name }}</span>
                                     </h1>
-                                    <span style="color:silver;">{{c.address}}</span>
+                                    <span class="text-secondary small">{{c.address}}</span>
                                 </div>
-                                <button type="button"
-                                        class="btn btn-outline-danger rounded-circle position-absolute top-0 end-0 mt-1 me-1"
-                                        data-bs-dismiss="modal" aria-label="Close">X
-                                </button>
                             </div>
 
-                            <div class="modal-body border-0">
+                            <div class="modal-body border-0 px-4">
                                 <div class="mb-4">
                                     <h6 class="fw-bold mb-3 text-white">Chọn ngày:</h6>
                                     <div class="d-flex flex-nowrap gap-2 overflow-x-auto pb-2">
@@ -159,23 +156,33 @@
                                         {% for movie, showtimes in movie_dict.items() %}
                                         <div class="movie-item d-flex align-items-start mb-4">
                                             <img src="{{ movie.image }}" alt="Poster" class="img-fluid rounded-4 me-3"
-                                                 style="width: 80px; height: 120px; object-fit: cover;">
+                                                 style="width: 100px; height: 140px; object-fit: cover;">
                                             <div class="movie-info flex-grow-1">
-                                                <h6 class="fw-bold text-uppercase text-white mb-1">{{ movie.name
-                                                    }}</h6>
-                                                <p class="text-secondary mb-2" style="font-size: 0.8rem;">Thời lượng: {{
-                                                    movie.duration }} phút | Tỉ lệ 16:9</p>
+                                                <h6 class="fw-bold text-uppercase text-white mb-1">{{ movie.name }}</h6>
+                                                <p class="text-secondary mb-2" style="font-size: 0.8rem;">
+                                                    Thời lượng: {{ movie.duration }} phút
+                                                </p>
                                                 <p class="text-secondary mb-3" style="font-size: 0.8rem;">
                                                     <span class="badge bg-warning text-dark">T{{ movie.limited_age }}</span>
                                                 </p>
 
                                                 <div class="showtimes d-flex flex-wrap gap-2">
                                                     {% for st in showtimes %}
-                                                    <a href="/booking/showtime-{{ st.id }}-{{ slugify(c.name) }}-room-{{ st.room.id }}" class="text-decoration-none">
+                                                    {% set booking_url = '/booking/showtime-' ~ st.id ~ '-' ~
+                                                    slugify(c.name) ~ '-room-' ~ st.room.id %}
+                                                    <a href="{% if current_user.is_authenticated %}{{ booking_url }}{% else %}javascript:void(0);{% endif %}"
+                                                       class="text-decoration-none"
+                                                       {% if not current_user.is_authenticated %}
+                                                       data-bs-toggle="modal"
+                                                       data-bs-target="#authModal"
+                                                       onclick="document.getElementById('nextUrlInput').value = '{{
+                                                    booking_url }}'; document.getElementById('tab-login').click();"
+                                                       {% endif %}>
+
                                                         <div class="time-btn ddn-glass p-2 rounded-3 text-center border border-secondary border-opacity-25"
                                                              style="min-width: 80px;">
-                                                            <div class="fw-bold text-white">{{
-                                                                st.start_time.strftime('%H:%M') }}
+                                                            <div class="fw-bold text-white">
+                                                                {{ st.start_time.strftime('%H:%M') }}
                                                             </div>
                                                             <div style="font-size: 0.7rem;" class="text-secondary mt-1">
                                                                 {{ st.movie_format.name if st.movie_format else '2D' }}
@@ -233,8 +240,9 @@
             </a>
         </div>
         {% endif %}
+
         {% if pages > 1 %}
-        <div class="row mt-4 d-flexr">
+        <div class="row mt-4 d-flex">
             <ul class="pagination justify-content-center gap-2 border-0 mb-0">
 
                 {# Nút Sang trái (Previous) #}
@@ -271,9 +279,10 @@
         </div>
         {% endif %}
     </div>
-    <script>
-        // Hàm này sẽ tự động chạy mỗi khi bạn click chọn ngày khác
-        function changeDateColor(radioBtn, cinemaId) {
+</div>
+<script>
+    // Hàm này sẽ tự động chạy mỗi khi bạn click chọn ngày khác
+    function changeDateColor(radioBtn, cinemaId) {
         // --- LOGIC 1: ĐỔI MÀU NÚT NHƯ CŨ ---
         let allLabels = document.querySelectorAll('.date-label-' + cinemaId);
         allLabels.forEach(function(label) {
@@ -301,5 +310,5 @@
             targetGroup.style.display = 'block';
         }
     }
-    </script>
-    {% endblock %}
+</script>
+{% endblock %}

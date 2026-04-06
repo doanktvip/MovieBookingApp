@@ -2,7 +2,7 @@ import hashlib
 import json
 import math
 from datetime import date, datetime, timedelta
-from sqlalchemy import func, update
+from sqlalchemy import func, update, case, collate
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
 from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
@@ -53,14 +53,29 @@ def add_user(username, email, password):
 
 
 def load_movies(genre_id=None, kw=None, page=1):
-    query = Movie.query
+    now = datetime.utcnow()
+
+    query = db.session.query(Movie).outerjoin(Showtime)
+
     if genre_id:
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
+
     if kw:
-        query = query.filter(Movie.name.contains(kw))
+        query = query.filter(collate(Movie.name, 'utf8mb4_general_ci').like(f"%{kw}%"))
+
+    upcoming_time = func.min(
+        case(
+            (Showtime.start_time >= now, Showtime.start_time),
+            else_=None
+        )
+    )
+
+    query = query.group_by(Movie.id).order_by(upcoming_time.is_(None), upcoming_time.asc(), Movie.created_at.desc())
+
     if page:
         start = (page - 1) * app.config.get('PAGE_SIZE')
-        query = query.slice(start, start + app.config.get('PAGE_SIZE'))
+        query = query.offset(start).limit(app.config.get('PAGE_SIZE'))
+
     return query.all()
 
 
@@ -73,7 +88,7 @@ def count_movies(genre_id=None, kw=None):
     if genre_id:
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
     if kw:
-        query = query.filter(Movie.name.contains(kw))
+        query = query.filter(collate(Movie.name, 'utf8mb4_general_ci').like(f"%{kw}%"))
     return query.count()
 
 
@@ -374,28 +389,29 @@ def get_reservation_expiry_time(session_id, showtime_id):
 
     return None
 
-#Tạo booking(Pending)
-def create_pending_booking(user_id, showtime_id,total_amount,booking_session):
+
+# Tạo booking(Pending)
+def create_pending_booking(user_id, showtime_id, total_amount, booking_session):
     try:
-        st_seat_ids=list(booking_session.keys())
+        st_seat_ids = list(booking_session.keys())
         if not st_seat_ids:
             raise Exception("Đơn hàng trống!")
 
         first_st_seat_id = st_seat_ids[0]
-        #Tìm ghế đầu có trong Ticket của Booking nào không
+        # Tìm ghế đầu có trong Ticket của Booking nào không
         existing_ticket = Ticket.query.join(Booking).filter(
-            Ticket.showtime_seat_id==first_st_seat_id,
-            Booking.status==BookingStatus.PENDING
+            Ticket.showtime_seat_id == first_st_seat_id,
+            Booking.status == BookingStatus.PENDING
         ).first()
 
-        #Nếu tìm thấy
+        # Nếu tìm thấy
         if existing_ticket:
-            existing_booking=existing_ticket.booking
-            #DS ghế cũ
-            old_seat_ids=[str(t.showtime_seat_id) for t in existing_booking.tickets]
-            #TH1: Khách giữ ghế thanh toán lại
-            if set(old_seat_ids)==set(st_seat_ids):
-                existing_booking.total_price=total_amount
+            existing_booking = existing_ticket.booking
+            # DS ghế cũ
+            old_seat_ids = [str(t.showtime_seat_id) for t in existing_booking.tickets]
+            # TH1: Khách giữ ghế thanh toán lại
+            if set(old_seat_ids) == set(st_seat_ids):
+                existing_booking.total_price = total_amount
 
                 db.session.commit()
                 return existing_booking.id
@@ -434,7 +450,8 @@ def create_pending_booking(user_id, showtime_id,total_amount,booking_session):
         print(f"Lỗi tạo Booking PENDING: {e}")
         raise e
 
-#Cập nhật trạng thái booking
+
+# Cập nhật trạng thái booking
 def update_status_booking(booking_id, status, current_sid=None):
     try:
         booking = Booking.query.get(booking_id)
@@ -443,9 +460,9 @@ def update_status_booking(booking_id, status, current_sid=None):
         booking.status = status
 
         if status == BookingStatus.PAID:
-            #Thanh toán thành công
+            # Thanh toán thành công
             for ticket in booking.tickets:
-                st_seat=ticket.showtime_seat
+                st_seat = ticket.showtime_seat
                 if st_seat:
                     # Kiểm tra bảo mật: Ghế có còn thuộc về người này không?
                     if current_sid and str(st_seat.hold_session_id) != str(current_sid):
@@ -454,13 +471,13 @@ def update_status_booking(booking_id, status, current_sid=None):
                     st_seat.status = SeatStatus.BOOKED
                     st_seat.hold_until = None
                     st_seat.hold_session_id = None
-        elif status == BookingStatus.PENDING :
-            #Nếu hủy thanh toán
+        elif status == BookingStatus.PENDING:
+            # Nếu hủy thanh toán
 
             for ticket in booking.tickets:
-                st_seat=ticket.showtime_seat
+                st_seat = ticket.showtime_seat
                 if st_seat and current_sid and str(st_seat.hold_session_id) == str(current_sid):
-                    st_seat.status=SeatStatus.RESERVED
+                    st_seat.status = SeatStatus.RESERVED
 
         db.session.commit()
         return True
@@ -468,6 +485,7 @@ def update_status_booking(booking_id, status, current_sid=None):
         db.session.rollback()
         print(f"Lỗi cập nhật Booking: {e}")
         raise e
+
 
 def get_or_create_province(name):
     name = name.strip()
@@ -608,10 +626,13 @@ def cancel_booking(booking_id, user_id):
         return True
 
     return False
-#Ticket
+
+
+# Ticket
 def load_bookings_for_checkin():
-    query=Booking.query.filter(Booking.status==BookingStatus.PAID)
+    query = Booking.query.filter(Booking.status == BookingStatus.PAID)
     return query.join(Showtime).order_by(Showtime.start_time.asc()).all()
+
 
 def confirm_booking_checkin(booking_id):
     try:

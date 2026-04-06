@@ -303,6 +303,21 @@ header, nav {
 .timer-danger {
     animation: timer-pulse 1s infinite;
 }
+/* =========================================
+   CSS CHO FORM ĐĂNG NHẬP & ĐĂNG KÝ
+   ========================================= */
+
+.auth-input-group {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.auth-input-bg {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
 
 @keyframes timer-pulse {
     0% { opacity: 1; }

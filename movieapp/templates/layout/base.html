@@ -26,10 +26,6 @@
 {%block footer%}
 {%include 'layout/footer.html'%}
 {%endblock%}
-
-{%include 'login.html'%}
-{%include 'register.html'%}
-
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <div class="position-fixed end-0 p-2 custom-alert-wrapper">
@@ -49,5 +45,41 @@
 {% endif %}
 {% endwith %}
 <div id="js-alert-container" class="position-fixed end-0 p-2 custom-alert-wrapper"></div>
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white rounded-4 border border-secondary shadow-lg"
+             style="background-color: #16161a;">
+
+            <div class="modal-header border-0 pb-0 justify-content-center mt-4">
+                <h4 class="fw-bold mb-0">Hệ thống thành viên</h4>
+            </div>
+
+            <div class="modal-body px-4 px-sm-5 pb-4 pt-4">
+
+                <ul class="nav nav-pills d-flex p-1 rounded-pill mb-4"
+                    style="background-color: rgba(255, 255, 255, 0.08);" role="tablist">
+                    <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link active w-100 rounded-pill fw-bold" id="tab-login" data-bs-toggle="pill"
+                                data-bs-target="#pane-login" type="button" role="tab">
+                            Đăng nhập
+                        </button>
+                    </li>
+                    <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link w-100 rounded-pill fw-bold" id="tab-register" data-bs-toggle="pill"
+                                data-bs-target="#pane-register" type="button" role="tab">
+                            Đăng ký mới
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+
+                    {% include 'login.html' %}
+                    {% include 'register.html' %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
