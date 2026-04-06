@@ -1,43 +1,32 @@
-<div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-dark text-white rounded-4 border border-secondary shadow-lg">
+<div class="tab-pane fade show active" id="pane-login" role="tabpanel">
+    <form method="POST" action="{{ url_for('login') }}">
+        <input type="hidden" name="next" id="nextUrlInput" value="{{ request.full_path }}">
 
-            <div class="modal-header border-0 justify-content-center pt-4">
-                <div class="btn-group w-100 px-3" role="group">
-                    <button type="button" class="btn btn-danger rounded-pill me-2 fw-bold">Đăng nhập</button>
-                    <button type="button" class="btn btn-outline-secondary text-white rounded-pill fw-bold"
-                            data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Đăng ký
-                    </button>
-                </div>
-            </div>
-            <div class="modal-body px-4 pb-4">
-
-                <form method="POST" action="{{ url_for('login') }}">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-secondary">Username</label>
-                        <input type="text" class="form-control text-white border-secondary rounded-3"
-                               placeholder="Nhập username" name="username"
-                               style="background-color: black !important;"
-                               required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small text-secondary">Mật khẩu</label>
-                        <input type="password" class="form-control text-white border-secondary rounded-3"
-                               placeholder="Nhập mật khẩu" name="password"
-                               style="background-color: black !important;"
-                               required>
-                    </div>
-                    <button type="submit" class="btn btn-danger w-100 py-2 fw-bold rounded-pill">
-                        ĐĂNG NHẬP
-                    </button>
-                </form>
-            </div>
-
-            <div class="text-center pb-3">
-                <button type="button" class="btn btn-link text-secondary text-decoration-none small"
-                        data-bs-dismiss="modal">Đóng
-                </button>
+        <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary ms-1">Tên đăng nhập</label>
+            <div class="input-group input-group-lg rounded-3 overflow-hidden auth-input-group">
+                <span class="input-group-text border-0 text-secondary auth-input-bg">
+                    <i class="bi bi-person-fill"></i>
+                </span>
+                <input type="text" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                       placeholder="Nhập username của bạn" name="username" required>
             </div>
         </div>
-    </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary ms-1">Mật khẩu</label>
+            <div class="input-group input-group-lg rounded-3 overflow-hidden auth-input-group">
+                <span class="input-group-text border-0 text-secondary auth-input-bg">
+                    <i class="bi bi-lock-fill"></i>
+                </span>
+                <input type="password" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                       placeholder="Nhập mật khẩu" name="password" required>
+            </div>
+        </div>
+
+        <button type="submit"
+                class="btn btn-danger w-100 py-3 fw-bold rounded-pill text-uppercase shadow-lg letter-spacing-1">
+            Đăng nhập ngay
+        </button>
+    </form>
 </div>

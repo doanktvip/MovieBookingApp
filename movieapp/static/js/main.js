@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
             serverAlerts.forEach(function(alertNode) {
                 // Kiểm tra xem alert đã bị người dùng bấm x tắt trước đó chưa
-                if (document.body.contains(alertNode)) { 
+                if (document.body.contains(alertNode)) {
                     let bsAlert = new bootstrap.Alert(alertNode);
                     bsAlert.close();
                 }

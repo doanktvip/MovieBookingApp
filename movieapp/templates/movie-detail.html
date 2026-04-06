@@ -145,11 +145,20 @@
 
                             <div class="d-flex flex-wrap gap-3 ps-4">
                                 {% for st in st_list %}
-                                <a href="/booking/showtime-{{ st.id }}-{{ slugify(cinema.name) }}-room-{{ st.room.id }}"
-                                   class="btn ddn-glass text-decoration-none">
+                                {% set booking_url = '/booking/showtime-' ~ st.id ~ '-' ~ slugify(cinema.name) ~
+                                '-room-' ~ st.room.id %}
+
+                                <a href="{% if current_user.is_authenticated %}{{ booking_url }}{% else %}javascript:void(0);{% endif %}"
+                                   class="btn ddn-glass text-decoration-none"
+                                   {% if not current_user.is_authenticated %}
+                                   data-bs-toggle="modal" data-bs-target="#authModal"
+                                   onclick="document.getElementById('nextUrlInput').value = '{{ booking_url }}';
+                                document.getElementById('tab-login').click();"
+                                   {% endif %}>
                                     <div class="rounded-3 d-flex flex-column justify-content-center align-items-center p-1">
                                         <span class="fw-bold fs-5 lh-1 mb-1 text-white">{{ st.start_time.strftime('%H:%M') }}</span>
-                                        <span class="text-white-50 fw-semibold" style="font-size: 0.65rem;">{{ st.movie_format.name }} • {{ st.translation.value }}</span>
+                                        <span class="text-white-50 fw-semibold" style="font-size: 0.65rem;">
+                                        {{ st.movie_format.name }} • {{ st.translation.value }}</span>
                                     </div>
                                 </a>
                                 {% endfor %}

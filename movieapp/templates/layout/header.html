@@ -1,14 +1,12 @@
 <header>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark bg-header-footer fixed-top py-0">
         <div class="container-fluid h-100 align-items-center">
-            <!--Phần logo-->
             <div class="d-flex align-items-center" style="flex: 1;">
                 <a class="navbar-brand d-flex align-items-center m-0" href="#">
                     <img src="https://res.cloudinary.com/dtqkyyzv7/image/upload/v1774015846/LOGO2_gnv4mp.png"
                          style="width: 8rem;">
                 </a>
             </div>
-            <!--Phần avatar-->
             <div class="d-flex align-items-center justify-content-end order-lg-3 gap-2" style="flex: 1;">
 
                 {% if current_user.is_authenticated %}
@@ -39,7 +37,7 @@
                 </div>
                 {% else %}
                 <a class="btn btn-danger btn-custom px-3 py-1 fw-bold align-items-center rounded-pill text-nowrap d-none d-lg-flex"
-                   data-bs-toggle="modal" data-bs-target="#loginModal" style="cursor: pointer;">
+                   data-bs-toggle="modal" data-bs-target="#authModal" style="cursor: pointer;">
                     <i class="bi bi-box-arrow-in-right fs-5 me-1"></i> Đăng nhập
                 </a>
                 {% endif %}
@@ -49,7 +47,6 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
-            <!--Phần navbar-->
             <div class="collapse navbar-collapse order-lg-2 bg-dark p-3 p-lg-0 mt-2 mt-lg-0 rounded flex-lg-grow-0"
                  id="mynavbar">
                 <ul class="navbar-nav header-menu mx-auto">
@@ -59,7 +56,6 @@
                             <i class="bi bi-house-door me-1"></i> Trang chủ
                         </a>
                     </li>
-                     {%if current_user.is_authenticated and current_user.role.name=='USER'%}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
                         <a class="nav-link {% if request.path.startswith('/movies') %}active{% endif %}" href="/movies">
                             <i class="bi bi-film me-1"></i> Phim
@@ -72,7 +68,7 @@
                             <i class="bi bi-camera-reels me-1"></i> Rạp
                         </a>
                     </li>
-
+                    {%if current_user.is_authenticated and current_user.role.name=='USER'%}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
                         <a class="nav-link {% if request.path.startswith('/tickets') %}active{% endif %}"
                            href="/tickets">
@@ -81,9 +77,9 @@
                     </li>
                     {%elif current_user.is_authenticated and current_user.role.name=='STAFF'%}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
-                        <a class="nav-link {% if request.path.startswith('/tickets') %}active{% endif %}"
+                        <a class="nav-link {% if request.path.startswith('/check_in') %}active{% endif %}"
                            href="/check_in">
-                            <i class="bi bi-ticket me-1"></i> Quản lý vé phim
+                            <i class="bi bi-card-checklist me-1"></i> Quản lý vé phim
                         </a>
                     </li>
                     {%endif%}
@@ -92,7 +88,7 @@
                 {% if not current_user.is_authenticated %}
                 <div class="d-lg-none mt-3 pt-3 border-top border-secondary">
                     <a class="btn btn-danger btn-custom py-2 fw-bold d-flex justify-content-center align-items-center rounded-pill w-100"
-                       data-bs-toggle="modal" data-bs-target="#loginModal" style="cursor: pointer;">
+                       data-bs-toggle="modal" data-bs-target="#authModal" style="cursor: pointer;">
                         <i class="bi bi-box-arrow-in-right fs-5 me-2"></i> Đăng nhập
                     </a>
                 </div>
