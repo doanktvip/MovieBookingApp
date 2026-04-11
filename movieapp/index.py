@@ -92,7 +92,6 @@ def movie():
     genres = dao.load_genres()
 
     total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
-    print(total_movies)
     total_pages = math.ceil(total_movies / app.config.get('PAGE_SIZE'))
     page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
     return render_template('movie.html', movies=movies, genres=genres, pages=total_pages, page=page, current_kw=kw,
@@ -238,7 +237,6 @@ def api_booking():
     response_data = utils.stats_seats(session['booking'])
     response_data['time_remaining'] = time_remaining
     response_data['expired'] = is_expired
-    print(response_data)
     return jsonify(response_data)
 
 
@@ -281,13 +279,8 @@ def pay():
     stats = utils.stats_seats(booking_session)
 
     # 3. Đẩy sang trang thanh toán
-    return render_template('checkout.html',
-                           showtime=showtime,
-                           movie=showtime.movie,
-                           cinema=showtime.room.cinema,
-                           room=showtime.room,
-                           booking_session=booking_session,
-                           stats=stats,
+    return render_template('checkout.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
+                           room=showtime.room, booking_session=booking_session, stats=stats,
                            time_remaining=time_remaining)
 
 
@@ -449,11 +442,11 @@ def check_in():
                     ticket.is_checked_in = True
                 try:
                     db.session.commit()
-                    mess = "Cập nhật thành công"
+                    flash("Cập nhật thành công", 'success')
                     return redirect("/check_in")
                 except:
                     db.session.rollback()
-                    mess = "Hệ thống bị lỗi!"
+                    flash("Hệ thống bị lỗi!", 'danger')
                     return redirect("/check_in")
     return render_template("staff_check_in.html", bookings=bookings)
 

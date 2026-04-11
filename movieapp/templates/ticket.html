@@ -10,6 +10,10 @@
         {% if bookings %}
         <div class="row">
             {% for booking in bookings %}
+            {# BƯỚC 1: Kiểm tra xem có vé nào trong đơn hàng đã check-in chưa #}
+            {% set checked_in_tickets = booking.tickets | selectattr('is_checked_in', 'equalto', true) | list %}
+            {% set has_checked_in = checked_in_tickets | length > 0 %}
+
             <div class="col-12 mb-4">
                 <div class="card border-0 rounded-4 p-0 shadow ddn-glass text-white overflow-hidden">
                     <div class="row g-0">
@@ -24,15 +28,17 @@
                                     {{ booking.showtime.movie.name }}
                                 </h3>
 
-                                {% if booking.status.name == 'PAID' %}
-                                <span class="badge bg-success px-3 py-2 fs-6 rounded-pill">Đã Thanh Toán</span>
-                                {% elif booking.status.name == 'PENDING' %}
-                                <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill">Đang Chờ</span>
-                                {% elif booking.status.name == 'CANCELLED' %}
-                                <span class="badge bg-danger px-3 py-2 fs-6 rounded-pill">Đã Hủy</span>
-                                {% else %}
-                                <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill">Thất Bại</span>
-                                {% endif %}
+                                <div class="text-end">
+                                    {% if booking.status.name == 'PAID' %}
+                                    <span class="badge bg-success px-3 py-2 fs-6 rounded-pill">Đã Thanh Toán</span>
+                                    {% elif booking.status.name == 'PENDING' %}
+                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6 rounded-pill">Đang Chờ</span>
+                                    {% elif booking.status.name == 'CANCELLED' %}
+                                    <span class="badge bg-danger px-3 py-2 fs-6 rounded-pill">Đã Hủy</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary px-3 py-2 fs-6 rounded-pill">Thất Bại</span>
+                                    {% endif %}
+                                </div>
                             </div>
 
                             <div class="row mt-4">
@@ -77,13 +83,20 @@
 
                                     <div class="mt-3 text-md-end text-center">
                                         {% if booking.status.name == 'PAID' %}
+                                        {% if has_checked_in %}
+                                        <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4"
+                                                disabled title="Vé đã check-in">
+                                            <i class="bi bi-check-circle me-1"></i>Đã Check-in
+                                        </button>
+                                        {% else %}
                                         <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-4"
                                                 data-bs-toggle="modal" data-bs-target="#cancelModal{{ booking.id }}">
                                             <i class="bi bi-x-circle me-1"></i> Hủy vé này
                                         </button>
+                                        {% endif %}
+
                                         {% elif booking.status.name == 'PENDING' %}
-                                        <a href="/checkout"
-                                           class="btn btn-success btn-sm rounded-pill px-4">
+                                        <a href="/checkout" class="btn btn-outline-success btn-sm rounded-pill px-4">
                                             <i class="bi bi-credit-card me-1"></i> Thanh toán
                                         </a>
                                         {% endif %}
@@ -95,14 +108,14 @@
                 </div>
             </div>
 
-            {% if booking.status.name in ['PAID','PENDING'] %}
+            {% if (booking.status.name == 'PAID' and not has_checked_in) or booking.status.name == 'PENDING' %}
             <div class="modal fade" id="cancelModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content bg-dark text-white border-secondary">
                         <div class="modal-header border-secondary">
                             <h5 class="modal-title fw-bold text-danger">Xác nhận hủy vé</h5>
-                            <button type="button" class="btn-close btn-close-white"
-                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
                         <div class="modal-body text-start">
                             Bạn có chắc chắn muốn hủy đơn vé <strong>#{{ booking.id }}</strong>
@@ -110,13 +123,9 @@
                             <span class="text-secondary" style="font-size: 0.9rem;">Hành động này không thể hoàn tác và ghế của bạn sẽ được nhường cho người khác.</span>
                         </div>
                         <div class="modal-footer border-secondary">
-                            <button type="button" class="btn ddn-glass text-white"
-                                    data-bs-dismiss="modal">Đóng
-                            </button>
-                            <form action="{{ url_for('cancel_ticket', booking_id=booking.id) }}"
-                                  method="POST">
-                                <button type="submit" class="btn btn-danger">Xác nhận hủy
-                                </button>
+                            <button type="button" class="btn ddn-glass text-white" data-bs-dismiss="modal">Đóng</button>
+                            <form action="{{ url_for('cancel_ticket', booking_id=booking.id) }}" method="POST">
+                                <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
                             </form>
                         </div>
                     </div>
@@ -144,11 +153,10 @@
         </div>
         {% endif %}
 
+        {# --- Phân trang --- #}
         {% if pages > 1 %}
         <div class="row mt-5">
             <ul class="pagination justify-content-center gap-2 border-0 mb-0">
-
-                {# Nút Sang trái (Previous) #}
                 {% if page > 1 %}
                 <li class="page-item">
                     <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
@@ -158,7 +166,6 @@
                 </li>
                 {% endif %}
 
-                {# Hiển thị các số trang #}
                 {% for i in page_range %}
                 <li class="page-item">
                     <a class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
@@ -168,7 +175,6 @@
                 </li>
                 {% endfor %}
 
-                {# Nút Sang phải (Next) #}
                 {% if page < pages %}
                 <li class="page-item">
                     <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
@@ -177,7 +183,6 @@
                     </a>
                 </li>
                 {% endif %}
-
             </ul>
         </div>
         {% endif %}

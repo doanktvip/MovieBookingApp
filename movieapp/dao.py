@@ -608,22 +608,26 @@ def get_bookings_by_user(user_id, page=1):
 
 
 def cancel_booking(booking_id, user_id):
-    booking = Booking.query.filter_by(
-        id=booking_id,
-        user_id=user_id,
-    ).first()
+    booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
 
     if booking:
-        booking.status = BookingStatus.CANCELLED
+        is_already_checked_in = any(ticket.is_checked_in for ticket in booking.tickets)
 
-        for ticket in booking.tickets:
-            if ticket.showtime_seat:
-                ticket.showtime_seat.status = SeatStatus.AVAILABLE
+        if is_already_checked_in:
+            return False
 
-            db.session.delete(ticket)
+        if booking.status != BookingStatus.CANCELLED:
+            booking.status = BookingStatus.CANCELLED
 
-        db.session.commit()
-        return True
+            for ticket in booking.tickets:
+                if ticket.showtime_seat:
+                    ticket.showtime_seat.status = SeatStatus.AVAILABLE
+                    ticket.showtime_seat.hold_until = None
+                    ticket.showtime_seat.hold_session_id = None
+                db.session.delete(ticket)
+
+            db.session.commit()
+            return True
 
     return False
 
