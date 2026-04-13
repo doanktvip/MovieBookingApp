@@ -26,6 +26,75 @@ function showCustomAlert(message, category = 'danger') {
         setTimeout(() => alertDiv.remove(), 150);
     }, 3000);
 }
+// ==========================================
+// HÀM GỌI API ĐĂNG NHẬP
+// ==========================================
+function loginUser(username, password, nextUrl = '/') {
+    fetch("/api/login", {
+        method: "post",
+        body: JSON.stringify({
+            "username": username,
+            "password": password
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            addPendingAlert(data.message, 'success')
+
+            window.location.href = nextUrl;
+        } else {
+            showCustomAlert(data.message, "danger");
+        }
+    })
+    .catch(error => {
+        console.error('Lỗi khi gọi API:', error);
+        showCustomAlert("Lỗi kết nối đến máy chủ. Vui lòng thử lại!", "danger");
+    });
+}
+
+// ==========================================
+// HÀM GỌI API ĐĂNG KÝ (VÀ TỰ ĐỘNG ĐĂNG NHẬP)
+// ==========================================
+function registerUser(username, email, password, confirm_password) {
+    fetch("/api/register", {
+        method: "post",
+        body: JSON.stringify({
+            "username": username,
+            "email": email,
+            "password": password,
+            "confirm_password": confirm_password
+        }),
+        headers: {
+            "Content-Type": "application/json"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            addPendingAlert(data.message, 'success')
+            const nextUrl = document.getElementById('nextUrlInput')?.value || '/';
+
+            loginUser(username, password, nextUrl);
+
+        } else {
+            showCustomAlert(data.message, "danger");
+        }
+    })
+    .catch(error => {
+        console.error('Lỗi khi gọi API:', error);
+        showCustomAlert("Lỗi kết nối đến máy chủ. Vui lòng thử lại!", "danger");
+    });
+}
+
+function addPendingAlert(message, type = 'success') {
+    let alerts = JSON.parse(sessionStorage.getItem('pendingAlerts') || "[]");
+    alerts.push({ message: message, type: type });
+    sessionStorage.setItem('pendingAlerts', JSON.stringify(alerts));
+}
 
 // ==========================================
 // 2. XỬ LÝ SỰ KIỆN KHI TRANG VỪA LOAD XONG
@@ -74,5 +143,17 @@ document.addEventListener("DOMContentLoaded", function() {
         cleanUrl.searchParams.delete('error');
         cleanUrl.searchParams.delete('success');
         window.history.replaceState({}, document.title, cleanUrl.toString());
+    }
+
+    const pendingAlerts = JSON.parse(sessionStorage.getItem('pendingAlerts') || "[]");
+
+    if (pendingAlerts.length > 0) {
+        pendingAlerts.forEach((alert, index) => {
+            setTimeout(() => {
+                showCustomAlert(alert.message, alert.type);
+            }, index * 100);
+        });
+
+        sessionStorage.removeItem('pendingAlerts');
     }
 });

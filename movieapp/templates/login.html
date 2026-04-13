@@ -1,5 +1,5 @@
 <div class="tab-pane fade show active" id="pane-login" role="tabpanel">
-    <form method="POST" action="{{ url_for('login') }}">
+    <form id="loginForm">
         <input type="hidden" name="next" id="nextUrlInput" value="{{ request.full_path }}">
 
         <div class="mb-4">
@@ -8,7 +8,7 @@
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-person-fill"></i>
                 </span>
-                <input type="text" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="text" id="username" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Nhập username của bạn" name="username" required>
             </div>
         </div>
@@ -19,12 +19,12 @@
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-lock-fill"></i>
                 </span>
-                <input type="password" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="password" id="password" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Nhập mật khẩu" name="password" required>
             </div>
         </div>
 
-        <button type="submit"
+        <button type="button" onclick="handleLogin()"
                 class="btn btn-danger w-100 py-3 fw-bold rounded-pill text-uppercase shadow-lg letter-spacing-1">
             Đăng nhập ngay
         </button>

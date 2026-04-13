@@ -60,7 +60,7 @@
                 <div class="d-flex gap-3 mb-4">
                     <img src="{{ movie.image }}" class="rounded-3 shadow" alt="Poster" style="width: 90px; object-fit: cover;">
                     <div>
-                        <h5 class="fw-bold text-white mb-1">{{ movie.title }}</h5>
+                        <h5 class="fw-bold text-white mb-1">{{ movie.name }}</h5>
                         {%if movie.limited_age>=18%}
                         <span class="badge bg-danger px-2 py-1 fs-6">T{{movie.limited_age}}</span>
                         {%elif movie.limited_age>=16%}
