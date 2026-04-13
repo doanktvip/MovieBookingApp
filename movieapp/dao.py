@@ -651,9 +651,23 @@ def cancel_booking(booking_id, user_id):
 
 
 # Ticket
-def load_bookings_for_checkin():
+def load_bookings_for_checkin(kw=None,page=1):
     query = Booking.query.filter(Booking.status == BookingStatus.PAID)
-    return query.join(Showtime).order_by(Showtime.start_time.asc()).all()
+    query=query.join(User)
+
+    if kw:
+        query=query.filter(User.username.like('%'+kw+'%'))
+    total_count = query.count()
+    page_size = app.config.get('PAGE_SIZE')
+    total_pages = math.ceil(total_count / page_size) if total_count > 0 else 1
+
+    query = query.join(Showtime).order_by(Showtime.start_time.asc())
+
+    # 2. (Phân trang)
+    if page:
+        start = (page - 1) * page_size
+        query = query.slice(start, start + page_size)
+    return query.all(),total_pages
 
 
 def confirm_booking_checkin(booking_id):

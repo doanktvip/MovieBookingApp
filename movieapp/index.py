@@ -452,7 +452,10 @@ def check_in():
     if current_user.role.name not in ['STAFF', 'ADMIN']:
         flash("Bạn không có quyền truy cập trang này!", "danger")
         return redirect(url_for('index'))
-    bookings = dao.load_bookings_for_checkin()
+    keyword = request.args.get('keyword')
+    page = request.args.get("page", default=1, type=int)
+    bookings,total_pages = dao.load_bookings_for_checkin(kw=keyword, page=page)
+    page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
     if request.method == 'POST':
         booking = request.form.get('submit_checkin')
         if booking:
@@ -468,7 +471,8 @@ def check_in():
                     db.session.rollback()
                     flash("Hệ thống bị lỗi!", 'danger')
                     return redirect("/check_in")
-    return render_template("staff_check_in.html", bookings=bookings)
+
+    return render_template("staff_check_in.html", bookings=bookings,keyword=keyword,page=page, pages=total_pages, page_range=page_range)
 
 
 @app.route('/tickets')
