@@ -45,11 +45,20 @@ def get_user_by_id(user_id):
     return User.query.get(user_id)
 
 
+def get_user_by_username(username):
+    return User.query.filter_by(username=username).first()
+
+
+def get_user_by_email(email):
+    return User.query.filter_by(email=email).first()
+
+
 def add_user(username, email, password):
     hashed_password = str(hashlib.md5(password.encode('utf-8')).hexdigest())
     u = User(username=username, email=email, password=hashed_password)
     db.session.add(u)
     db.session.commit()
+    return u
 
 
 def load_movies(genre_id=None, kw=None, page=1):
@@ -209,16 +218,22 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
 def release_expired_seats(showtime_id=None):
     try:
         now = datetime.utcnow()
-        query = ShowtimeSeat.query.filter(ShowtimeSeat.status == SeatStatus.RESERVED,
-                                          ShowtimeSeat.hold_until < now)
+        query = ShowtimeSeat.query.filter(
+            ShowtimeSeat.status == SeatStatus.RESERVED,
+            ShowtimeSeat.hold_until < now
+        )
 
-        # Nếu có truyền showtime_id thì lọc chính xác, không thì dọn toàn bộ hệ thống
         if showtime_id:
             query = query.filter(ShowtimeSeat.showtime_id == showtime_id)
 
         expired_seats = query.all()
 
         for st_seat in expired_seats:
+            tickets = Ticket.query.filter_by(showtime_seat_id=st_seat.id).all()
+            for t in tickets:
+                if t.booking and t.booking.status == BookingStatus.PENDING:
+                    t.booking.status = BookingStatus.FAILED
+
             st_seat.status = SeatStatus.AVAILABLE
             st_seat.hold_until = None
             st_seat.hold_session_id = None
@@ -226,7 +241,7 @@ def release_expired_seats(showtime_id=None):
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print(f"LỖI DỌN GHẾ: {e}")
+        print(f"LỖI DỌN GHẾ VÀ ĐƠN HÀNG: {e}")
 
 
 def get_showtime_by_id(showtime_id):
@@ -359,7 +374,10 @@ def process_seat_reservations(session_id, selected_seats):
 def clear_db_booking_by_session(session_id):
     if not session_id: return
     try:
-        ShowtimeSeat.query.filter_by(hold_session_id=str(session_id)).update({
+        ShowtimeSeat.query.filter_by(
+            hold_session_id=str(session_id),
+            status=SeatStatus.RESERVED
+        ).update({
             "status": SeatStatus.AVAILABLE,
             "hold_until": None,
             "hold_session_id": None
@@ -367,7 +385,7 @@ def clear_db_booking_by_session(session_id):
         db.session.commit()
     except Exception as e:
         db.session.rollback()
-        print(e)
+        print(f"Lỗi khi dọn dẹp session {session_id}: {e}")
 
 
 # Hàm phục hồi trạng thái

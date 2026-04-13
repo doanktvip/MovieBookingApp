@@ -8,3 +8,10 @@ def stats_seats(booking):
         'seats': list_seats,
         'total_amount': total_amount
     }
+
+
+def format_api_response_fail(message, status='error'):
+    return {
+        "status": status,
+        "message": message
+    }

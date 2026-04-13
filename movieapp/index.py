@@ -27,23 +27,31 @@ def index():
     return render_template('index.html', movies=movies, genres=genres, tien_ich=tien_ich)
 
 
-@app.route('/login', methods=['POST'])
-def login():
-    username = request.form.get('username')
-    password = request.form.get('password')
-    next_url = request.form.get('next')
+# Đăng nhập
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
 
+    if not data:
+        return jsonify(utils.format_api_response_fail("Thiếu dữ liệu gửi lên")), 400
+
+    username = data.get('username')
+    password = data.get('password')
     user = dao.auth_user(username=username, password=password)
 
     if user:
         login_user(user)
-        flash("Đăng nhập thành công", "success")
-
-        return redirect(next_url or url_for('index'))
+        return jsonify({
+            "status": "success",
+            "message": "Đăng nhập thành công",
+            "data": {
+                "user_id": user.id,
+                "username": user.username,
+                "role": user.role.name
+            }
+        }), 200
     else:
-        flash("Username hoặc password không đúng", "danger")
-
-        return redirect(request.referrer or url_for('index', error='login'))
+        return jsonify(utils.format_api_response_fail("Username hoặc password không đúng")), 401
 
 
 @login_manager.user_loader
@@ -57,29 +65,42 @@ def logout_my_user():
     return redirect(url_for('index'))
 
 
-@app.route('/register', methods=['POST'])
-def register():
-    username = request.form.get('username')
-    email = request.form.get('email')
-    password = request.form.get('password')
-    confirm_password = request.form.get('confirm_password')
+# Đăng ký
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+
+    if not data:
+        return jsonify(utils.format_api_response_fail("Thiếu dữ liệu gửi lên")), 400
+
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
 
     if password != confirm_password:
-        flash("Mật khẩu xác nhận không khớp!", "danger")
-        return redirect(url_for('index', error='register'))
+        return jsonify(utils.format_api_response_fail("Mật khẩu xác nhận không khớp!")), 400
 
-    if User.query.filter_by(username=username).first() is not None:
-        flash("Tài khoản đã tồn tại!", "danger")
-        return redirect(url_for('index', error='register'))
+    if dao.get_user_by_username(username) is not None:
+        return jsonify(utils.format_api_response_fail("Tên đăng nhập đã tồn tại!")), 400
+
+    if dao.get_user_by_email(email) is not None:
+        return jsonify(utils.format_api_response_fail("Email đã được sử dụng!")), 400
 
     try:
-        dao.add_user(username=username, email=email, password=password)
-        flash("Đăng ký thành công! Vui lòng đăng nhập.", "success")
-        return redirect(url_for('index', success='register'))
+        new_user = dao.add_user(username=username, email=email, password=password)
+        return jsonify({
+            "status": "success",
+            "message": "Đăng ký tài khoản thành công.",
+            "data": {
+                "email": new_user.email,
+                "username": new_user.username
+            }
+        }), 201
+
     except Exception as e:
-        print(str(e))
-        flash("Đăng ký thất bại. Tên đăng nhập hoặc Email đã tồn tại!", "danger")
-        return redirect(url_for('index', error='register'))
+        print(f"Lỗi đăng ký: {str(e)}")
+        return jsonify(utils.format_api_response_fail("Đã xảy ra lỗi hệ thống khi đăng ký!")), 500
 
 
 @app.route("/movies")
@@ -90,7 +111,6 @@ def movie():
 
     movies = dao.load_movies(genre_id=genre_id, kw=kw, page=page)
     genres = dao.load_genres()
-
     total_movies = dao.count_movies(genre_id=genre_id, kw=kw)
     total_pages = math.ceil(total_movies / app.config.get('PAGE_SIZE'))
     page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
