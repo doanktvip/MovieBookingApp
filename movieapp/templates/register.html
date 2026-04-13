@@ -1,13 +1,12 @@
 <div class="tab-pane fade" id="pane-register" role="tabpanel">
-    <form method="POST" action="{{ url_for('register') }}">
-
+    <form id="registerForm">
         <div class="mb-3">
             <label class="form-label fw-semibold small text-secondary ms-1">Tên đăng nhập</label>
             <div class="input-group input-group-lg rounded-3 overflow-hidden auth-input-group">
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-person-fill"></i>
                 </span>
-                <input type="text" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="text" id="username1" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Viết liền không dấu" name="username" required>
             </div>
         </div>
@@ -18,7 +17,7 @@
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-envelope-fill"></i>
                 </span>
-                <input type="email" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="email" id="email" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Nhập địa chỉ email" name="email" required>
             </div>
         </div>
@@ -29,7 +28,8 @@
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-lock-fill"></i>
                 </span>
-                <input type="password" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="password" id="password1"
+                       class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Nhập mật khẩu" name="password" required>
             </div>
         </div>
@@ -40,15 +40,15 @@
                 <span class="input-group-text border-0 text-secondary auth-input-bg">
                     <i class="bi bi-shield-lock-fill"></i>
                 </span>
-                <input type="password" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                <input type="password" id="confirm_password"
+                       class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
                        placeholder="Nhập lại mật khẩu" name="confirm_password" required>
             </div>
         </div>
 
-        <button type="submit"
+        <button type="button" onclick="handleRegister()"
                 class="btn btn-danger w-100 py-3 fw-bold rounded-pill text-uppercase shadow-lg letter-spacing-1">
             Đăng ký tài khoản
         </button>
-
     </form>
 </div>
