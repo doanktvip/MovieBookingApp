@@ -11,12 +11,12 @@
 
         <div class="row mb-4">
             <div class="col-md-6 col-lg-5">
-                <form action="{{ url_for('check_in') }}" method="GET">
+                <form action="{{ url_for('check_in', page=page, keyword=keyword) }}" method="GET">
                     <div class="input-group shadow-sm">
                         <input type="text"
                                class="form-control text-white ddn-glass"
                                name="keyword"
-                               placeholder="Nhập Mã Đơn hoặc Mã Vé..."
+                               placeholder="Nhập thông tin khách hàng..."
                                value="{{ keyword }}">
                         <button class="btn ddn-glass text-white px-4" type="submit">
                             <i class="bi bi-search"></i>
@@ -30,98 +30,139 @@
             <div class="table-responsive">
                 <table class="table table-borderless align-middle text-white mb-0">
                     <thead class="border-bottom border-secondary border-opacity-50">
-                        <tr class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">
-                            <th class="pb-3">Mã Đơn</th>
-                            <th class="pb-3">Thông tin khách</th>
-                            <th class="pb-3">Phim & Suất Chiếu</th>
-                            <th class="pb-3">Phòng / Rạp</th>
-                            <th class="pb-3">Danh sách ghế</th>
-                            <th class="pb-3">Trạng thái</th>
-                            <th class="pb-3 text-center">Thao tác</th>
-                        </tr>
+                    <tr class="text-secondary small text-uppercase" style="letter-spacing: 0.5px;">
+                        <th class="pb-3">Mã Đơn</th>
+                        <th class="pb-3">Thông tin khách</th>
+                        <th class="pb-3">Phim & Suất Chiếu</th>
+                        <th class="pb-3">Phòng / Rạp</th>
+                        <th class="pb-3">Danh sách ghế</th>
+                        <th class="pb-3">Trạng thái</th>
+                        <th class="pb-3 text-center">Thao tác</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {% for b in bookings %}
-<!--                            {# Kiểm tra xem tất cả vé trong đơn đã được check-in chưa #}-->
-                            {% set ns = namespace(is_checked_in=true) %}
-                            {% for ticket in b.tickets %}
-                                {% if not ticket.is_checked_in %}
-                                    {% set ns.is_checked_in = false %}
-                                {% endif %}
-                            {% endfor %}
-                        <tr class="border-bottom border-secondary border-opacity-25" style="transition: all 0.2s;">
-                            <td class="py-3">
-                                <span class="badge text-secondary fw-normal px-2 py-1" style="background-color: rgba(255, 255, 255, 0.1);">#{{ b.id }}</span>
-                            </td>
+                    {% for b in bookings %}
+                    <!--                            {# Kiểm tra xem tất cả vé trong đơn đã được check-in chưa #}-->
+                    {% set ns = namespace(is_checked_in=true) %}
+                    {% for ticket in b.tickets %}
+                    {% if not ticket.is_checked_in %}
+                    {% set ns.is_checked_in = false %}
+                    {% endif %}
+                    {% endfor %}
+                    <tr class="border-bottom border-secondary border-opacity-25" style="transition: all 0.2s;">
+                        <td class="py-3">
+                            <span class="badge text-secondary fw-normal px-2 py-1"
+                                  style="background-color: rgba(255, 255, 255, 0.1);">#{{ b.id }}</span>
+                        </td>
 
-                            <td class="py-3 text-warning fw-bold">{{ b.user.username}}</td>
+                        <td class="py-3 text-warning fw-bold">{{ b.user.username}}</td>
 
-                            {% set showtime = b.showtime %}
-                            <td class="py-3">
-                                <div class="fw-bold text-truncate" style="max-width: 250px;">{{ showtime.movie.name }}</div>
-                                <div class="text-white-50 small mt-1">
-                                    <span class="text-danger"><i class="bi bi-clock"></i> {{ showtime.start_time.strftime('%H:%M') }}</span>
-                                    <span class="mx-1">•</span>
-                                    <span>{{ showtime.start_time.strftime('%d/%m/%Y') }}</span>
-                                </div>
-                            </td>
+                        {% set showtime = b.showtime %}
+                        <td class="py-3">
+                            <div class="fw-bold text-truncate" style="max-width: 250px;">{{ showtime.movie.name }}</div>
+                            <div class="text-white-50 small mt-1">
+                                <span class="text-danger"><i class="bi bi-clock"></i> {{ showtime.start_time.strftime('%H:%M') }}</span>
+                                <span class="mx-1">•</span>
+                                <span>{{ showtime.start_time.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                        </td>
 
-                            <td class="py-3">
-                                <div>{{ showtime.room.name }}</div>
-                                <div class="text-secondary small mt-1">{{ showtime.room.cinema.name }}</div>
-                            </td>
+                        <td class="py-3">
+                            <div>{{ showtime.room.name }}</div>
+                            <div class="text-secondary small mt-1">{{ showtime.room.cinema.name }}</div>
+                        </td>
 
-                            <td class="py-3">
-                                {%if b.tickets | length <=3 %}
-                                {%for ticket in b.tickets%}
-                                <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1">{{ ticket.showtime_seat.seat.row }}{{ ticket.showtime_seat.seat.col }}</span>
-                                {%endfor%}
-                                {%else%}
-                                {%for ticket in b.tickets[:3]%}
-                                <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1">{{ ticket.showtime_seat.seat.row }}{{ ticket.showtime_seat.seat.col }}</span>
-                                {%endfor%}
-                                <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1"
-                                      title="Các ghế khác: {% for t in b.tickets[3:] %}{{ t.showtime_seat.seat.row }}{{ t.showtime_seat.seat.col }}{% if not loop.last %}, {% endif %}{% endfor %}">
+                        <td class="py-3">
+                            {%if b.tickets | length <=3 %}
+                            {%for ticket in b.tickets%}
+                            <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1">{{ ticket.showtime_seat.seat.row }}{{ ticket.showtime_seat.seat.col }}</span>
+                            {%endfor%}
+                            {%else%}
+                            {%for ticket in b.tickets[:3]%}
+                            <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1">{{ ticket.showtime_seat.seat.row }}{{ ticket.showtime_seat.seat.col }}</span>
+                            {%endfor%}
+                            <span class="badge bg-danger rounded-pill px-3 py-2 fs-6 m-1"
+                                  title="Các ghế khác: {% for t in b.tickets[3:] %}{{ t.showtime_seat.seat.row }}{{ t.showtime_seat.seat.col }}{% if not loop.last %}, {% endif %}{% endfor %}">
             +{{ b.tickets | length - 3 }}</span>
-                                {%endif%}
-                            </td>
+                            {%endif%}
+                        </td>
 
-                            <td class="py-3" id="status-td-{{ b.id }}">
-                                {% if ns.is_checked_in %}
-                                    <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Đã vào rạp</span>
-                                {% else %}
-                                    <span class="text-warning small fw-bold"><i class="bi bi-hourglass-split me-1"></i>Chưa Check-in</span>
-                                {% endif %}
-                            </td>
+                        <td class="py-3" id="status-td-{{ b.id }}">
+                            {% if ns.is_checked_in %}
+                            <span class="text-success small fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Đã vào rạp</span>
+                            {% else %}
+                            <span class="text-warning small fw-bold"><i class="bi bi-hourglass-split me-1"></i>Chưa Check-in</span>
+                            {% endif %}
+                        </td>
 
-                            <td class="py-3 text-center" id="action-td-{{ b.id }}">
-                                {% if not ns.is_checked_in %}
-                                <form action="/check_in" method="post">
-                                    <button class="btn btn-sm btn-danger rounded-pill px-4 fw-bold shadow-sm" type="submit" name="submit_checkin" value="{{b.id}}">
-                                        Check-in
-                                    </button>
-                                </form>
-                                {% else %}
-                                    <button class="btn btn-sm ddn-glass text-secondary rounded-pill px-4" disabled>Đã xử lý</button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <div class="d-flex flex-column align-items-center justify-content-center">
-                                    <i class="bi bi-ticket-perforated text-secondary mb-3" style="font-size: 4rem; opacity: 0.2;"></i>
-                                    <h5 class="fw-bold text-white mb-2">Không có dữ liệu</h5>
-                                    <p class="text-secondary small">Không tìm thấy vé nào phù hợp hoặc chưa có vé cho hôm nay.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                        <td class="py-3 text-center" id="action-td-{{ b.id }}">
+                            {% if not ns.is_checked_in %}
+                            <form action="{{ url_for('check_in', page=page, keyword=keyword) }}" method="post">
+                                <button class="btn btn-sm btn-danger rounded-pill px-4 fw-bold shadow-sm" type="submit"
+                                        name="submit_checkin" value="{{b.id}}">
+                                    Check-in
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-sm ddn-glass text-secondary rounded-pill px-4" disabled>Đã xử lý
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="d-flex flex-column align-items-center justify-content-center">
+                                <i class="bi bi-ticket-perforated text-secondary mb-3"
+                                   style="font-size: 4rem; opacity: 0.2;"></i>
+                                <h5 class="fw-bold text-white mb-2">Không có dữ liệu</h5>
+                                <p class="text-secondary small">Không tìm thấy vé nào phù hợp hoặc chưa có vé cho hôm
+                                    nay.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+        {% if pages > 1 %}
+        <div class="row mt-4 d-flex">
+            <ul class="pagination justify-content-center gap-2 border-0 mb-0">
 
+                {# Nút Sang trái (Previous) #}
+                {% if page > 1 %}
+                <li class="page-item">
+                    <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('check_in', page=page-1, keyword=keyword) }}">
+                        &laquo;
+                    </a>
+                </li>
+                {% endif %}
+
+                {# Hiển thị các số trang #}
+                {% for i in page_range %}
+                <li class="page-item">
+                    <a class="page-link {% if i == page %}bg-danger shadow-none{% else %}ddn-glass{% endif %} border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('check_in', page=i, keyword=keyword) }}">
+                        {{ i }}
+                    </a>
+                </li>
+                {% endfor %}
+
+                {# Nút Sang phải (Next) #}
+                {% if page < pages %}
+                <li class="page-item">
+                    <a class="page-link ddn-glass border-0 rounded-2 text-white px-3"
+                       href="{{ url_for('check_in', page=page+1, keyword=keyword) }}">
+                        &raquo;
+                    </a>
+                </li>
+                {% endif %}
+
+            </ul>
+        </div>
+        {% endif %}
     </div>
 </div>
 <script>
