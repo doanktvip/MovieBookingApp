@@ -397,7 +397,12 @@ def momo_return():
             return redirect(url_for('index'))
 
         except Exception as e:
-            flash("Đã thanh toán nhưng lỗi lưu vé, vui lòng liên hệ CSKH!", "danger")
+            error_msg = str(e)
+            dao.update_status_booking(booking_id, BookingStatus.FAILED, current_sid)
+            flash(f"Lỗi: {error_msg} Giao dịch đã bị trừ tiền trên MoMo, vui lòng liên hệ CSKH kèm mã đơn {booking_id} để được đối soát/hoàn tiền!","danger")
+
+            # (Tuỳ chọn) Nếu muốn, bạn có thể dọn dẹp giỏ hàng hiện tại luôn
+            session.pop('booking', None)
             return redirect(url_for('index'))
 
     else:
