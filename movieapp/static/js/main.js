@@ -18,7 +18,7 @@ function showCustomAlert(message, category = 'danger') {
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
 
-    container.appendChild(alertDiv);
+    container.prepend(alertDiv);
 
     // Tự động đóng thông báo do JS tạo ra sau 3 giây
     setTimeout(() => {
@@ -116,35 +116,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 3000);
     }
 
-    // --- B. Kiểm tra URL xem lỗi từ đâu để bật đúng Modal ---
-    const urlParams = new URLSearchParams(window.location.search);
-    const errorSource = urlParams.get('error');
-    const successSource = urlParams.get('success');
-
-    if (errorSource === 'register') {
-        // Mở Modal Đăng ký
-        var registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
-        registerModal.show();
-    } else if (errorSource === 'login') {
-        // Mở Modal Đăng nhập
-        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
-
-    if (successSource === 'register') {
-        // Đăng ký thành công -> Mở Modal đăng nhập
-        var loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-        loginModal.show();
-    }
-
-    // --- C. Dọn dẹp URL (Xóa ?error=... đi cho sạch đẹp) ---
-    if (errorSource || successSource) {
-        const cleanUrl = new URL(window.location);
-        cleanUrl.searchParams.delete('error');
-        cleanUrl.searchParams.delete('success');
-        window.history.replaceState({}, document.title, cleanUrl.toString());
-    }
-
+    // Thông báo hiển thị ở đây
     const pendingAlerts = JSON.parse(sessionStorage.getItem('pendingAlerts') || "[]");
 
     if (pendingAlerts.length > 0) {

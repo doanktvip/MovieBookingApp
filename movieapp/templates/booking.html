@@ -118,15 +118,6 @@
             <div class="col-lg-4">
                 <div class="card ddn-glass border-0 rounded-4 p-4 text-white position-sticky sticky-offset-20">
                     <h4 class="fw-bold mb-4">Thông tin đặt vé</h4>
-
-                    <div id="timer-container" class="mb-4 text-center" data-time-remaining="{{ time_remaining }}"
-                         style="display: {% if time_remaining and time_remaining > 0 %}block{% else %}none{% endif %};">
-                        <div class="d-flex flex-column align-items-center">
-                            <span class="small fw-bold mb-1">Thời gian giữ ghế còn lại</span>
-                            <span id="countdown-timer" class="fs-3">--:--</span>
-                        </div>
-                    </div>
-
                     <div class="d-flex gap-3 mb-4">
                         <img src="{{ movie.image }}" class="rounded-3 shadow booking-poster" alt="Poster">
                         <div>
@@ -171,9 +162,10 @@
                         <span id="total-price" class="fs-2 fw-bold text-danger">0 đ</span>
                     </div>
 
-                    <button type="submit" id="btn-checkout"
-                            class="btn btn-danger w-100 py-3 fw-bold rounded-3 mt-4 opacity-50" disabled>
-                        Thanh toán
+                    <button type="button" id="btn-book-seats"
+                            class="btn btn-danger w-100 py-3 fw-bold rounded-3 mt-4 opacity-50"
+                            disabled
+                            onclick="handleBooking()"> Đặt ghế
                     </button>
 
                 </div>
