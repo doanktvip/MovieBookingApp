@@ -135,12 +135,6 @@ if __name__ == "__main__":
                     db.session.add(Booking(**b))
                 db.session.commit()
 
-            # 2.14. Nạp Tickets
-            if os.path.exists(os.path.join(os.path.dirname(__file__), 'movieapp', 'data', 'ticket.json')):
-                for t in load_json("ticket.json"):
-                    db.session.add(Ticket(**t))
-                db.session.commit()
-
             print("ĐÃ SEED DỮ LIỆU THÀNH CÔNG!")
 
         except Exception as e:
