@@ -234,30 +234,31 @@ def booking(showtime_id, cinema_slug, room_id):
 
 
 @app.route('/api/booking', methods=['POST'])
+@login_user_required  # Bắt buộc đăng nhập để đặt ghế
 def api_booking():
     data = request.json
     selected_seats = data.get('seats', [])
+    showtime_id = data.get('showtime_id')
+
+    if not showtime_id or not selected_seats:
+        return jsonify({"status": "error", "message": "Vui lòng chọn ít nhất 1 ghế!"}), 400
+
     current_session_id = session.get('user_session_id')
+    user_id = current_user.id
 
-    booking_dict, expire_time = dao.process_seat_reservations(current_session_id, selected_seats)
+    # Gọi hàm xử lý nguyên khối ở DAO
+    success, msg, booking_dict, expire_time = dao.process_seat_reservations_secure(
+        user_id, current_session_id, showtime_id, selected_seats
+    )
 
-    now = datetime.utcnow()
+    if not success:
+        return jsonify({"status": "error", "message": msg}), 400
 
-    if expire_time is None or expire_time <= now:
-        session['booking'] = {}
-        time_remaining = 0
-        is_expired = True if selected_seats else False
-    else:
-        session['booking'] = booking_dict
-        time_remaining = math.ceil((expire_time - now).total_seconds())
-        is_expired = False
-
+    # Nếu thành công, lưu thông tin vào Session để trang Checkout sử dụng
+    session['booking'] = booking_dict
     session.modified = True
 
-    response_data = utils.stats_seats(session['booking'])
-    response_data['time_remaining'] = time_remaining
-    response_data['expired'] = is_expired
-    return jsonify(response_data)
+    return jsonify({"status": "success", "message": "Thành công"})
 
 
 @app.route('/api/clear-booking-session', methods=['POST'])
@@ -459,7 +460,7 @@ def check_in():
         return redirect(url_for('index'))
     keyword = request.args.get('keyword','')
     page = request.args.get("page", default=1, type=int)
-    bookings,total_pages = dao.load_bookings_for_checkin(kw=keyword, page=page)
+    bookings, total_pages = dao.load_bookings_for_checkin(kw=keyword, page=page)
     page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
     if request.method == 'POST':
         booking = request.form.get('submit_checkin')
@@ -477,7 +478,8 @@ def check_in():
                     flash("Hệ thống bị lỗi!", 'danger')
                     return redirect("/check_in")
 
-    return render_template("staff_check_in.html", bookings=bookings,keyword=keyword,page=page, pages=total_pages, page_range=page_range)
+    return render_template("staff_check_in.html", bookings=bookings, keyword=keyword, page=page, pages=total_pages,
+                           page_range=page_range)
 
 
 @app.route('/tickets')

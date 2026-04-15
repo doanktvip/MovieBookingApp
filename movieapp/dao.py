@@ -215,6 +215,7 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
     return cinema_dict, total_pages
 
 
+# Giải phóng ghế hết hạn
 def release_expired_seats(showtime_id=None):
     try:
         now = datetime.utcnow()
@@ -286,88 +287,71 @@ def get_seat_by_id(seat_id):
     return Seat.query.get(seat_id)
 
 
-# Quản lý bộ đếm thời gian
-def get_or_create_expire_time(session_id, selected_seat_ids):
+# Đặt ghế
+def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_seats):
     now = datetime.utcnow()
+    selected_st_seat_ids = [str(s.get('id')) for s in selected_seats]
 
-    if not selected_seat_ids:
-        ShowtimeSeat.query.filter_by(hold_session_id=session_id).update({
-            "status": SeatStatus.AVAILABLE,
-            "hold_until": None,
-            "hold_session_id": None
-        })
-        return None
+    # Ràng buộc: Kiểm tra thời gian chiếu phim
+    st = Showtime.query.get(showtime_id)
+    if not st:
+        return False, "Suất chiếu không tồn tại.", {}, None
+    if now >= st.start_time:
+        return False, "Phim đã bắt đầu chiếu, không thể đặt vé.", {}, None
 
-    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=session_id).all()
+    # Ràng buộc: Tối đa 8 ghế / 1 người / 1 suất chiếu
+    prev_tickets = db.session.query(Ticket).join(Booking).filter(
+        Booking.user_id == user_id,
+        Booking.showtime_id == showtime_id,
+        Booking.status.in_([BookingStatus.PAID, BookingStatus.PENDING])).count()
 
-    for st in user_held_seats:
-        if st.hold_until and st.hold_until < now:
-            ShowtimeSeat.query.filter_by(hold_session_id=session_id).update({
-                "status": SeatStatus.AVAILABLE,
-                "hold_until": None,
-                "hold_session_id": None
-            })
-            return None
+    if prev_tickets + len(selected_st_seat_ids) > 8:
+        return False, f"Bạn đã có {prev_tickets} vé cho suất này. Chỉ được đặt tối đa 8 ghế.", {}, None
 
-        if st.hold_until and st.hold_until > now:
-            return st.hold_until
+    # Ràng buộc: Khóa dòng (with_for_update) và kiểm tra ghế đã có người đặt chưa
+    seats_to_lock = ShowtimeSeat.query.with_for_update().filter(
+        ShowtimeSeat.id.in_(selected_st_seat_ids),
+        ShowtimeSeat.showtime_id == showtime_id
+    ).all()
+
+    if len(seats_to_lock) != len(selected_st_seat_ids):
+        return False, "Một số ghế không hợp lệ hoặc không thuộc suất chiếu này.", {}, None
 
     hold_minutes = app.config.get("HOLD_TIME_MINUTES", 10)
-    return now + timedelta(minutes=hold_minutes)
-
-
-# Xử lý thao tác "Bỏ tick"
-def release_unselected_seats(session_id, selected_seat_ids):
-    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=session_id).all()
-
-    for st_seat in user_held_seats:
-        if str(st_seat.id) not in selected_seat_ids:
-            st_seat.status = SeatStatus.AVAILABLE
-            st_seat.hold_until = None
-            st_seat.hold_session_id = None
-
-
-# Khóa an toàn và Tính tiền
-def reserve_and_calculate_seats(session_id, selected_seats, expire_time):
+    expire_time = now + timedelta(minutes=hold_minutes)
     booking_dict = {}
 
-    for seat_data in selected_seats:
-        st_seat_id = str(seat_data.get('id'))
+    for s in seats_to_lock:
+        is_taken_by_others = (s.status == SeatStatus.RESERVED and
+                              str(s.hold_session_id) != str(session_id) and
+                              s.hold_until and s.hold_until > now)
 
-        st_seat = ShowtimeSeat.query.with_for_update().get(st_seat_id)
+        if s.status == SeatStatus.BOOKED or is_taken_by_others:
+            return False, f"Ghế {s.seat.seat_number} vừa có người khác nhanh tay chọn mất.", {}, None
 
-        if st_seat:
-            if st_seat.status == SeatStatus.AVAILABLE or str(st_seat.hold_session_id) == str(session_id):
-                st_seat.status = SeatStatus.RESERVED
-                st_seat.hold_until = expire_time
-                st_seat.hold_session_id = str(session_id)
-                final_price = float(st_seat.price or 0)
+        # Đánh dấu giữ ghế
+        s.status = SeatStatus.RESERVED
+        s.hold_until = expire_time
+        s.hold_session_id = str(session_id)
 
-                booking_dict[st_seat_id] = {
-                    "id": st_seat_id,
-                    "name": seat_data.get('name'),
-                    "price": final_price
-                }
-            else:
-                pass
+        # Lấy tên ghế gửi từ frontend để map
+        seat_name = next((item['name'] for item in selected_seats if str(item['id']) == str(s.id)), "")
+        booking_dict[str(s.id)] = {
+            "id": str(s.id),
+            "name": seat_name,
+            "price": float(s.price or 0)
+        }
 
-    return booking_dict
-
-
-# Hàm điều phối tổng
-def process_seat_reservations(session_id, selected_seats):
-    selected_st_ids = [str(s.get('id')) for s in selected_seats]
-
-    expire_time = get_or_create_expire_time(session_id, selected_st_ids)
-
-    if expire_time:
-        release_unselected_seats(session_id, selected_st_ids)
-        booking_dict = reserve_and_calculate_seats(session_id, selected_seats, expire_time)
-    else:
-        booking_dict = {}
+    # Giải phóng các ghế cũ mà user đã bỏ tick (nếu trước đó có chọn)
+    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=str(session_id)).all()
+    for s in user_held_seats:
+        if str(s.id) not in selected_st_seat_ids:
+            s.status = SeatStatus.AVAILABLE
+            s.hold_until = None
+            s.hold_session_id = None
 
     db.session.commit()
-    return booking_dict, expire_time
+    return True, "Giữ ghế thành công", booking_dict, expire_time
 
 
 # Hàm dọn dẹp khẩn cấp
@@ -653,13 +637,12 @@ def cancel_booking(booking_id, user_id):
 
 
 # Ticket
-def load_bookings_for_checkin(kw=None,page=1):
+def load_bookings_for_checkin(kw=None, page=1):
     query = Booking.query.filter(Booking.status == BookingStatus.PAID)
-    query=query.join(User)
+    query = query.join(User)
 
     if kw:
-        query=query.filter(User.username.like('%'+kw+'%'))
-
+        query = query.filter(User.username.like('%' + kw + '%'))
     total_count = query.count()
     page_size = app.config.get('PAGE_SIZE')
     total_pages = math.ceil(total_count / page_size) if total_count > 0 else 1
@@ -670,7 +653,7 @@ def load_bookings_for_checkin(kw=None,page=1):
     if page:
         start = (page - 1) * page_size
         query = query.slice(start, start + page_size)
-    return query.all(),total_pages
+    return query.all(), total_pages
 
 
 def confirm_booking_checkin(booking_id):
