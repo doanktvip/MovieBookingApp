@@ -458,7 +458,7 @@ def check_in():
     if current_user.role.name not in ['STAFF', 'ADMIN']:
         flash("Bạn không có quyền truy cập trang này!", "danger")
         return redirect(url_for('index'))
-    keyword = request.args.get('keyword')
+    keyword = request.args.get('keyword','')
     page = request.args.get("page", default=1, type=int)
     bookings, total_pages = dao.load_bookings_for_checkin(kw=keyword, page=page)
     page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
