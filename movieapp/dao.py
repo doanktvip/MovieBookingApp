@@ -659,6 +659,7 @@ def load_bookings_for_checkin(kw=None,page=1):
 
     if kw:
         query=query.filter(User.username.like('%'+kw+'%'))
+
     total_count = query.count()
     page_size = app.config.get('PAGE_SIZE')
     total_pages = math.ceil(total_count / page_size) if total_count > 0 else 1
