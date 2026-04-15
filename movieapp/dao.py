@@ -1,14 +1,52 @@
 import hashlib
 import json
 import math
+import re
 from datetime import date, datetime, timedelta
-from sqlalchemy import func, update, case, collate
+
+from flask import current_app
+from sqlalchemy import func, update, case, collate, or_
 from sqlalchemy.orm import contains_eager
 from movieapp import db, app
 from movieapp.models import Movie, Genre, User, Cinema, MovieFormat, Showtime, TranslationType, Room, Province, Seat, \
     ShowtimeSeat, SeatType, SeatStatus, Ticket, Booking, BookingStatus
 import unicodedata
 import cloudinary.uploader
+
+
+def is_valid_username_custom(text):
+    """
+    Trả về True nếu username:
+    - Chỉ chứa ký tự Latinh (a-z, A-Z), số (0-9) và dấu gạch dưới (_).
+    - KHÔNG chứa khoảng trắng.
+    - KHÔNG chứa tiếng Việt có dấu hoặc ký tự đặc biệt khác.
+    """
+    pattern = r'^[a-zA-Z0-9_]+$'
+    return bool(re.match(pattern, text))
+
+
+def is_valid_email_custom(email):
+    """
+    Trả về True nếu email:
+    - Tuân thủ định dạng email chuẩn (ví dụ: abc@gmail.com).
+    - Cho phép chữ cái không dấu, số, dấu chấm (.), gạch dưới (_), gạch ngang (-).
+    - KHÔNG chứa khoảng trắng.
+    - KHÔNG chứa tiếng Việt có dấu.
+    """
+    pattern = r'^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
+
+def is_valid_password_custom(text):
+    """
+    Trả về True nếu mật khẩu:
+    - Chỉ chứa ký tự Latinh (a-z, A-Z), số (0-9).
+    - Cho phép các ký tự đặc biệt: !@#$%^&*()_+-=[]{}|;:,.<>?
+    - KHÔNG chứa khoảng trắng.
+    - KHÔNG chứa tiếng Việt có dấu.
+    """
+    pattern = r'^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{}|;:,.<>?]+$'
+    return bool(re.match(pattern, text))
 
 
 def get_page_range(current_page, total_pages, max_visible=3):
@@ -37,6 +75,18 @@ def get_page_range(current_page, total_pages, max_visible=3):
 
 
 def auth_user(username, password):
+    #  Kiểm tra các ràng buộc định dạng
+    if not all([username, password]):
+        raise ValueError("Vui lòng nhập đầy đủ thông tin!")
+
+    if not is_valid_username_custom(username):
+        raise ValueError("Tên đăng nhập chỉ được chứa chữ cái không dấu, số và '_', không có khoảng trắng!")
+
+    if not is_valid_password_custom(password):
+        raise ValueError("Mật khẩu không được dùng tiếng Việt hoặc khoảng trắng!")
+
+    if not (6 <= len(username) <= 50) or not (6 <= len(password) <= 50):
+        raise ValueError("Tên đăng nhập và mật khẩu phải từ 6 đến 50 ký tự!")
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
     return User.query.filter(User.username.__eq__(username), User.password.__eq__(password)).first()
 
@@ -54,11 +104,41 @@ def get_user_by_email(email):
 
 
 def add_user(username, email, password):
-    hashed_password = str(hashlib.md5(password.encode('utf-8')).hexdigest())
+    #  Kiểm tra các ràng buộc định dạng
+    if not all([username, email, password]):
+        raise ValueError("Vui lòng nhập đầy đủ thông tin!")
+
+    if not is_valid_username_custom(username):
+        raise ValueError("Tên đăng nhập chỉ được chứa chữ cái không dấu, số và '_', không có khoảng trắng!")
+
+    if not is_valid_email_custom(email):
+        raise ValueError("Email không được dùng tiếng Việt hoặc khoảng trắng!")
+
+    if not is_valid_password_custom(password):
+        raise ValueError("Mật khẩu không được dùng tiếng Việt hoặc khoảng trắng!")
+
+    if not (6 <= len(username) <= 50) or not (6 <= len(password) <= 50):
+        raise ValueError("Tên đăng nhập và mật khẩu phải từ 6 đến 50 ký tự!")
+
+    # Kiểm tra trùng lặp bằng hàm chuyên biệt
+    if get_user_by_username(username):
+        raise ValueError("Tên đăng nhập đã tồn tại!")
+
+    if get_user_by_email(email):
+        raise ValueError("Email đã được sử dụng!")
+
+    #  Thực hiện lưu dữ liệu
+    hashed_password = hashlib.md5(password.encode('utf-8')).hexdigest()
     u = User(username=username, email=email, password=hashed_password)
-    db.session.add(u)
-    db.session.commit()
-    return u
+
+    try:
+        db.session.add(u)
+        db.session.commit()
+        return u
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi không xác định: {e}")
+        raise ValueError("Đã xảy ra lỗi hệ thống khi lưu dữ liệu!")
 
 
 def load_movies(genre_id=None, kw=None, page=1):
@@ -70,7 +150,7 @@ def load_movies(genre_id=None, kw=None, page=1):
         query = query.filter(Movie.genres.any(Genre.id == genre_id))
 
     if kw:
-        query = query.filter(collate(Movie.name, 'utf8mb4_general_ci').like(f"%{kw}%"))
+        query = query.filter(collate(Movie.name, 'utf8mb4_general_ci').like(f"%{kw.strip()}%"))
 
     upcoming_time = func.min(
         case(
@@ -81,9 +161,15 @@ def load_movies(genre_id=None, kw=None, page=1):
 
     query = query.group_by(Movie.id).order_by(upcoming_time.is_(None), upcoming_time.asc(), Movie.created_at.desc())
 
-    if page:
-        start = (page - 1) * app.config.get('PAGE_SIZE')
-        query = query.offset(start).limit(app.config.get('PAGE_SIZE'))
+    if page is not None:
+        try:
+            page_num = int(page)
+            if page_num < 1:
+                page_num = 1
+        except ValueError:
+            page_num = 1
+        start = (page_num - 1) * current_app.config.get('PAGE_SIZE')
+        query = query.offset(start).limit(current_app.config.get('PAGE_SIZE'))
 
     return query.all()
 
@@ -107,51 +193,27 @@ def load_tien_ich():
         return tien_ich
 
 
-# Hàm chuẩn hóa tiếng Việt: Xóa dấu và chuyển chữ Đ/đ
-def remove_accents(input_str):
-    if not input_str:
-        return ""
-    # Chuẩn hóa unicode, tách dấu ra khỏi chữ cái
-    s1 = unicodedata.normalize('NFD', input_str)
-    # Xóa các ký tự dấu
-    s2 = ''.join([c for c in s1 if unicodedata.category(c) != 'Mn'])
-    # Xử lý riêng chữ đ/Đ của tiếng Việt và chuyển về chữ thường
-    return s2.replace('đ', 'd').replace('Đ', 'D').lower()
-
-
 def load_cinema(keyword=None, page=None, province_id=None):
     query = Cinema.query
-    total = 0
 
-    # Tìm kiếm theo khu vuc
     if province_id:
-        query = query.filter(Cinema.province_id.__eq__(int(province_id)))
+        query = query.filter(Cinema.province_id == int(province_id))
 
-    all_cinemas = query.all()
-    # tim kiem theo ten rap
     if keyword:
-        keyword = remove_accents(keyword).strip()
-        result = []
-        for c in all_cinemas:
-            name_clean = remove_accents(c.name)
-            address_clean = remove_accents(c.address)
-            if keyword in name_clean or keyword in address_clean:
-                result.append(c)
+        kw = f"%{keyword.strip()}%"
+        query = query.filter(or_(
+            Cinema.name.ilike(kw),
+            Cinema.address.ilike(kw)
+        ))
 
-        # Phân trang
-        total = len(result)
-        if page:
-            start = (int(page) - 1) * app.config["PAGE_SIZE"]
-            end = start + app.config["PAGE_SIZE"]
-            result = result[start:end]
-        return result, total
-    else:
-        total = query.count()
-        if page:
-            start = (int(page) - 1) * app.config["PAGE_SIZE"]
-            end = start + app.config["PAGE_SIZE"]
-            query = query.slice(start, end)
-        return query.all(), total
+    total = query.count()
+
+    # Phân trang chung cho mọi trường hợp
+    if page:
+        page_size = current_app.config["PAGE_SIZE"]
+        query = query.offset((int(page) - 1) * page_size).limit(page_size)
+
+    return query.all(), total
 
 
 def load_provinces():
@@ -469,9 +531,11 @@ def update_status_booking(booking_id, status, current_sid=None):
                 if st_seat:
                     # Kiểm tra bảo mật: Ghế có còn thuộc về người này không?
                     if current_sid and str(st_seat.hold_session_id) != str(current_sid):
-                        raise Exception(f"Ghế {st_seat.seat.row}{st_seat.seat.col} đã hết thời gian giữ và bị người khác lấy!")
+                        raise Exception(
+                            f"Ghế {st_seat.seat.row}{st_seat.seat.col} đã hết thời gian giữ và bị người khác lấy!")
                     if st_seat.hold_until and st_seat.hold_until < now:
-                        raise Exception("Giao dịch trễ! Thời gian giữ ghế đã hết hạn trước khi hệ thống ghi nhận thanh toán.")
+                        raise Exception(
+                            "Giao dịch trễ! Thời gian giữ ghế đã hết hạn trước khi hệ thống ghi nhận thanh toán.")
 
                     st_seat.status = SeatStatus.BOOKED
                     st_seat.hold_until = None
