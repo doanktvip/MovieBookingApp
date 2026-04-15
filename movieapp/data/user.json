@@ -1,23 +1,23 @@
 [
   {
     "id": 1,
-    "username": "admin",
-    "password": "123",
+    "username": "admin123",
+    "password": "123456",
     "email": "admin@cinema.com",
     "role": "admin",
     "active": true
   },
   {
     "id": 2,
-    "username": "doan",
-    "password": "123",
+    "username": "doanktvip",
+    "password": "123456",
     "email": "vana@gmail.com",
     "role": "user",
     "active": true
   },
   {
     "id": 3,
-    "username": "hodat",
+    "username": "hovandat",
     "password": "123",
     "email": "vandat@gmail.com",
     "role": "staff",

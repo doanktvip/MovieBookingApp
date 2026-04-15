@@ -201,10 +201,7 @@ def load_cinema(keyword=None, page=None, province_id=None):
 
     if keyword:
         kw = f"%{keyword.strip()}%"
-        query = query.filter(or_(
-            Cinema.name.ilike(kw),
-            Cinema.address.ilike(kw)
-        ))
+        query = query.filter(or_(Cinema.name.ilike(kw), Cinema.address.ilike(kw)))
 
     total = query.count()
 
@@ -229,40 +226,40 @@ def get_movie_format_all():
 
 
 def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, lang_str=None, page=1):
-    # Bắt đầu từ bảng Showtime (Suất chiếu), nối với Room (Phòng) và Cinema (Rạp)
     query = Showtime.query.join(Room).join(Cinema).filter(Showtime.movie_id == movie_id)
-    # Lọc theo Ngày: Nếu có truyền ngày vào thì lọc theo ngày đó, nếu không thì lấy mặc định là ngày hôm nay.
+
     if date_str:
         query = query.filter(func.date(Showtime.start_time) == date_str)
     else:
         query = query.filter(func.date(Showtime.start_time) == date.today())
-    # Lọc theo Định dạng (2D, 3D, IMAX...): Nếu người dùng chọn định dạng, nối thêm bảng MovieFormat để lọc.
+
     if format_str:
         query = query.join(MovieFormat).filter(MovieFormat.name == format_str)
-    # Lọc theo Ngôn ngữ (Phụ đề, Lồng tiếng): So sánh với kiểu dữ liệu Enum TranslationType.
+
     if lang_str:
-        query = query.filter(Showtime.translation == TranslationType(lang_str))
-    # Lấy ID Rạp: Từ bộ lọc ở trên
+        try:
+            lang_enum = TranslationType[lang_str]
+            query = query.filter(Showtime.translation == lang_enum)
+        except KeyError:
+            return {}, 0
+
     cinema_id_query = query.with_entities(Cinema.id).distinct()
 
     total_cinemas = cinema_id_query.count()
-    total_pages = math.ceil(total_cinemas / app.config.get('PAGE_SIZE')) if total_cinemas > 0 else 0
+    total_pages = math.ceil(total_cinemas / current_app.config.get('PAGE_SIZE')) if total_cinemas > 0 else 0
 
     if page:
-        start = (page - 1) * app.config.get('PAGE_SIZE')
-        cinema_id_tuples = cinema_id_query.slice(start, start + app.config.get('PAGE_SIZE')).all()
+        start = (page - 1) * current_app.config.get('PAGE_SIZE')
+        cinema_id_tuples = cinema_id_query.slice(start, start + current_app.config.get('PAGE_SIZE')).all()
     else:
         cinema_id_tuples = cinema_id_query.all()
-    # Dữ liệu DB trả về dạng mảng tuple [(1,), (2,)]. Đoạn này rút gọn nó thành mảng số bình thường [1, 2].
+
     cinema_ids = [c[0] for c in cinema_id_tuples]
-    # Nếu sau khi lọc mà không có rạp nào phù hợp, ta thoát hàm sớm và trả về kết quả rỗng luôn, không cần làm tiếp.
     if not cinema_ids:
         return {}, total_pages
-    # Cập nhật lại câu truy vấn ban đầu: Báo cho hệ thống biết CHỈ lấy suất chiếu của các rạp nằm trong danh sách 'cinema_ids' (rạp của trang hiện tại).
+
     query = query.filter(Cinema.id.in_(cinema_ids))
-    # TỐI ƯU CỰC KỲ QUAN TRỌNG: Dùng contains_eager để "gói" sẵn thông tin Room và Cinema vào chung với Showtime.
     query = query.options(contains_eager(Showtime.room).contains_eager(Room.cinema))
-    # Sắp xếp: Gom các suất chiếu của cùng 1 rạp lại gần nhau (Cinema.id.asc()),
     query = query.order_by(Cinema.id.asc(), Showtime.start_time.asc())
 
     showtimes = query.all()
