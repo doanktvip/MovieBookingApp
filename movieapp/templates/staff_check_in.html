@@ -17,7 +17,7 @@
                                class="form-control text-white ddn-glass"
                                name="keyword"
                                placeholder="Nhập thông tin khách hàng..."
-                               value="{{ keyword }}">
+                               value="{{ keyword if keyword else ''}}">
                         <button class="btn ddn-glass text-white px-4" type="submit">
                             <i class="bi bi-search"></i>
                         </button>
