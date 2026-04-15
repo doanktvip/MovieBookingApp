@@ -58,7 +58,7 @@ class User(BaseModel, UserMixin):
 
     avatar = Column(String(255), nullable=False,
                     default="https://res.cloudinary.com/db4bjqp4f/image/upload/v1765436438/shtnr60mecp057e2uctk.jpg")
-    bookings = relationship('Booking', backref='user', lazy=True)
+    bookings = relationship('Booking', backref='user', cascade="all, delete-orphan", lazy=True)
 
     def __str__(self):
         return self.username
@@ -80,7 +80,7 @@ class Movie(BaseModel):
     rate = Column(Float)
     limited_age = Column(Integer)
     is_active = Column(Boolean, default=True)
-    showtimes = relationship('Showtime', backref='movie', lazy=True)
+    showtimes = relationship('Showtime', backref='movie', cascade="all, delete-orphan", lazy=True)
     genres = relationship('Genre', secondary=movie_genre, back_populates='movies', lazy=True)
 
 
@@ -129,7 +129,7 @@ class Showtime(BaseModel):
 
     format_id = Column(Integer, ForeignKey('movie_format.id'), nullable=False)
     translation = Column(Enum(TranslationType), default=TranslationType.SUBTITLE)
-    bookings = relationship('Booking', backref='showtime', lazy=True)
+    bookings = relationship('Booking', backref='showtime', cascade="all, delete-orphan", lazy=True)
     showtime_seats = relationship('ShowtimeSeat', backref='showtime', cascade="all, delete-orphan", lazy=True)
 
     def __str__(self):
@@ -195,7 +195,7 @@ class Cinema(BaseModel):
     address = Column(String(200), nullable=False)
     map_url = Column(String(200), nullable=False)
     hotline = Column(String(20))
-    rooms = relationship('Room', backref='cinema', lazy=True)
+    rooms = relationship('Room', backref='cinema', cascade="all, delete-orphan", lazy=True)
     province_id = Column(Integer, ForeignKey('province.id'), nullable=False)
 
 
