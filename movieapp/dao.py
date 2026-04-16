@@ -449,7 +449,7 @@ def clear_db_booking_by_session(session_id):
         print(f"Lỗi khi dọn dẹp session {session_id}: {e}")
 
 
-# Hàm phục hồi trạng thái
+# Hàm trả về thời gian giữ ghế còn lại
 def get_reservation_expiry_time(session_id, showtime_id):
     if not session_id:
         return None
@@ -683,7 +683,7 @@ def count_bookings_by_user(user_id):
 def get_bookings_by_user(user_id, page=1):
     query = Booking.query.filter_by(user_id=user_id).order_by(Booking.created_at.desc())
     if page:
-        page_size = app.config.get('PAGE_SIZE')
+        page_size = current_app.config.get('PAGE_SIZE')
         start = (page - 1) * page_size
         query = query.slice(start, start + page_size)
 
@@ -693,26 +693,38 @@ def get_bookings_by_user(user_id, page=1):
 def cancel_booking(booking_id, user_id):
     booking = Booking.query.filter_by(id=booking_id, user_id=user_id).first()
 
-    if booking:
-        is_already_checked_in = any(ticket.is_checked_in for ticket in booking.tickets)
+    if not booking:
+        return False, "Đơn hàng không tồn tại!"
 
-        if is_already_checked_in:
-            return False
+    # Kiểm tra check-in
+    is_already_checked_in = any(ticket.is_checked_in for ticket in booking.tickets)
+    if is_already_checked_in:
+        return False, "Không thể hủy vé đã được check-in!"
 
+    # Kiểm tra ràng buộc 2 giờ
+    now = datetime.utcnow()
+    if booking.showtime:
+        limit_time = booking.showtime.start_time - timedelta(hours=2)
+        if now > limit_time:
+            return False, "Chỉ được hủy vé trước giờ chiếu ít nhất 2 tiếng!"
+
+    # Thực hiện hủy
+    try:
         if booking.status != BookingStatus.CANCELLED:
             booking.status = BookingStatus.CANCELLED
-
             for ticket in booking.tickets:
                 if ticket.showtime_seat:
                     ticket.showtime_seat.status = SeatStatus.AVAILABLE
                     ticket.showtime_seat.hold_until = None
                     ticket.showtime_seat.hold_session_id = None
                 db.session.delete(ticket)
-
             db.session.commit()
-            return True
+            return True, "Đã hủy vé thành công!"
+    except Exception as e:
+        db.session.rollback()
+        return False, f"Lỗi hệ thống: {str(e)}"
 
-    return False
+    return False, "Đơn hàng đã được hủy trước đó."
 
 
 # Ticket
