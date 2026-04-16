@@ -92,3 +92,23 @@ def test_cancel_booking_db_exception(test_app, sample_full_chain):
             assert success is False
             # Bây giờ tin nhắn sẽ đúng là "Lỗi hệ thống"
             assert "Lỗi hệ thống" in message
+
+
+# Test trường hợp đơn hàng đã được hủy trước đó
+def test_cancel_booking_already_cancelled(test_app, sample_full_chain):
+    with test_app.app_context():
+        # Lấy booking và đưa vào session hiện tại
+        booking = db.session.merge(sample_full_chain["booking"])
+        user = sample_full_chain["users"]["user1"]
+
+        # Thiết lập trạng thái đơn hàng thành CANCELLED trước khi gọi hàm
+        booking.status = BookingStatus.CANCELLED
+        booking.showtime.start_time = datetime.utcnow() + timedelta(hours=5)
+        db.session.commit()
+
+        # Gọi hàm hủy một lần nữa
+        success, message = dao.cancel_booking(booking.id, user.id)
+
+        # Kiểm tra kết quả
+        assert success is False
+        assert message == "Đơn hàng đã được hủy trước đó."
