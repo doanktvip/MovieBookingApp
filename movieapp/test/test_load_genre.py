@@ -8,10 +8,7 @@ from movieapp.test.test_base import test_session, test_app, sample_movies_data, 
 # ==========================================
 
 def test_load_genres_success(sample_movies_data):
-    """
-    Kiểm tra hàm load_genres lấy đúng danh sách thể loại từ database.
-    Dựa trên fixture sample_movies_data (Tầng 4) đã tạo 2 thể loại.
-    """
+
     # 1. Gọi hàm DAO
     result = load_genres()
 
@@ -26,10 +23,5 @@ def test_load_genres_success(sample_movies_data):
 
 
 def test_load_genres_empty(test_app):
-    """
-    Kiểm tra trường hợp database trống (chỉ dùng test_app, không dùng fixture data)
-    """
-    # Hàm này chạy trong context của test_app nhưng không có dữ liệu mẫu
     result = load_genres()
-
     assert len(result) == 0

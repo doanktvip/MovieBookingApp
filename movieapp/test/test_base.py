@@ -167,7 +167,7 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
     sts_target = sample_showtimes_complex["showtime_seats"][1]
     booking = Booking(user_id=u1.id, showtime_id=st1.id, total_price=sts_target.price, status=BookingStatus.PAID,
                       payment_method="MoMo")
-    test_session.add(booking);
+    test_session.add(booking)
     test_session.commit()
     ticket = Ticket(booking_id=booking.id, showtime_seat_id=sts_target.id, final_price=sts_target.price,
                     is_checked_in=False)
