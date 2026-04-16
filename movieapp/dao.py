@@ -159,7 +159,7 @@ def load_movies(genre_id=None, kw=None, page=1):
         )
     )
 
-    query = query.group_by(Movie.id).order_by(upcoming_time.is_(None), upcoming_time.asc(), Movie.created_at.desc())
+    query = query.group_by(Movie.id).order_by(Movie.id.desc(), upcoming_time.is_(None), upcoming_time.asc())
 
     if page is not None:
         try:
@@ -278,30 +278,48 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
 def release_expired_seats(showtime_id=None):
     try:
         now = datetime.utcnow()
-        query = ShowtimeSeat.query.filter(
+
+        expired_seats_query = db.session.query(ShowtimeSeat.id).filter(
             ShowtimeSeat.status == SeatStatus.RESERVED,
             ShowtimeSeat.hold_until < now
         )
 
         if showtime_id:
-            query = query.filter(ShowtimeSeat.showtime_id == showtime_id)
+            expired_seats_query = expired_seats_query.filter(ShowtimeSeat.showtime_id == showtime_id)
 
-        expired_seats = query.all()
+        expired_seat_ids = [s.id for s in expired_seats_query.all()]
 
-        for st_seat in expired_seats:
-            tickets = Ticket.query.filter_by(showtime_seat_id=st_seat.id).all()
-            for t in tickets:
-                if t.booking and t.booking.status == BookingStatus.PENDING:
-                    t.booking.status = BookingStatus.FAILED
+        if not expired_seat_ids:
+            return
 
-            st_seat.status = SeatStatus.AVAILABLE
-            st_seat.hold_until = None
-            st_seat.hold_session_id = None
+        related_bookings = db.session.query(Booking).join(Ticket).filter(
+            Ticket.showtime_seat_id.in_(expired_seat_ids),
+            Booking.status == BookingStatus.PENDING
+        ).all()
+
+        for booking in related_bookings:
+            booking.status = BookingStatus.FAILED
+            for t in booking.tickets:
+                if t.showtime_seat:
+                    t.showtime_seat.status = SeatStatus.AVAILABLE
+                    t.showtime_seat.hold_until = None
+                    t.showtime_seat.hold_session_id = None
+
+        db.session.query(ShowtimeSeat).filter(
+            ShowtimeSeat.id.in_(expired_seat_ids),
+            ShowtimeSeat.status != SeatStatus.AVAILABLE
+        ).update({
+            ShowtimeSeat.status: SeatStatus.AVAILABLE,
+            ShowtimeSeat.hold_until: None,
+            ShowtimeSeat.hold_session_id: None
+        }, synchronize_session=False)
 
         db.session.commit()
+
     except Exception as e:
         db.session.rollback()
-        print(f"LỖI DỌN GHẾ VÀ ĐƠN HÀNG: {e}")
+        print(f"Lỗi hiệu năng/logic: {e}")
+        raise e
 
 
 def get_showtime_by_id(showtime_id):

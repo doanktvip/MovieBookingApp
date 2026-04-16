@@ -187,9 +187,10 @@ def register_routes(app):
         showtime = dao.get_showtime_by_id(showtime_id)
         if not showtime or showtime.room_id != room_id:
             abort(404)
-
-        dao.release_expired_seats(showtime_id)
-
+        try:
+            dao.release_expired_seats(showtime_id)
+        except Exception:
+            flash("Hệ thống đang bận, trạng thái ghế có thể cập nhật chậm.", "danger")
         current_sid = session.get('user_session_id')
         time_remaining = 0
         booking_session = session.get('booking', {})
