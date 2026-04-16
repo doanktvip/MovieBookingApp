@@ -127,9 +127,9 @@ def sample_movies_data(test_session, sample_cinemas):
 
     now = datetime.utcnow()
     m1 = Movie(name="Phim Hành Động Sắp Chiếu", release_date=now - timedelta(days=10), duration=120)
-    m1.genres.append(g_action);
+    m1.genres.append(g_action)
     m2 = Movie(name="Phim Hài Đã Chiếu", release_date=now - timedelta(days=20), duration=90)
-    m2.genres.append(g_comedy);
+    m2.genres.append(g_comedy)
     m3 = Movie(name="Phim Mới Nhập Kho", release_date=now + timedelta(days=30), duration=100)
     m3.genres.append(g_action)
 
@@ -141,13 +141,13 @@ def sample_movies_data(test_session, sample_cinemas):
 
 @pytest.fixture
 def sample_showtimes_complex(test_session, sample_movies_data):
-    f2d = sample_movies_data["formats"]["2D"];
-    r1 = sample_movies_data["rooms"][0];
+    f2d = sample_movies_data["formats"]["2D"]
+    r1 = sample_movies_data["rooms"][0]
     m1 = sample_movies_data["movies"]["hot"]
     now = datetime.combine(date.today(), datetime.min.time()) + timedelta(hours=10)
     st1 = Showtime(movie_id=m1.id, room_id=r1.id, format_id=f2d.id, translation=TranslationType.SUBTITLE,
                    start_time=now, end_time=now + timedelta(hours=2), base_price=50000)
-    test_session.add(st1);
+    test_session.add(st1)
     test_session.commit()
     sts_list = []
     room_1_seats = [s for s in sample_movies_data["seats"] if s.room_id == r1.id]
@@ -155,15 +155,15 @@ def sample_showtimes_complex(test_session, sample_movies_data):
         status = SeatStatus.BOOKED if idx == 0 else SeatStatus.AVAILABLE
         sts_list.append(ShowtimeSeat(showtime_id=st1.id, seat_id=seat.id, status=status,
                                      price=st1.base_price + seat.seat_type.surcharge))
-    test_session.add_all(sts_list);
+    test_session.add_all(sts_list)
     test_session.commit()
     return {**sample_movies_data, "showtime": st1, "showtime_seats": sts_list}
 
 
 @pytest.fixture
 def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
-    u1 = sample_users["users"]["user1"];
-    st1 = sample_showtimes_complex["showtime"];
+    u1 = sample_users["users"]["user1"]
+    st1 = sample_showtimes_complex["showtime"]
     sts_target = sample_showtimes_complex["showtime_seats"][1]
     booking = Booking(user_id=u1.id, showtime_id=st1.id, total_price=sts_target.price, status=BookingStatus.PAID,
                       payment_method="MoMo")
@@ -171,6 +171,6 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
     test_session.commit()
     ticket = Ticket(booking_id=booking.id, showtime_seat_id=sts_target.id, final_price=sts_target.price,
                     is_checked_in=False)
-    test_session.add(ticket);
+    test_session.add(ticket)
     test_session.commit()
     return {**sample_users, **sample_showtimes_complex, "booking": booking, "ticket": ticket}
