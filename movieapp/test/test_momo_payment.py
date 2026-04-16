@@ -1,5 +1,3 @@
-import pytest
-import requests
 from movieapp.momo_payment import create_momo_payment
 
 def test_create_momo_payment_success(mocker):

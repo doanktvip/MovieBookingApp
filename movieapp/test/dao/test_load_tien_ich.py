@@ -12,6 +12,7 @@ def test_load_failed():
         mock_json.side_effect=Exception('FileNotFoundError')
         with pytest.raises(Exception):
             load_tien_ich()
+
 def test_load_error_format_file():
     with patch('builtins.open',mock_open(read_data="{wifi: true, error]")) as mock_json:
         mock_json.side_effect=Exception("Error Format Json File")

@@ -1,5 +1,6 @@
 from movieapp.dao import load_bookings_for_checkin
-from movieapp.test.conftest import sample_full_chain
+from movieapp.test.conftest import test_session, test_app, sample_full_chain, sample_users, sample_showtimes_complex, \
+    sample_movies_data, sample_cinemas, sample_basic_setup
 
 
 # ==========================================
@@ -14,7 +15,6 @@ def test_load_bookings_all(sample_full_chain):
 
 
 def test_load_bookings_kw_match(sample_full_chain):
-
     actual_bookings, total_page = load_bookings_for_checkin(kw='new_user')
 
     assert len(actual_bookings) == 1

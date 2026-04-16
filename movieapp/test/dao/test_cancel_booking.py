@@ -1,12 +1,8 @@
 from unittest.mock import patch
-
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import BookingStatus, SeatStatus
-# Import các fixture từ test_base
-from movieapp.test.conftest import (
-    test_app, sample_full_chain
-)
+from movieapp.test.conftest import test_app, sample_full_chain
 
 
 # Test hủy thành công
@@ -16,7 +12,7 @@ def test_cancel_booking_success(test_app, sample_full_chain):
         user = sample_full_chain["users"]["user1"]
 
         # Bước quan trọng: Giả lập suất chiếu còn xa (5 tiếng nữa)
-        booking.showtime.start_time = datetime.utcnow() + timedelta(hours=5)
+        booking.showtime.start_time = datetime.now() + timedelta(hours=5)
         db.session.commit()
 
         success, message = dao.cancel_booking(booking.id, user.id)
@@ -37,7 +33,7 @@ def test_cancel_booking_too_late(test_app, sample_full_chain):
         user = sample_full_chain["users"]["user1"]
 
         # Giả lập chỉ còn 1 tiếng nữa là chiếu
-        booking.showtime.start_time = datetime.utcnow() + timedelta(hours=1)
+        booking.showtime.start_time = datetime.now() + timedelta(hours=1)
         db.session.commit()
 
         success, message = dao.cancel_booking(booking.id, user.id)
@@ -80,7 +76,7 @@ def test_cancel_booking_db_exception(test_app, sample_full_chain):
         user = sample_full_chain["users"]["user1"]
 
         # Phải đảm bảo suất chiếu thỏa mãn điều kiện > 2h trước
-        booking.showtime.start_time = datetime.utcnow() + timedelta(hours=5)
+        booking.showtime.start_time = datetime.now() + timedelta(hours=5)
         db.session.commit()
 
         # Giả lập lỗi khi commit
@@ -101,7 +97,7 @@ def test_cancel_booking_already_cancelled(test_app, sample_full_chain):
 
         # Thiết lập trạng thái đơn hàng thành CANCELLED trước khi gọi hàm
         booking.status = BookingStatus.CANCELLED
-        booking.showtime.start_time = datetime.utcnow() + timedelta(hours=5)
+        booking.showtime.start_time = datetime.now() + timedelta(hours=5)
         db.session.commit()
 
         # Gọi hàm hủy một lần nữa

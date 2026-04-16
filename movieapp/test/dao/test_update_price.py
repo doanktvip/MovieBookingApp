@@ -2,10 +2,8 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 from movieapp import dao, db
 from movieapp.models import ShowtimeSeat, Seat
-# Import các fixture từ test_base
-from movieapp.test.conftest import (
-    test_app, sample_showtimes_complex
-)
+from movieapp.test.conftest import test_app, test_session, sample_showtimes_complex, sample_movies_data, sample_cinemas, \
+    sample_basic_setup
 
 
 # Test trường hợp cập nhật thành công

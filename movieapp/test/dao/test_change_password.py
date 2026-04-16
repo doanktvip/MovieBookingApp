@@ -1,8 +1,7 @@
 import hashlib
 from unittest.mock import patch
 from movieapp import dao, db
-# Import các fixture từ test_base
-from movieapp.test.conftest import test_app, sample_users
+from movieapp.test.conftest import test_app, test_session, sample_users
 
 
 # 1. Test không tìm thấy người dùng

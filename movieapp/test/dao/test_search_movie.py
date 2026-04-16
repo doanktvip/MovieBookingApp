@@ -1,6 +1,7 @@
 import pytest
 from movieapp import dao
-from movieapp.test.conftest import test_app, sample_showtimes_complex, sample_movies_data
+from movieapp.test.conftest import test_session, test_app, sample_showtimes_complex, sample_movies_data, \
+    sample_cinemas, sample_basic_setup
 
 
 # LẤY TẤT CẢ VÀ PHÂN TRANG

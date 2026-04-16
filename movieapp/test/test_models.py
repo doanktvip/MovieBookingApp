@@ -11,25 +11,27 @@ def test_duplicate_username(test_session):
     """Kiểm tra ràng buộc UNIQUE cho username"""
     u1 = User(username="testuser", email="test1@gmail.com", password="123")
     test_session.add(u1)
-    test_session().commit()
+    test_session.commit()
 
     u2 = User(username="testuser", email="test2@gmail.com", password="123")
     test_session.add(u2)
     with pytest.raises(IntegrityError):
         test_session.commit()
-    test_session().rollback()
+    test_session.rollback()
+
 
 def test_user_email_not_null(test_session):
     """Kiểm tra ràng buộc NOT NULL cho email"""
-    u = User(username="no_email", password="123") # Không có email
+    u = User(username="no_email", password="123")  # Không có email
     test_session.add(u)
     with pytest.raises(IntegrityError):
         test_session.commit()
     test_session.rollback()
 
+
 def test_movie_name_not_null(test_session):
     """Kiểm tra ràng buộc NOT NULL cho tên phim"""
-    m = Movie(release_date=datetime.utcnow()) # Thiếu name
+    m = Movie(release_date=datetime.now())  # Thiếu name
     test_session.add(m)
     with pytest.raises(IntegrityError):
         test_session.commit()
@@ -74,10 +76,11 @@ def test_basemodel_str_attribute_error(test_session):
         # Seat kế thừa BaseModel nhưng không có thuộc tính .name
         print(str(seat))
 
+
 # Dòng 136-141
 def test_showtime_str_with_start_time(test_session):
     """Kiểm tra hiển thị Showtime khi có thời gian bắt đầu"""
-    m = Movie(name="Avatar 2", release_date=datetime.utcnow())
+    m = Movie(name="Avatar 2", release_date=datetime.now())
     test_session.add(m)
     test_session.flush()  # Để lấy movie.name
 
@@ -90,16 +93,17 @@ def test_showtime_str_with_start_time(test_session):
 
 def test_showtime_str_without_start_time(test_session):
     """Kiểm tra hiển thị Showtime khi start_time là None"""
-    m = Movie(name="Dune", release_date=datetime.utcnow())
+    m = Movie(name="Dune", release_date=datetime.now())
     st = Showtime(movie=m, start_time=None)
 
     assert "Chưa xác định" in str(st)
     assert "Phim Dune" in str(st)
 
-#Dòng 157-164
+
+# Dòng 157-164
 def test_showtime_seat_str_full_data(test_session):
     """Kiểm tra ShowtimeSeat khi có đầy đủ thông tin Ghế và Suất chiếu"""
-    m = Movie(name="Iron Man", release_date=datetime.utcnow())
+    m = Movie(name="Iron Man", release_date=datetime.now())
     start = datetime(2023, 10, 10, 20, 0)
     st = Showtime(movie=m, start_time=start)
     seat = Seat(seat_number="H12")
@@ -118,15 +122,16 @@ def test_showtime_seat_str_missing_data(test_session):
     expected = "Ghế Trống - Suất Chưa xác định"
     assert str(sts) == expected
 
-#Dòng 179-181
+
+# Dòng 179-181
 def test_booking_str_with_user(test_session):
     """Kiểm tra hiển thị Booking khi có User liên kết"""
     u = User(username="nguyenvana", email="a@gmail.com", password="123")
     test_session.add(u)
-    test_session.commit()
 
-    # Giả sử id của booking là 100
-    b = Booking(id=100, user=u, total_price=50000.0)
+    b = Booking(id=100, user=u, total_price=50000.0, showtime_id=1)
+    test_session.add(b)  # Thêm booking vào session
+    test_session.flush()  # Flush để DB ghi nhận quan hệ
 
     expected = "Đơn #100 - Khách: nguyenvana"
     assert str(b) == expected
