@@ -10,8 +10,8 @@ import enum
 class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
-    created_at = Column(DateTime, default=datetime.utcnow)  # Dùng utcnow để đồng bộ
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)  # Dùng now để đồng bộ
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     def __str__(self):
         return self.name

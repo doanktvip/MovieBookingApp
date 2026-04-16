@@ -2,8 +2,6 @@ import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import Booking, Ticket, BookingStatus, SeatStatus, ShowtimeSeat, Showtime
-from movieapp.test.test_base import test_app, sample_users, sample_showtimes_complex, test_session, sample_movies_data, \
-    sample_cinemas, sample_basic_setup, sample_full_chain
 
 
 # CÁC RÀNG BUỘC KHI ĐẶT GHẾ
@@ -38,7 +36,7 @@ def test_process_seat_reservations(test_app, sample_users, sample_showtimes_comp
         target_showtime_id = showtime.id
 
         # VÁ LỖI 2: Đảm bảo 2 ghế mục tiêu mang đi test phải hoàn toàn trống (AVAILABLE)
-        # (Vì trong file test_base.py, ghế đầu tiên đang bị set cứng là BOOKED)
+        # (Vì trong file conftest.py, ghế đầu tiên đang bị set cứng là BOOKED)
         for s in target_seats:
             s.status = SeatStatus.AVAILABLE
             s.hold_session_id = None

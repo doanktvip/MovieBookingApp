@@ -2,7 +2,7 @@ import pytest
 from movieapp import dao, db
 from movieapp.models import Province
 from unittest.mock import patch
-from movieapp.test.test_base import test_app, test_session
+from movieapp.test.conftest import test_app, test_session
 
 
 # Test trường hợp tên rỗng

@@ -1,6 +1,6 @@
 import pytest
 from movieapp import dao
-from movieapp.test.test_base import test_app, sample_showtimes_complex, sample_movies_data, sample_cinemas, \
+from movieapp.test.conftest import test_app, sample_showtimes_complex, sample_movies_data, sample_cinemas, \
     test_session, sample_basic_setup
 
 

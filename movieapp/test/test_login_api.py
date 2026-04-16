@@ -1,5 +1,5 @@
 import pytest
-from movieapp.test.test_base import test_client, test_app, sample_users, test_session
+from movieapp.test.conftest import test_client, test_app, sample_users, test_session
 
 
 # TEST ĐĂNG NHẬP THÀNH CÔNG
