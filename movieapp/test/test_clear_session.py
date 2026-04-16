@@ -4,7 +4,7 @@ import pytest
 from movieapp import dao, db
 from movieapp.models import SeatStatus, ShowtimeSeat
 # Import các fixture cần thiết từ test_base
-from movieapp.test.test_base import (
+from movieapp.test.conftest import (
     test_app, test_session, sample_showtimes_complex,
     sample_movies_data, sample_cinemas, sample_basic_setup
 )

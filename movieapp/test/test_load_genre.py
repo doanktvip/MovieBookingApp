@@ -1,6 +1,6 @@
 import pytest
 from movieapp.dao import load_genres
-from movieapp.test.test_base import test_session, test_app, sample_movies_data, sample_cinemas, sample_basic_setup
+from movieapp.test.conftest import test_session, test_app, sample_movies_data, sample_cinemas, sample_basic_setup
 
 
 # ==========================================

@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import SeatStatus, BookingStatus, Ticket, Booking, ShowtimeSeat
-from movieapp.test.test_base import test_session, test_app, sample_showtimes_complex, sample_movies_data, \
+from movieapp.test.conftest import test_session, test_app, sample_showtimes_complex, sample_movies_data, \
     sample_cinemas, sample_basic_setup, sample_users
 
 

@@ -199,7 +199,7 @@ def register_routes(app):
             expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
 
             if expire_time:
-                now = datetime.utcnow()
+                now = datetime.now()
                 time_remaining = math.ceil((expire_time - now).total_seconds())
             else:
                 dao.clear_db_booking_by_session(current_sid)
@@ -276,7 +276,7 @@ def register_routes(app):
         booking_session = session.get('booking')
         current_sid = session.get('user_session_id')
         expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
-        now = datetime.utcnow()
+        now = datetime.now()
 
         # 1. BẢO MẬT: Kiểm tra xem user có lách luật vào thẳng link không, hoặc hết giờ giữ ghế
         if not booking_session or not expire_time or now >= expire_time:
@@ -305,7 +305,7 @@ def register_routes(app):
             abort(404)
         # Tính thời gian hết hạn phụ thuộc giữ ghế
         expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
-        now = datetime.utcnow()
+        now = datetime.now()
         if expire_time and expire_time > now:
             time_remaining_seconds = int((expire_time - now).total_seconds())
             expire_minutes = math.ceil(time_remaining_seconds / 60)

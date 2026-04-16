@@ -142,7 +142,7 @@ def add_user(username, email, password):
 
 
 def load_movies(genre_id=None, kw=None, page=1):
-    now = datetime.utcnow()
+    now = datetime.now()
 
     query = db.session.query(Movie).outerjoin(Showtime)
 
@@ -277,7 +277,7 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
 # Giải phóng ghế hết hạn
 def release_expired_seats(showtime_id=None):
     try:
-        now = datetime.utcnow()
+        now = datetime.now()
 
         expired_seats_query = db.session.query(ShowtimeSeat.id).filter(
             ShowtimeSeat.status == SeatStatus.RESERVED,
@@ -366,7 +366,7 @@ def get_seat_by_id(seat_id):
 
 # Đặt ghế
 def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_seats):
-    now = datetime.utcnow()
+    now = datetime.now()
     selected_st_seat_ids = [str(s.get('id')) for s in selected_seats]
 
     # Ràng buộc: Kiểm tra thời gian chiếu phim
@@ -454,7 +454,7 @@ def get_reservation_expiry_time(session_id, showtime_id):
     if not session_id:
         return None
 
-    now = datetime.utcnow()
+    now = datetime.now()
 
     active_seat = ShowtimeSeat.query.filter(
         ShowtimeSeat.hold_session_id == str(session_id),
@@ -537,7 +537,7 @@ def update_status_booking(booking_id, status, current_sid=None):
         if not booking:
             raise Exception("Không tìm thấy đơn hàng!")
         booking.status = status
-        now = datetime.utcnow()
+        now = datetime.now()
 
         if status == BookingStatus.PAID:
             # Thanh toán thành công
@@ -702,7 +702,7 @@ def cancel_booking(booking_id, user_id):
         return False, "Không thể hủy vé đã được check-in!"
 
     # Kiểm tra ràng buộc 2 giờ
-    now = datetime.utcnow()
+    now = datetime.now()
     if booking.showtime:
         limit_time = booking.showtime.start_time - timedelta(hours=2)
         if now > limit_time:
