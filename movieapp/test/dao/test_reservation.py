@@ -1,11 +1,9 @@
-import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
-from movieapp.models import SeatStatus, ShowtimeSeat
+from movieapp.models import SeatStatus
 # Import các fixture từ test_base
-from movieapp.test.test_base import (
-    test_app, test_session, sample_showtimes_complex,
-    sample_movies_data, sample_cinemas, sample_basic_setup)
+from movieapp.test.conftest import (
+    test_app, sample_showtimes_complex)
 
 
 # Test trường hợp session_id là None

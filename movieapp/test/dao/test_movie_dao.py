@@ -1,7 +1,7 @@
 import pytest
 
 from movieapp import dao
-from movieapp.test.test_base import test_session, sample_movies_data, test_app, sample_basic_setup, sample_cinemas
+from movieapp.test.conftest import sample_movies_data, test_app, sample_basic_setup
 
 
 # ==========================================

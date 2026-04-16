@@ -1,7 +1,7 @@
 import pytest
 
 from movieapp import dao
-from movieapp.test.test_base import test_app, test_session, sample_users
+from movieapp.test.conftest import test_app, sample_users
 
 
 def test_get_user_by_id(test_app, sample_users):

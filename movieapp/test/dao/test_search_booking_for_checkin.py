@@ -1,7 +1,5 @@
-import pytest
 from movieapp.dao import load_bookings_for_checkin
-from movieapp.test.test_base import test_session, test_app, sample_full_chain, sample_users, sample_showtimes_complex, \
-    sample_movies_data, sample_cinemas, sample_basic_setup
+from movieapp.test.conftest import sample_full_chain
 
 
 # ==========================================

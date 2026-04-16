@@ -1,13 +1,11 @@
 from unittest.mock import patch
 
-import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import BookingStatus, SeatStatus
 # Import các fixture từ test_base
-from movieapp.test.test_base import (
-    test_app, test_session, sample_full_chain, sample_users, sample_showtimes_complex, sample_movies_data,
-    sample_cinemas, sample_basic_setup
+from movieapp.test.conftest import (
+    test_app, sample_full_chain
 )
 
 

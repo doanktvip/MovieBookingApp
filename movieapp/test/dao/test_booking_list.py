@@ -1,10 +1,8 @@
-import pytest
 from movieapp import dao, db
 from movieapp.models import Booking
-# Sử dụng các fixture từ test_base.py
-from movieapp.test.test_base import (
-    test_app, test_session, sample_users, sample_showtimes_complex, sample_movies_data, sample_cinemas,
-    sample_basic_setup
+# Sử dụng các fixture từ conftest.py
+from movieapp.test.conftest import (
+    test_app, sample_users, sample_showtimes_complex
 )
 
 
