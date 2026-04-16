@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils, db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user
-from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required
+from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required, admin_required
 from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus, Booking
 from movieapp.momo_payment import create_momo_payment
 
@@ -440,6 +440,7 @@ def register_routes(app):
     @app.route('/check_in', methods=['POST', 'GET'])
     @login_user_required
     @staff_required
+    @admin_required
     def check_in():
         # Bảo mật user
         if current_user.role.name not in ['STAFF', 'ADMIN']:

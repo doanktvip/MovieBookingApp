@@ -43,3 +43,12 @@ def user_required(f):
         return f(*args, **kwargs)
 
     return decorated_func
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_func(*args, **kwargs):
+        if current_user.role != UserRole.ADMIN:
+            return redirect("/")
+        return f(*args, **kwargs)
+
+    return decorated_func

@@ -4,6 +4,7 @@ from movieapp.dao import create_pending_booking, update_status_booking
 from movieapp.models import Booking, BookingStatus, ShowtimeSeat, SeatStatus
 from movieapp.test.test_base import test_session, test_app, sample_full_chain, sample_users, sample_showtimes_complex, \
     sample_movies_data, sample_cinemas, sample_basic_setup
+from unittest.mock import patch
 
 
 # ==========================================
@@ -70,6 +71,51 @@ def test_create_booking_recontinue_pay(sample_showtimes_complex, sample_users):
     booking = Booking.query.get(id1)
     assert booking.total_price == 45000
 
+#Khách đổi thêm bớt ghế để thanh toán lại
+def test_create_booking_different_seat(sample_showtimes_complex,sample_users):
+    data_st=sample_showtimes_complex
+    user = sample_users["users"]["user1"]
+    st_id = data_st["showtime"].id
+    seat_id_1 = str(data_st["showtime_seats"][1].seat_id)
+    seat_id_2=str(data_st["showtime_seats"][2].seat_id)
+    seat_id_3 = str(data_st["showtime_seats"][2].seat_id)
+
+    # Tạo lần 1
+    booking_session_1 = {seat_id_1: {"price": 50000}}
+    id1 = create_pending_booking(user.id, st_id, 50000, booking_session_1)
+
+    #Thêm bớt ghế lần 2
+    booking_session_2={seat_id_1: {"price": 50000},seat_id_2: {"price": 50000}}
+    id2 = create_pending_booking(user.id, st_id, 100000, booking_session_2)
+
+    # Lúc này CSDL chỉ còn đơn mới đơn cũ bị xóa
+    assert Booking.query.count() == 1
+
+    # Kiểm tra đơn mới có đủ 3 ghế??
+    new_booking = Booking.query.get(id2)
+    assert new_booking is not None
+    assert new_booking.status == BookingStatus.PENDING
+    assert len(new_booking.tickets) == 2
+
+def test_create_booking_db_commit_error(sample_showtimes_complex, sample_users):
+    data_st = sample_showtimes_complex
+    user = sample_users["users"]["user1"]
+    st_id = data_st["showtime"].id
+    seat_id = str(data_st["showtime_seats"][1].seat_id)
+    booking_session = {seat_id: {"price": 50000}}
+    total_amount = 50000
+    with patch("movieapp.db.session.commit") as mock_commit:
+        # Giả lập lỗi kết nối database
+        mock_commit.side_effect = Exception("Database Connection Error")
+
+        # Kiểm tra xem hàm có raise đúng lỗi Exception đã giả lập hay không
+        with pytest.raises(Exception, match="Database Connection Error"):
+            create_pending_booking(
+                user_id=user.id,
+                showtime_id=st_id,
+                total_amount=total_amount,
+                booking_session=booking_session
+            )
 
 # ==========================================
 # KIỂM THỬ HÀM CẬP NHẬT TRẠNG THÁI (UPDATE)
@@ -123,3 +169,33 @@ def test_update_status_booking_expire_paying(sample_full_chain, test_session):
 
     with pytest.raises(Exception, match="Giao dịch trễ!"):
         update_status_booking(data["booking"].id, BookingStatus.PAID, session_id)
+
+def test_update_status_booking_canceled_paying(sample_full_chain, test_session):
+    data = sample_full_chain
+    session_id = "session_123"
+    st_seat = data["showtime_seats"][1]
+    booking = data["booking"]
+    st_seat.hold_session_id = session_id
+    st_seat.status = SeatStatus.RESERVED
+    test_session.commit()
+
+    result=update_status_booking(booking.id, BookingStatus.PENDING, session_id)
+
+    assert result is not None
+    assert booking.status == BookingStatus.PENDING
+
+    #Kiểm tra ghế tiếp tục giữ
+    st_seat_check = ShowtimeSeat.query.get(st_seat.id)
+    assert st_seat.status == SeatStatus.RESERVED
+    assert st_seat.hold_session_id == session_id
+
+def test_update_status_booking_cancelled_paying(sample_full_chain):
+    data = sample_full_chain
+    booking_id = data["booking"].id
+
+    # Mock lệnh commit để ra lỗi
+    with patch("movieapp.db.session.commit") as mock_commit:
+        mock_commit.side_effect = Exception("Database is down")
+
+        with pytest.raises(Exception, match="Database is down"):
+            update_status_booking(booking_id, BookingStatus.PAID)
