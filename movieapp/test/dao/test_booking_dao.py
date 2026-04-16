@@ -1,7 +1,8 @@
 import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
-from movieapp.models import Booking, Ticket, BookingStatus, SeatStatus, ShowtimeSeat, Showtime
+from movieapp.models import Booking, Ticket, BookingStatus, SeatStatus, ShowtimeSeat
+from movieapp.test.conftest import test_app, sample_users, sample_showtimes_complex, sample_full_chain
 
 
 # CÁC RÀNG BUỘC KHI ĐẶT GHẾ
@@ -27,7 +28,7 @@ def test_process_seat_reservations(test_app, sample_users, sample_showtimes_comp
         # --- CÁC BẢN VÁ LỖI DỮ LIỆU TỪ TEST_BASE ---
 
         # VÁ LỖI 1: Đẩy giờ chiếu lên tương lai (+1 tiếng) để không bị chặn bởi lỗi "phim đã chiếu"
-        showtime.start_time = datetime.utcnow() + timedelta(hours=1)
+        showtime.start_time = datetime.now() + timedelta(hours=1)
         db.session.commit()
 
         # Lấy 2 ghế làm mẫu để mang đi test đặt vé
@@ -50,7 +51,7 @@ def test_process_seat_reservations(test_app, sample_users, sample_showtimes_comp
             target_showtime_id = 9999
 
         elif scenario == "movie_started":
-            showtime.start_time = datetime.utcnow() - timedelta(minutes=10)
+            showtime.start_time = datetime.now() - timedelta(minutes=10)
             db.session.commit()
 
         elif scenario == "exceed_8_seats":
@@ -77,7 +78,7 @@ def test_process_seat_reservations(test_app, sample_users, sample_showtimes_comp
             # Giả lập ghế đang bị người khác (cùng lúc) giữ chỗ
             target_seats[0].status = SeatStatus.RESERVED
             target_seats[0].hold_session_id = "ANOTHER_USER_SESSION"
-            target_seats[0].hold_until = datetime.utcnow() + timedelta(minutes=10)
+            target_seats[0].hold_until = datetime.now() + timedelta(minutes=10)
             db.session.commit()
 
         # ----------------------------------------------------
@@ -119,14 +120,14 @@ def test_release_unselected_seats(test_app, sample_users, sample_showtimes_compl
         seats = [db.session.merge(s) for s in sample_showtimes_complex["showtime_seats"]]
 
         # Đảm bảo giờ chiếu ở tương lai để không bị báo lỗi "phim đã chiếu"
-        showtime.start_time = datetime.utcnow() + timedelta(hours=1)
+        showtime.start_time = datetime.now() + timedelta(hours=1)
         db.session.commit()
 
         # 1. TẠO BỐI CẢNH: Giả sử hôm qua user đã tick chọn giữ Ghế A (id=seats[0].id)
         seat_a = seats[0]
         seat_a.status = SeatStatus.RESERVED
         seat_a.hold_session_id = session_id
-        seat_a.hold_until = datetime.utcnow() + timedelta(minutes=10)
+        seat_a.hold_until = datetime.now() + timedelta(minutes=10)
 
         # 2. Hôm nay: User đổi ý, bỏ tick Ghế A và CHỈ CHỌN Ghế B (id=seats[1].id)
         seat_b = seats[1]

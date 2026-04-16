@@ -23,7 +23,7 @@ def test_release_expired_seats_logic(test_app, sample_users, sample_showtimes_co
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][0])
 
         st_seat.status = SeatStatus.RESERVED
-        st_seat.hold_until = datetime.utcnow() + timedelta(minutes=hold_offset)
+        st_seat.hold_until = datetime.now() + timedelta(minutes=hold_offset)
         st_seat.hold_session_id = "test_session_123"
 
         booking = Booking(user_id=user.id, showtime_id=showtime.id,
@@ -55,7 +55,7 @@ def test_release_expired_seats_specific_showtime(test_app, sample_showtimes_comp
         seat_target = db.session.merge(sample_showtimes_complex["showtime_seats"][0])
         seat_other = db.session.merge(sample_showtimes_complex["showtime_seats"][1])
 
-        now = datetime.utcnow()
+        now = datetime.now()
         for seat in [seat_target, seat_other]:
             seat.status = SeatStatus.RESERVED
             seat.hold_until = now - timedelta(minutes=5)

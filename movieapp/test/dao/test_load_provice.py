@@ -1,4 +1,3 @@
-import pytest
 from movieapp.dao import load_provinces
 from movieapp.test.conftest import test_session, test_app, sample_basic_setup
 

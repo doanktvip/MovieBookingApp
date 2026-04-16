@@ -92,7 +92,7 @@ def auth_user(username, password):
 
 
 def get_user_by_id(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 
 def get_user_by_username(username):
@@ -218,7 +218,7 @@ def load_provinces():
 
 
 def get_movie_by_id(movie_id):
-    return Movie.query.get(movie_id)
+    return db.session.get(Movie, movie_id)
 
 
 def get_movie_format_all():
@@ -323,7 +323,7 @@ def release_expired_seats(showtime_id=None):
 
 
 def get_showtime_by_id(showtime_id):
-    return Showtime.query.get(showtime_id)
+    return db.session.get(Showtime, showtime_id)
 
 
 def get_seats_by_showtime(showtime_id):
@@ -357,11 +357,11 @@ def get_seats_all():
 
 
 def get_seat_type(seat_type_id):
-    return SeatType.query.get(seat_type_id)
+    return db.session.get(SeatType, seat_type_id)
 
 
 def get_seat_by_id(seat_id):
-    return Seat.query.get(seat_id)
+    return db.session.get(Seat, seat_id)
 
 
 # Đặt ghế
@@ -370,7 +370,7 @@ def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_
     selected_st_seat_ids = [str(s.get('id')) for s in selected_seats]
 
     # Ràng buộc: Kiểm tra thời gian chiếu phim
-    st = Showtime.query.get(showtime_id)
+    st = db.session.get(Showtime, showtime_id)
     if not st:
         return False, "Suất chiếu không tồn tại.", {}, None
     if now >= st.start_time:
@@ -512,7 +512,7 @@ def create_pending_booking(user_id, showtime_id, total_amount, booking_session):
 
         # Tạo Vé lẻ cho từng ghế (nhưng ghế vẫn giữ nguyên trạng thái RESERVED)
         for st_seat_id, seat_data in booking_session.items():
-            st_seat = ShowtimeSeat.query.get(st_seat_id)
+            st_seat = db.session.get(ShowtimeSeat, st_seat_id)
             if st_seat:
                 new_ticket = Ticket(
                     booking_id=new_booking.id,
@@ -533,7 +533,7 @@ def create_pending_booking(user_id, showtime_id, total_amount, booking_session):
 # Cập nhật trạng thái booking
 def update_status_booking(booking_id, status, current_sid=None):
     try:
-        booking = Booking.query.get(booking_id)
+        booking = db.session.get(Booking, booking_id)
         if not booking:
             raise Exception("Không tìm thấy đơn hàng!")
         booking.status = status
@@ -631,7 +631,7 @@ def update_future_showtime_seats_price(seat_type_id, new_surcharge):
 
 # Chỉnh sửa thông tin user
 def update_user_profile(user_id, email, avatar_file=None):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return False, "Không tìm thấy người dùng!"
 
@@ -658,7 +658,7 @@ def update_user_profile(user_id, email, avatar_file=None):
 
 # Đổi mật khẩu
 def change_password(user_id, old_password, new_password):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return False, "Người dùng không tồn tại!"
     hashed_old = str(hashlib.md5(old_password.strip().encode('utf-8')).hexdigest())
@@ -749,7 +749,7 @@ def load_bookings_for_checkin(kw=None, page=1):
 
 def confirm_booking_checkin(booking_id):
     try:
-        booking = Booking.query.get(booking_id)
+        booking = db.session.get(Booking, booking_id)
         if not booking:
             return False, "Không tìm thấy đơn hàng"
         for ticket in booking.tickets:

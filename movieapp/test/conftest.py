@@ -37,6 +37,7 @@ def test_app():
         yield app
         db.session.remove()
         db.drop_all()
+        db.engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -125,7 +126,7 @@ def sample_movies_data(test_session, sample_cinemas):
     g_comedy = Genre(name="Hài hước")
     test_session.add_all([g_action, g_comedy])
 
-    now = datetime.utcnow()
+    now = datetime.now()
     m1 = Movie(name="Phim Hành Động Sắp Chiếu", release_date=now - timedelta(days=10), duration=120)
     m1.genres.append(g_action)
     m2 = Movie(name="Phim Hài Đã Chiếu", release_date=now - timedelta(days=20), duration=90)

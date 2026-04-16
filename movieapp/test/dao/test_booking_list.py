@@ -1,5 +1,6 @@
 from movieapp import dao, db
 from movieapp.models import Booking
+from movieapp.test.conftest import test_app, sample_users, sample_showtimes_complex
 
 
 # Test phân trang (Trang 1 và Trang 2)

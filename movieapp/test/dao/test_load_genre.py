@@ -1,4 +1,3 @@
-import pytest
 from movieapp.dao import load_genres
 from movieapp.test.conftest import test_session, test_app, sample_movies_data, sample_cinemas, sample_basic_setup
 
@@ -8,7 +7,6 @@ from movieapp.test.conftest import test_session, test_app, sample_movies_data, s
 # ==========================================
 
 def test_load_genres_success(sample_movies_data):
-
     # 1. Gọi hàm DAO
     result = load_genres()
 

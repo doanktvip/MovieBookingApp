@@ -1,11 +1,8 @@
-import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
-from movieapp.models import SeatStatus, ShowtimeSeat
-# Import các fixture từ test_base
-from movieapp.test.conftest import (
-    test_app, test_session, sample_showtimes_complex,
-    sample_movies_data, sample_cinemas, sample_basic_setup)
+from movieapp.models import SeatStatus
+from movieapp.test.conftest import test_app, test_session, sample_showtimes_complex, sample_movies_data, sample_cinemas, \
+    sample_basic_setup
 
 
 # Test trường hợp session_id là None
@@ -23,7 +20,7 @@ def test_get_reservation_expiry_time_valid(test_app, sample_showtimes_complex):
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][1])
 
         # Thiết lập ghế đang được giữ, hết hạn sau 10 phút
-        future_time = datetime.utcnow() + timedelta(minutes=10)
+        future_time = datetime.now() + timedelta(minutes=10)
         st_seat.status = SeatStatus.RESERVED
         st_seat.hold_session_id = session_id
         st_seat.hold_until = future_time
@@ -43,7 +40,7 @@ def test_get_reservation_expiry_time_expired(test_app, sample_showtimes_complex)
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][1])
 
         # Thiết lập ghế đã hết hạn từ 5 phút trước
-        past_time = datetime.utcnow() - timedelta(minutes=5)
+        past_time = datetime.now() - timedelta(minutes=5)
         st_seat.status = SeatStatus.RESERVED
         st_seat.hold_session_id = session_id
         st_seat.hold_until = past_time

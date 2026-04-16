@@ -1,4 +1,3 @@
-import pytest
 from datetime import datetime
 from movieapp.dao import get_showtimes_by_movie_and_date
 from movieapp.test.conftest import test_session, test_app, sample_showtimes_complex, \

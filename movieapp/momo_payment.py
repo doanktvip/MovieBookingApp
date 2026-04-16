@@ -20,7 +20,7 @@ def create_momo_payment(order_id, amount, order_info, redirect_url, ipn_url,expi
     raw_signature = f"accessKey={ACCESS_KEY}&amount={amount_str}&extraData={extra_data}&ipnUrl={ipn_url}&orderId={order_id}&orderInfo={order_info}&partnerCode={PARTNER_CODE}&redirectUrl={redirect_url}&requestId={request_id}&requestType={request_type}"
 
     # 2. Mã hóa chữ ký bằng HMAC SHA256
-    h = hmac.new(bytes(SECRET_KEY, 'ascii'), bytes(raw_signature, 'ascii'), hashlib.sha256)
+    h = hmac.new(bytes(SECRET_KEY, 'utf-8'), bytes(raw_signature, 'utf-8'), hashlib.sha256)
     signature = h.hexdigest()
 
     # 3. Gói dữ liệu gửi lên MoMo
