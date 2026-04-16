@@ -44,3 +44,14 @@ def test_get_showtimes_pagination_logic(test_app, sample_showtimes_complex):
 
         cinema_dict, total_pages = dao.get_showtimes_grouped_by_cinema(movie_id=movie_id, page=1)
         assert total_pages == 1
+
+
+def test_get_showtimes_no_pagination(test_app, sample_showtimes_complex):
+    with test_app.app_context():
+        data = sample_showtimes_complex
+        movie_id = data["movies"]["hot"].id
+
+        cinema_dict, total_pages = dao.get_showtimes_grouped_by_cinema(movie_id=movie_id, page=None)
+
+        assert len(cinema_dict) > 0
+        assert total_pages == 1

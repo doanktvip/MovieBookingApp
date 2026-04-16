@@ -3,12 +3,10 @@ from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import Booking, Ticket, BookingStatus, SeatStatus, ShowtimeSeat, Showtime
 from movieapp.test.test_base import test_app, sample_users, sample_showtimes_complex, test_session, sample_movies_data, \
-    sample_cinemas, sample_basic_setup
+    sample_cinemas, sample_basic_setup, sample_full_chain
 
 
-# =====================================================================
-# TEST 1: CÁC RÀNG BUỘC KHI ĐẶT GHẾ (PARAMETRIZED)
-# =====================================================================
+# CÁC RÀNG BUỘC KHI ĐẶT GHẾ
 @pytest.mark.parametrize("scenario, expected_success, expected_msg_snippet", [
     ("success", True, "Giữ ghế thành công"),
     ("invalid_showtime", False, "Suất chiếu không tồn tại"),
@@ -24,7 +22,7 @@ def test_process_seat_reservations(test_app, sample_users, sample_showtimes_comp
         user = sample_users["users"]["user1"]
         session_id = "test_user_session_123"
 
-        # Dùng merge() để nạp lại đối tượng vào session hiện tại (Tránh DetachedInstanceError)
+        # Dùng merge() để nạp lại đối tượng vào session hiện tại
         showtime = db.session.merge(sample_showtimes_complex["showtime"])
         seats = [db.session.merge(s) for s in sample_showtimes_complex["showtime_seats"]]
 
@@ -157,3 +155,30 @@ def test_release_unselected_seats(test_app, sample_users, sample_showtimes_compl
         # Ghế B phải được giữ chỗ thành công do user vừa chọn
         assert seat_b_check.status == SeatStatus.RESERVED
         assert seat_b_check.hold_session_id == session_id
+
+
+# HÀM count_bookings_by_user
+# Test trường hợp người dùng có đơn hàng
+def test_count_bookings_by_user_has_data(test_app, sample_full_chain):
+    with test_app.app_context():
+        user1 = sample_full_chain["users"]["user1"]
+
+        count = dao.count_bookings_by_user(user1.id)
+        assert count == 1
+
+
+# Test trường hợp người dùng chưa có đơn hàng nào
+def test_count_bookings_by_user_zero(test_app, sample_users):
+    with test_app.app_context():
+        user2 = sample_users["users"]["user2"]
+
+        count = dao.count_bookings_by_user(user2.id)
+        assert count == 0
+
+
+# Test trường hợp user_id không tồn tại trong hệ thống
+def test_count_bookings_by_user_invalid_id(test_app):
+    with test_app.app_context():
+        count = dao.count_bookings_by_user(9999)
+
+        assert count == 0

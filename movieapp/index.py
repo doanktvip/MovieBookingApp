@@ -487,12 +487,12 @@ def register_routes(app):
     @app.route('/cancel-booking/<int:booking_id>', methods=['POST'])
     @login_user_required
     def cancel_ticket(booking_id):
-        success = dao.cancel_booking(booking_id=booking_id, user_id=current_user.id)
+        success, message = dao.cancel_booking(booking_id=booking_id, user_id=current_user.id)
 
         if success:
-            flash("Đã hủy vé thành công!", "success")
+            flash(message, "success")
         else:
-            flash("Không thể hủy vé. Đơn hàng không tồn tại hoặc đã được xử lý!", "danger")
+            flash(message, "danger")
 
         return redirect(url_for('my_tickets'))
 

@@ -88,3 +88,9 @@ def test_load_movies_page_edge_cases(test_app, sample_showtimes_complex, page, e
         if expected_first_movie_key:
             expected_movie = sample_showtimes_complex["movies"][expected_first_movie_key]
             assert movies[0].id == expected_movie.id
+
+
+def test_load_movies_non_integer_page(test_app, sample_movies_data):
+    with test_app.app_context():
+        movies = dao.load_movies(page="abc")
+        assert len(movies) > 0

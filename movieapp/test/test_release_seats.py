@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
@@ -68,3 +70,13 @@ def test_release_expired_seats_specific_showtime(test_app, sample_showtimes_comp
 
         assert seat_target_check.status == SeatStatus.AVAILABLE
         assert seat_other_check.status == SeatStatus.RESERVED
+
+
+def test_release_expired_seats_exception_handling(test_app):
+    with test_app.app_context():
+        # Sử dụng patch để ép db.session.query ném ra một Exception
+        with patch.object(db.session, 'query', side_effect=Exception("Lỗi DB giả lập")):
+            with pytest.raises(Exception) as excinfo:
+                dao.release_expired_seats()
+
+            assert "Lỗi DB giả lập" in str(excinfo.value)
