@@ -96,9 +96,14 @@
                                         {% endif %}
 
                                         {% elif booking.status.name == 'PENDING' %}
-                                        <a href="/checkout" class="btn btn-outline-success btn-sm rounded-pill px-4">
-                                            <i class="bi bi-credit-card me-1"></i> Thanh toán
-                                        </a>
+                                        {# Form này sẽ gửi POST lên /checkout kèm showtime_id để tránh lỗi 404 #}
+                                        <form action="{{ url_for('pay') }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="showtime_id" value="{{ booking.showtime.id }}">
+                                            <button type="submit"
+                                                    class="btn btn-outline-success btn-sm rounded-pill px-4">
+                                                <i class="bi bi-credit-card me-1"></i> Thanh toán
+                                            </button>
+                                        </form>
                                         {% endif %}
                                     </div>
                                 </div>

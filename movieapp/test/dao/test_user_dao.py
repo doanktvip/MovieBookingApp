@@ -108,14 +108,26 @@ def test_auth_user_invalid_password_format(password, test_app):
             dao.auth_user(username="new_user1", password=password)
 
 
+# Trường hợp sai độ dài
 @pytest.mark.parametrize("username, password", [
     ("user", "123456"),  # Username quá ngắn (< 6 ký tự)
     ("a" * 51, "123456"),  # Username quá dài (> 50 ký tự)
     ("new_user1", "123"),  # Password quá ngắn (< 6 ký tự)
     ("new_user1", "a" * 51),  # Password quá dài (> 50 ký tự)
 ], ids=["user_too_short", "user_too_long", "pass_too_short", "pass_too_long"])
-# Trường hợp sai độ dài
 def test_auth_user_invalid_length(username, password, test_app):
     with test_app.app_context():
         with pytest.raises(ValueError, match="Tên đăng nhập và mật khẩu phải từ 6 đến 50 ký tự!"):
             dao.auth_user(username=username, password=password)
+
+
+# Trường hợp tài khoản bị vô hiệu hóa
+def test_auth_user_inactive(test_app, sample_users, test_session):
+    u1 = sample_users["users"]["user1"]
+
+    with test_app.app_context():
+        u1.active = False
+        test_session.commit()
+
+        with pytest.raises(ValueError, match="Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên!"):
+            dao.auth_user(username=u1.username, password="123456")

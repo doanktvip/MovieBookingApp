@@ -82,3 +82,21 @@ def test_api_login_fail_invalid_password_format(test_client, payload):
 
     assert res.status_code == 400
     assert res.get_json()['message'] == "Mật khẩu không được dùng tiếng Việt hoặc khoảng trắng!"
+
+
+# TÀI KHOẢN BỊ VÔ HIỆU HÓA
+def test_api_login_fail_inactive_user(test_client, sample_users, test_session):
+    valid_user = sample_users["users"]["user1"]
+
+    # Tạm thời vô hiệu hóa user
+    valid_user.active = False
+    test_session.commit()
+
+    # Gọi API đăng nhập
+    res = test_client.post("/api/login", json={
+        "username": valid_user.username,
+        "password": "123456"
+    })
+
+    assert res.status_code == 400
+    assert res.get_json()['message'] == "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên!"

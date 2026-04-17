@@ -1,7 +1,7 @@
 from flask import redirect, url_for, request, jsonify
-from flask_admin import Admin, AdminIndexView, expose
+from flask_admin import Admin, AdminIndexView, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
+from flask_login import current_user, logout_user
 from markupsafe import Markup
 from wtforms import StringField, TextAreaField, FileField
 from wtforms.widgets import TextArea
@@ -109,7 +109,7 @@ class AdminAuthMixin:
         return current_user.is_authenticated and current_user.role == UserRole.ADMIN
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect(url_for('login', next=request.url))
+        return redirect("/")
 
 
 class BaseModelView(AdminAuthMixin, ModelView):
@@ -346,6 +346,16 @@ class MyAdminIndexView(AdminAuthMixin, AdminIndexView):
         return self.render('admin/index.html', stats=stats)
 
 
+class MyLogoutView(BaseView):
+    @expose("/")
+    def index(self):
+        logout_user()
+        return redirect("/")
+
+    def is_accessible(self) -> bool:
+        return current_user.is_authenticated
+
+
 admin = Admin(app=app, name='Hệ Thống Đặt Vé', index_view=MyAdminIndexView())
 # CATEGORY: QUẢN LÝ RẠP & CƠ SỞ VẬT CHẤT
 admin.add_view(ProvinceView(Province, db.session, name='Tỉnh/Thành', category='Cơ sở vật chất'))
@@ -366,3 +376,6 @@ admin.add_view(TicketView(Ticket, db.session, name='Danh sách vé', category='G
 
 # CATEGORY: TÀI KHOẢN
 admin.add_view(UserView(User, db.session, name='Người dùng'))
+
+# Đăng xuất
+admin.add_view(MyLogoutView("Đăng xuất"))

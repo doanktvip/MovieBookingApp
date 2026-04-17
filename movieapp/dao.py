@@ -87,8 +87,15 @@ def auth_user(username, password):
 
     if not (6 <= len(username) <= 50) or not (6 <= len(password) <= 50):
         raise ValueError("Tên đăng nhập và mật khẩu phải từ 6 đến 50 ký tự!")
+
     password = hashlib.md5(password.encode("utf-8")).hexdigest()
-    return User.query.filter(User.username.__eq__(username), User.password.__eq__(password)).first()
+    user = User.query.filter(User.username.__eq__(username), User.password.__eq__(password)).first()
+
+    if user:
+        if not user.active:
+            raise ValueError("Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên!")
+
+    return user
 
 
 def get_user_by_id(user_id):
@@ -320,6 +327,22 @@ def release_expired_seats(showtime_id=None):
         db.session.rollback()
         print(f"Lỗi hiệu năng/logic: {e}")
         raise e
+
+
+def release_single_seat_db(seat_id, session_id):
+    try:
+        s = ShowtimeSeat.query.filter_by(
+            id=seat_id,
+            hold_session_id=str(session_id)
+        ).first()
+        if s:
+            s.status = SeatStatus.AVAILABLE
+            s.hold_until = None
+            s.hold_session_id = None
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Lỗi release_single_seat: {e}")
 
 
 def get_showtime_by_id(showtime_id):
