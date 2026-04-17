@@ -121,9 +121,10 @@ def sample_users(test_session):
     u1 = User(username="new_user1", email='user1@gmail.com', password=hashed_pwd)
     u2 = User(username="new_user2", email='user2@gmail.com', password=hashed_pwd)
     admin = User(username="admin_test", email="admin@test.com", password=hashed_pwd, role=UserRole.ADMIN)
-    test_session.add_all([u1, u2, admin])
+    staff=User(username="staff_test", email="staff@test.com", password=hashed_pwd, role=UserRole.STAFF)
+    test_session.add_all([u1, u2, admin,staff])
     test_session.commit()
-    yield {"users": {"user1": u1, "user2": u2, "admin": admin}}
+    yield {"users": {"user1": u1, "user2": u2, "admin": admin,"staff": staff}}
 
 
 @pytest.fixture

@@ -1,10 +1,8 @@
 import math
-import re
-import uuid
-import unicodedata
-from datetime import datetime, timedelta
 
-from urllib3 import proxy_from_url
+import uuid
+
+from datetime import datetime, timedelta
 
 from movieapp import app, dao, login_manager, utils, db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
@@ -12,6 +10,7 @@ from flask_login import login_user, current_user, logout_user
 from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required, admin_required
 from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus, Booking
 from movieapp.momo_payment import create_momo_payment
+from movieapp.utils import slugify
 
 
 def register_routes(app):
@@ -174,15 +173,6 @@ def register_routes(app):
                                cinema_showtimes=cinema_showtimes, total_pages=total_pages, page=page,
                                page_range=page_range,
                                current_date=date_filter, current_format=format_filter, current_lang=lang_filter)
-
-    def slugify(text):
-        # Loại bỏ dấu tiếng Việt và dấu câu
-        text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
-        # Xóa ký tự đặc biệt và viết thường
-        text = re.sub(r'[^\w\s-]', '', text).strip().lower()
-        # Gắn kết các từ bằng dấu gạch ngang
-        text = re.sub(r'[-\s]+', '-', text)
-        return text
 
     @app.context_processor
     def common_attribute():
@@ -351,7 +341,7 @@ def register_routes(app):
             booking_id = dao.create_pending_booking(user_id, showtime_id, total_amount, booking_session)
         except Exception as e:
             flash("Lỗi hệ thống khi tạo đơn hàng, vui lòng thử lại!", "danger")
-            return redirect(url_for('checkout'))
+            return redirect(url_for('pay'))
 
         # Tạo mã đơn hàng duy nhất (Ví dụ: DDN-12345678)
         order_id = f"DDN-{uuid.uuid4().hex[:8].upper()}"
@@ -382,7 +372,7 @@ def register_routes(app):
                 return redirect(momo_response['payUrl'])  # CHUYỂN HƯỚNG KHÁCH SANG MOMO
             else:
                 flash(f"Lỗi khởi tạo MoMo: {momo_response.get('message')}", "danger")
-                return redirect(url_for('checkout'))
+                return redirect(url_for('pay'))
 
         return "Chức năng thanh toán khác đang cập nhật"
 
@@ -422,7 +412,7 @@ def register_routes(app):
                     f"Lỗi: {error_msg} Giao dịch đã bị trừ tiền trên MoMo, vui lòng liên hệ CSKH kèm mã đơn {booking_id} để được đối soát/hoàn tiền!",
                     "danger")
 
-                # (Tuỳ chọn) Nếu muốn, bạn có thể dọn dẹp giỏ hàng hiện tại luôn
+                # dọn dẹp giỏ hàng hiện tại
                 session.pop('booking', None)
                 return redirect(url_for('index'))
 
@@ -470,12 +460,7 @@ def register_routes(app):
     @app.route('/check_in', methods=['POST', 'GET'])
     @login_user_required
     @staff_required
-    @admin_required
     def check_in():
-        # Bảo mật user
-        if current_user.role.name not in ['STAFF', 'ADMIN']:
-            flash("Bạn không có quyền truy cập trang này!", "danger")
-            return redirect(url_for('index'))
         keyword = request.args.get('keyword')
         page = request.args.get("page", default=1, type=int)
         bookings, total_pages = dao.load_bookings_for_checkin(kw=keyword, page=page)
@@ -530,6 +515,5 @@ def register_routes(app):
 
 if __name__ == '__main__':
     from movieapp import admin
-
     register_routes(app=app)
     app.run(debug=True)

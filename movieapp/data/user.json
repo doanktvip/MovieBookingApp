@@ -18,7 +18,7 @@
   {
     "id": 3,
     "username": "hovandat",
-    "password": "123",
+    "password": "123456",
     "email": "vandat@gmail.com",
     "role": "staff",
     "active": true
