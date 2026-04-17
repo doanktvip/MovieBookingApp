@@ -6,7 +6,7 @@ from movieapp import db, login_manager
 from movieapp.models import (
     Cinema, User, Showtime, Movie, Genre, MovieFormat, Room, Province,
     TranslationType, Ticket, BookingStatus, ShowtimeSeat, SeatStatus,
-    Booking, Seat, SeatType
+    Booking, Seat, SeatType, UserRole
 )
 
 
@@ -21,6 +21,10 @@ def create_app():
     login_manager.init_app(app)
     from movieapp.index import register_routes
     register_routes(app)
+    with app.app_context():
+        from movieapp.admin import admin, add_province_quick
+        app.add_url_rule('/api/add_province_quick', 'add_province_quick', add_province_quick, methods=['POST'])
+        admin.init_app(app)
     return app
 
 
@@ -49,7 +53,8 @@ def test_client(test_app):
 @pytest.fixture(scope="function")
 def test_session(test_app):
     """Fixture dùng để thao tác trực tiếp với Database."""
-    return db.session
+    yield db.session
+    db.session.rollback()
 
 
 # ==========================================
@@ -68,7 +73,7 @@ def sample_basic_setup(test_session):
     test_session.add_all([p_hcm, p_hn, f2d, f3d, st_normal, st_vip])
     test_session.commit()
 
-    return {
+    yield {
         "provinces": {"hcm": p_hcm, "hn": p_hn},
         "formats": {"2D": f2d, "3D": f3d},
         "seat_types": {"normal": st_normal, "vip": st_vip}
@@ -102,7 +107,7 @@ def sample_cinemas(test_session, sample_basic_setup):
     test_session.add_all(seats)
     test_session.commit()
 
-    return {
+    yield {
         **sample_basic_setup,
         "cinemas": {"cgv_tan_phu": c1, "cgv_crescent": c2, "cgv_yen_lang": c3},
         "rooms": [r1, r2, r3],
@@ -115,9 +120,10 @@ def sample_users(test_session):
     hashed_pwd = hashlib.md5("123456".encode('utf-8')).hexdigest()
     u1 = User(username="new_user1", email='user1@gmail.com', password=hashed_pwd)
     u2 = User(username="new_user2", email='user2@gmail.com', password=hashed_pwd)
-    test_session.add_all([u1, u2])
+    admin = User(username="admin_test", email="admin@test.com", password=hashed_pwd, role=UserRole.ADMIN)
+    test_session.add_all([u1, u2, admin])
     test_session.commit()
-    return {"users": {"user1": u1, "user2": u2}}
+    yield {"users": {"user1": u1, "user2": u2, "admin": admin}}
 
 
 @pytest.fixture
@@ -136,8 +142,8 @@ def sample_movies_data(test_session, sample_cinemas):
 
     test_session.add_all([m1, m2, m3])
     test_session.commit()
-    return {**sample_cinemas, "genres": {"action": g_action, "comedy": g_comedy},
-            "movies": {"hot": m1, "old": m2, "new": m3}}
+    yield {**sample_cinemas, "genres": {"action": g_action, "comedy": g_comedy},
+           "movies": {"hot": m1, "old": m2, "new": m3}}
 
 
 @pytest.fixture
@@ -158,7 +164,7 @@ def sample_showtimes_complex(test_session, sample_movies_data):
                                      price=st1.base_price + seat.seat_type.surcharge))
     test_session.add_all(sts_list)
     test_session.commit()
-    return {**sample_movies_data, "showtime": st1, "showtime_seats": sts_list}
+    yield {**sample_movies_data, "showtime": st1, "showtime_seats": sts_list}
 
 
 @pytest.fixture
@@ -174,4 +180,4 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
                     is_checked_in=False)
     test_session.add(ticket)
     test_session.commit()
-    return {**sample_users, **sample_showtimes_complex, "booking": booking, "ticket": ticket}
+    yield {**sample_users, **sample_showtimes_complex, "booking": booking, "ticket": ticket}

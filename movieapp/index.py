@@ -3,6 +3,9 @@ import re
 import uuid
 import unicodedata
 from datetime import datetime, timedelta
+
+from urllib3 import proxy_from_url
+
 from movieapp import app, dao, login_manager, utils, db
 from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
 from flask_login import login_user, current_user, logout_user
@@ -17,6 +20,12 @@ def register_routes(app):
         if 'user_session_id' not in session:
             session['user_session_id'] = str(uuid.uuid4())
             session.modified = True
+
+        if request.method == 'GET' and not request.path.startswith('/static'):
+            try:
+                dao.release_expired_seats()
+            except Exception as e:
+                app.logger.error(f"Cleanup error: {e}")
 
     # Trang chủ
     @app.route('/')
@@ -249,7 +258,9 @@ def register_routes(app):
         session['booking'] = booking_dict
         session.modified = True
 
-        return jsonify({"status": "success", "message": "Thành công"})
+        return jsonify(
+            {"status": "success", "message": "Thành công",
+             "redirect_url": url_for('pay', showtime_id=showtime_id)})
 
     @app.route('/api/clear-booking-session', methods=['POST'])
     def clear_booking_session():
@@ -261,6 +272,25 @@ def register_routes(app):
         session.modified = True
 
         return jsonify({"status": "cleared"})
+
+    @app.route('/api/release-seat', methods=['POST'])
+    def api_release_seat():
+        data = request.json
+        seat_id = data.get('seat_id')
+        current_sid = session.get('user_session_id')
+
+        if seat_id and current_sid:
+            # 1. Xóa trong Database
+            dao.release_single_seat_db(seat_id, current_sid)
+
+            # 2. Xóa trong Session
+            booking_session = session.get('booking', {})
+            if str(seat_id) in booking_session:
+                booking_session.pop(str(seat_id))
+                session['booking'] = booking_session
+                session.modified = True
+
+        return jsonify({"status": "success"})
 
     # Thanh toán
     @app.route("/checkout", methods=['GET', 'POST'])
