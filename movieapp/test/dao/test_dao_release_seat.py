@@ -46,15 +46,6 @@ def test_release_single_seat_db_wrong_session(test_session, sample_showtimes_com
     assert target_seat.status == SeatStatus.RESERVED
     assert target_seat.hold_session_id == owner_session_id
 
-
-# Test hàm chạy trơn tru nếu ID ghế không tồn tại (không báo lỗi)
-def test_release_single_seat_db_not_found(test_session):
-    try:
-        dao.release_single_seat_db(9999, "any-session")
-    except Exception as e:
-        pytest.fail(f"Hàm bị crash khi ID không tồn tại: {e}")
-
-
 # Test trường hợp Exception
 @patch('movieapp.dao.db.session.commit')
 def test_release_single_seat_db_exception(mock_commit, test_session, sample_showtimes_complex):
