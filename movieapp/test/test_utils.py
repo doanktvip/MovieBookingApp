@@ -1,4 +1,8 @@
-from movieapp.utils import stats_seats, format_api_response_fail
+from datetime import datetime
+
+import pytest
+
+from movieapp.utils import stats_seats, format_api_response_fail, get_vn_weekday
 
 
 # TEST HÀM stats_seats
@@ -40,3 +44,29 @@ def test_format_api_response_fail():
     # Nhánh 2: Truyền status tùy chỉnh ('fail')
     res_custom = format_api_response_fail("Dữ liệu không hợp lệ", status="fail")
     assert res_custom['status'] == 'fail'
+
+
+# TEST HÀM get_vn_weekday
+# Kiểm tra hàm chuyển đổi ngày sang định dạng thứ tiếng Việt.
+@pytest.mark.parametrize("date_str, expected_vn_day", [
+    ("2026-04-13", "T2"),  # Thứ Hai
+    ("2026-04-14", "T3"),  # Thứ Ba
+    ("2026-04-15", "T4"),  # Thứ Tư
+    ("2026-04-16", "T5"),  # Thứ Năm
+    ("2026-04-17", "T6"),  # Thứ Sáu
+    ("2026-04-18", "T7"),  # Thứ Bảy
+    ("2026-04-19", "CN"),  # Chủ Nhật
+])
+def test_get_vn_weekday_logic(date_str, expected_vn_day):
+    test_date = datetime.strptime(date_str, "%Y-%m-%d")
+
+    result = get_vn_weekday(test_date)
+
+    assert result == expected_vn_day
+
+
+# Kiểm tra xem hàm có báo lỗi khi truyền sai kiểu dữ liệu không
+def test_get_vn_weekday_with_invalid_type():
+    with pytest.raises(AttributeError):
+        # Truyền vào một chuỗi thay vì object datetime
+        get_vn_weekday("2026-04-18")

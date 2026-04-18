@@ -1,16 +1,13 @@
 import math
-
 import uuid
-
 from datetime import datetime, timedelta
-
 from movieapp import app, dao, login_manager, utils, db
-from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify
+from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify, current_app
 from flask_login import login_user, current_user, logout_user
 from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required, admin_required
 from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus, Booking
 from movieapp.momo_payment import create_momo_payment
-from movieapp.utils import slugify
+from movieapp.utils import slugify, get_vn_weekday
 
 
 def register_routes(app):
@@ -19,12 +16,6 @@ def register_routes(app):
         if 'user_session_id' not in session:
             session['user_session_id'] = str(uuid.uuid4())
             session.modified = True
-
-        if request.method == 'GET' and not request.path.startswith('/static'):
-            try:
-                dao.release_expired_seats()
-            except Exception as e:
-                app.logger.error(f"Cleanup error: {e}")
 
     # Trang chủ
     @app.route('/')
@@ -148,10 +139,6 @@ def register_routes(app):
                                sorted_dates=sorted_dates, current_date=current_date, get_vn_weekday=get_vn_weekday,
                                movies=movies, movie_showtimes=movie_showtimes, page_range=page_range)
 
-    def get_vn_weekday(d):
-        weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
-        return weekdays[d.weekday()]
-
     @app.route('/movies/<int:movie_id>')
     def movie_detail(movie_id):
         movie_info = dao.get_movie_by_id(movie_id)
@@ -169,13 +156,13 @@ def register_routes(app):
         page_range = dao.get_page_range(page, total_pages)
         return render_template('movie-detail.html', movie=movie_info, sorted_dates=sorted_dates,
                                get_vn_weekday=get_vn_weekday, movie_format=movie_format,
-                               TranslationType=TranslationType,
-                               cinema_showtimes=cinema_showtimes, total_pages=total_pages, page=page,
-                               page_range=page_range,
-                               current_date=date_filter, current_format=format_filter, current_lang=lang_filter)
+                               TranslationType=TranslationType, cinema_showtimes=cinema_showtimes,
+                               total_pages=total_pages, page=page, page_range=page_range, current_date=date_filter,
+                               current_format=format_filter, current_lang=lang_filter)
 
     @app.context_processor
     def common_attribute():
+        dao.release_expired_seats()
         return {
             "slugify": slugify
         }
@@ -250,7 +237,7 @@ def register_routes(app):
 
         return jsonify(
             {"status": "success", "message": "Thành công",
-             "redirect_url": url_for('pay', showtime_id=showtime_id)})
+             "redirect_url": url_for("pay", showtime_id=showtime_id)})
 
     @app.route('/api/clear-booking-session', methods=['POST'])
     def clear_booking_session():
@@ -412,7 +399,7 @@ def register_routes(app):
                     f"Lỗi: {error_msg} Giao dịch đã bị trừ tiền trên MoMo, vui lòng liên hệ CSKH kèm mã đơn {booking_id} để được đối soát/hoàn tiền!",
                     "danger")
 
-                # dọn dẹp giỏ hàng hiện tại
+                # (Tuỳ chọn) Nếu muốn, bạn có thể dọn dẹp giỏ hàng hiện tại luôn
                 session.pop('booking', None)
                 return redirect(url_for('index'))
 
@@ -481,7 +468,8 @@ def register_routes(app):
                         flash("Hệ thống bị lỗi!", 'danger')
                         return redirect("/check_in")
 
-        return render_template("staff_check_in.html", bookings=bookings, keyword=keyword, page=page, pages=total_pages,
+        return render_template("staff_check_in.html", bookings=bookings, keyword=keyword, page=page,
+                               pages=total_pages,
                                page_range=page_range)
 
     @app.route('/tickets')
@@ -492,7 +480,7 @@ def register_routes(app):
         user_bookings = dao.get_bookings_by_user(user_id=current_user.id, page=page)
 
         total_bookings = dao.count_bookings_by_user(current_user.id)
-        page_size = app.config.get('PAGE_SIZE', 5)
+        page_size = current_app.config.get('PAGE_SIZE')
         total_pages = math.ceil(total_bookings / page_size)
 
         page_range = dao.get_page_range(current_page=page, total_pages=total_pages)
@@ -515,5 +503,6 @@ def register_routes(app):
 
 if __name__ == '__main__':
     from movieapp import admin
+
     register_routes(app=app)
     app.run(debug=True)

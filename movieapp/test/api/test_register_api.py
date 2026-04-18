@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from movieapp.test.conftest import test_client, test_app, test_session, sample_users
 
@@ -86,3 +88,24 @@ def test_register_api_fail_duplicates(test_client, sample_users, payload, expect
     data = res.get_json()
     assert data is not None
     assert data.get('message') == expected_message
+
+
+# TEST LỖI HỆ THỐNG
+def test_register_api_system_error(test_client):
+    with patch('movieapp.dao.add_user') as mocked_add_user:
+        mocked_add_user.side_effect = Exception("Kết nối database thất bại")
+
+        payload = {
+            "username": "tester_error",
+            "email": "error@gmail.com",
+            "password": "password123",
+            "confirm_password": "password123"
+        }
+
+        res = test_client.post("/api/register", json=payload)
+
+        assert res.status_code == 500
+
+        data = res.get_json()
+        assert data['status'] == "error"
+        assert data['message'] == "Đã xảy ra lỗi hệ thống khi đăng ký!"

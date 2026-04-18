@@ -1,5 +1,4 @@
 from unittest.mock import patch
-import pytest
 from movieapp import dao
 from movieapp.models import SeatStatus
 
@@ -45,6 +44,7 @@ def test_release_single_seat_db_wrong_session(test_session, sample_showtimes_com
     test_session.refresh(target_seat)
     assert target_seat.status == SeatStatus.RESERVED
     assert target_seat.hold_session_id == owner_session_id
+
 
 # Test trường hợp Exception
 @patch('movieapp.dao.db.session.commit')
