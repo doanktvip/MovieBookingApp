@@ -20,6 +20,8 @@ def format_api_response_fail(message, status='error'):
         "status": status,
         "message": message
     }
+
+
 def slugify(text):
     # Loại bỏ dấu tiếng Việt và dấu câu
     text = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
@@ -28,3 +30,8 @@ def slugify(text):
     # Gắn kết các từ bằng dấu gạch ngang
     text = re.sub(r'[-\s]+', '-', text)
     return text
+
+
+def get_vn_weekday(d):
+    weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
+    return weekdays[d.weekday()]

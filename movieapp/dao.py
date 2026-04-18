@@ -2,8 +2,8 @@ import hashlib
 import json
 import math
 import re
+import os
 from datetime import date, datetime, timedelta
-
 from flask import current_app
 from sqlalchemy import func, update, case, collate, or_
 from sqlalchemy.orm import contains_eager
@@ -150,7 +150,6 @@ def add_user(username, email, password):
 
 def load_movies(genre_id=None, kw=None, page=1):
     now = datetime.now()
-
     query = db.session.query(Movie).outerjoin(Showtime)
 
     if genre_id:
@@ -166,17 +165,18 @@ def load_movies(genre_id=None, kw=None, page=1):
         )
     )
 
-    query = query.group_by(Movie.id).order_by(Movie.id.desc(), upcoming_time.is_(None), upcoming_time.asc())
+    query = query.group_by(Movie.id).order_by(upcoming_time.is_(None).asc(), upcoming_time.asc(), Movie.id.desc())
 
     if page is not None:
         try:
             page_num = int(page)
-            if page_num < 1:
-                page_num = 1
+            if page_num < 1: page_num = 1
         except ValueError:
             page_num = 1
-        start = (page_num - 1) * current_app.config.get('PAGE_SIZE')
-        query = query.offset(start).limit(current_app.config.get('PAGE_SIZE'))
+
+        page_size = current_app.config.get('PAGE_SIZE', 2)
+        start = (page_num - 1) * page_size
+        query = query.offset(start).limit(page_size)
 
     return query.all()
 
@@ -195,9 +195,20 @@ def count_movies(genre_id=None, kw=None):
 
 
 def load_tien_ich():
-    with open("data/tienich.json", encoding="utf-8") as f:
-        tien_ich = json.load(f)
-        return tien_ich
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "data", "tienich.json")
+
+    try:
+        if os.path.exists(file_path):
+            with open(file_path, encoding="utf-8") as f:
+                tien_ich = json.load(f)
+                return tien_ich
+        else:
+            print(f"Cảnh báo: Không tìm thấy file dữ liệu tại {file_path}")
+            return []
+    except Exception as e:
+        print(f"Lỗi khi nạp dữ liệu tiện ích: {e}")
+        return []
 
 
 def load_cinema(keyword=None, page=None, province_id=None):
