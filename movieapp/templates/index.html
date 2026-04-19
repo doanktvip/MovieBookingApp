@@ -1,5 +1,181 @@
 {%extends 'layout/base.html'%}
 
 {%block content%}
-<h1>HI</h1>
+<!-- Carousel -->
+<div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" xmlns="http://www.w3.org/1999/html">
+
+    <div class="carousel-indicators custom-indicators">
+        {% for movie in movies[:3] %}
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}" aria-current="true"
+                aria-label="Slide {{ loop.index }}"></button>
+        {% endfor %}
+    </div>
+
+    <div class="carousel-inner">
+        {% for movie in movies[:3] %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="carousel-image-wrapper">
+                <img src="{{ movie.image }}" class="d-block w-100 hero-img" alt="{{ movie.name }}">
+                <div class="gradient-overlay"></div>
+            </div>
+
+            <div class="custom-hero-content">
+                <div class="container h-100 position-relative z-3">
+                    <div class="row h-100 align-items-center">
+                        <div class="col-12 col-md-8 col-lg-6 mt-4 mt-md-5">
+                            <h1 class="movie-title text-white mb-1">{{ movie.name }}</h1>
+
+                            <div class="movie-meta text-light mb-3">
+                                <span class="rating text-warning fw-bold"><i class="bi bi-star-fill me-1"></i>{{movie.rate}}/10</span>
+                                <span class="separator mx-2">•</span>
+                                <span>{% if movie.duration // 60 > 0 %}{{ movie.duration // 60 }}h {% endif %}{{ movie.duration % 60 }}m</span>
+                                <span class="separator mx-2">•</span>
+                                <span>{{ movie.release_date.strftime('%Y') if movie.release_date else '' }}</span>
+                            </div>
+
+                            <div class="movie-genres mb-3">
+                                {% for genre in movie.genres %}
+                                <span class="badge bg-secondary rounded-pill me-2 px-3 py-2 bg-opacity-50 border border-light">{{ genre.name }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="movie-description text-light mb-4 text-white-50">
+                                {{ movie.description | safe }}
+                            </div>
+                            <div class="movie-actions">
+                                <a href="/movies/{{movie.id}}" class="btn btn-danger btn-custom me-3 px-4 py-2 fw-bold">
+                                    Đặt vé ngay
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-white fw-bold rounded position-absolute top-0 end-0 mt-3 me-4">
+                        <span class="badge text-white px-2 py-1 fs-6
+                        {% if movie.limited_age <= 13 %}
+                        bg-warning
+                        {% elif movie.limited_age <= 16 %}
+                        bg-orange
+                        {% else %}
+                        bg-danger
+                        {% endif %}">T{{ movie.limited_age }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button class="carousel-control-prev custom-nav-btn" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="prev" style="width: 100px;">
+        <div class="nav-icon-circle"><i class="carousel-control-prev-icon w-10"></i></div>
+    </button>
+    <button class="carousel-control-next custom-nav-btn" type="button" data-bs-target="#heroCarousel"
+            data-bs-slide="next" style="width: 100px;">
+        <div class="nav-icon-circle"><i class="carousel-control-next-icon"></i></div>
+    </button>
+</div>
+<div class="mt-5 mb-2">
+    <div class="container d-flex position-relative film-showing">
+        <h2 class="fw-bold">Phim Đang Chiếu</h2>
+        <a href="/movies" class="text-danger nav-link position-absolute end-0">Xem tất cả<i
+                class="bi bi-arrow-right ms-1"></i></a>
+    </div>
+</div>
+<div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-inner">
+        {% for m in movies %}
+        <div class="carousel-item {% if loop.first %}active{% endif %} py-2">
+
+            <a href="/movies/{{ m.id }}" class="text-decoration-none text-white d-block">
+                <div class="card mx-auto border-0 card-carousel position-relative" style="width: 19rem; height:27rem;">
+
+                    <img src="{{m.image}}" class="w-100 h-100" alt="{{m.name}}"
+                         style="object-fit: cover;">
+
+                    <div class="position-absolute start-0 end-0 bottom-0 p-3 pt-5"
+                         style="background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0) 100%);">
+
+                        <h5 class="card-title fw-bold text-white mb-2">{{m.name}}</h5>
+
+                        <div class="card-text text-white-50 text-truncate-3 mb-3" style="font-size: 0.9rem;">
+                            {{ m.description | safe }}
+                        </div>
+
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3 text-white-50"
+                             style="font-size: 0.85rem;">
+                            <span class="rating text-warning fw-bold d-flex align-items-center">
+                                <i class="bi bi-star-fill me-1"></i>{{m.rate}}</span>
+
+                            <span class="text-secondary mx-1">•</span>
+
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for genre in m.genres %}
+                                <span>{{ genre.name }}{% if not loop.last %} / {% endif %}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-2 mt-2">
+                            <div class="btn btn-danger btn-sm rounded-pill px-3 py-1 flex-grow-1 text-center fw-bold"
+                                 style="font-size: 0.8rem;">
+                                <i class="bi bi-ticket-perforated me-1"></i> Đặt vé ngay
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="position-absolute top-0 end-0 mt-2 me-2">
+                        {% if m.limited_age <= 13 %}
+                        <span class="badge bg-warning px-2 py-1 fs-6">T{{ m.limited_age }}</span>
+                        {% elif m.limited_age <= 16 %}
+                        <span class="badge px-2 py-1 fs-6"
+                              style="background-color: #fc8403;">T{{ m.limited_age }}</span>
+                        {% else %}
+                        <span class="badge bg-danger px-2 py-1 fs-6">T{{ m.limited_age }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a></div>
+        {% endfor %}
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+<div class="banner mt-5">
+    <div class="container">
+        <div class="row mb-4">
+            {%for t in tien_ich%}
+            <div class="col-md-4 col-12 mb-3 ">
+                <div class="align-items-center p-4 tien-ich h-100">
+                    <div class="mt-3 mb-4">
+                        <div class="text-center align-items-center">
+                            <span class="p-3 rounded-circle" style="background-color: #631e24 !important">
+                            <i class="text-danger {{t.icon}} fs-4"></i>
+                        </span>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <h5 class="fw-bold">{{t.title}}</h5>
+                        <div class="text-white-50 lh-lg fst-light">
+                            {{ t.description | safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {%endfor%}
+        </div>
+    </div>
+</div>
+<div class="text-center py-5" style="background-color: rgba(26, 15, 15, 0.6) !important;">
+    <h1 class="fw-bold mb-4">Trải nghiệm điện ảnh đỉnh cao</h1>
+    <p class="fs-5 " style="color: gray;">Với công nghệ âm thanh Dolby Atmos, hình ảnh 4K sắc nét và ghế ngồi cao
+        cấp,</br> DDN mang đến cho bạn những phút giây giải trí tuyệt vời nhất</p>
+    <a class="btn btn-danger p-2 px-4 mt-5" href="/movies">Khám phá ngay</a>
+</div>
 {%endblock%}

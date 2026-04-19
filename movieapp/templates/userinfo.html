@@ -1,0 +1,155 @@
+{% extends 'layout/base.html' %}
+
+{% block content %}
+<div class="card bg-transparent text-white border-0 rounded-0 min-vh-100">
+    <div class="card-body container py-5 d-flex flex-column align-items-center">
+
+        <div class="text-center mb-5">
+            <h1 class="card-title display-6 fw-bold mb-2">Thông tin cá nhân</h1>
+            <h6 class="card-subtitle text-secondary">Quản lý hồ sơ tài khoản của bạn</h6>
+        </div>
+
+        <div class="col-md-8 col-lg-5">
+            <div class="card ddn-glass border-secondary text-white shadow-lg">
+                <div class="card-body text-center p-5">
+
+                    <img src="{{ current_user.avatar }}"
+                         alt="Avatar của {{ current_user.username }}"
+                         class="rounded-circle mb-4 shadow border border-2 border-secondary"
+                         style="width: 120px; height: 120px; object-fit: cover;">
+
+                    <h3 class="fw-bold mb-1">{{ current_user.username }}</h3>
+                    <p class="text-secondary mb-4 fs-5">{{ current_user.email }}</p>
+
+                    <div class="text-start border-top border-secondary pt-4 mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-secondary"><i class="bi bi-person-badge me-2"></i>Vai trò</span>
+                            <span class="badge bg-secondary px-3 py-2 fs-6">
+                                {% if current_user.role.value == 'admin' %}
+                                    Quản trị viên
+                                {% elif current_user.role.value == 'staff' %}
+                                    Nhân viên
+                                {% else %}
+                                    Khách hàng
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-secondary"><i class="bi bi-calendar-check me-2"></i>Ngày tham gia</span>
+                            <span class="fw-medium">{{ current_user.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-secondary"><i class="bi bi-shield-check me-2"></i>Trạng thái</span>
+                            {% if current_user.active %}
+                            <span class="text-success fw-medium"><i class="bi bi-check-circle-fill me-1"></i>Đang hoạt động</span>
+                            {% else %}
+                            <span class="text-danger fw-medium"><i class="bi bi-x-circle-fill me-1"></i>Đã khóa</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-5 d-flex gap-3">
+                        <button type="button" class="btn btn-outline-light rounded-pill w-100 fw-bold py-2"
+                                data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                            <i class="bi bi-key me-2"></i>Đổi mật khẩu
+                        </button>
+                        <button type="button"
+                                class="btn btn-danger rounded-pill w-100 fw-bold py-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editProfileModal">
+                            <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content ddn-glass border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold">Chỉnh sửa hồ sơ</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="{{ url_for('edit_profile') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body p-4 text-center">
+
+                    <div class="mb-4">
+                        <img src="{{ current_user.avatar }}"
+                             id="edit-preview-avatar"
+                             class="rounded-circle mb-3 border border-2 border-danger shadow"
+                             style="width: 120px; height: 120px; object-fit: cover;">
+
+                        <div class="text-start">
+                            <label class="form-label small text-secondary">Chọn ảnh đại diện mới</label>
+                            <input type="file" name="avatar" id="avatar-file-input"
+                                   class="form-control bg-dark border-secondary text-white"
+                                   accept="image/*">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 text-start">
+                        <label class="form-label small text-secondary">Địa chỉ Email</label>
+                        <input type="email" name="email" class="form-control bg-dark border-secondary text-white"
+                               value="{{ current_user.email }}" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal">Hủy
+                    </button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content ddn-glass border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold">Đổi mật khẩu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('change_password_route') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Mật khẩu hiện tại</label>
+                        <input type="password" name="old_password"
+                               class="form-control bg-dark border-secondary text-white" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Mật khẩu mới</label>
+                        <input type="password" name="new_password"
+                               class="form-control bg-dark border-secondary text-white" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small text-secondary">Xác nhận mật khẩu mới</label>
+                        <input type="password" name="confirm_password"
+                               class="form-control bg-dark border-secondary text-white" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-outline-light rounded-pill px-4" data-bs-dismiss="modal">Hủy
+                    </button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Cập nhật mật khẩu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('avatar-file-input').onchange = evt => {
+        const [file] = document.getElementById('avatar-file-input').files;
+        if (file) {
+            document.getElementById('edit-preview-avatar').src = URL.createObjectURL(file);
+        }
+    }
+</script>
+{% endblock %}

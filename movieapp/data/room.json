@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Phòng.01",
+    "cinema_id": 1
+  },
+  {
+    "id": 2,
+    "name": "Phòng.02",
+    "cinema_id": 1
+  },
+  {
+    "id": 3,
+    "name": "Phòng.01",
+    "cinema_id": 2
+  },
+  {
+    "id": 4,
+    "name": "Phòng.01",
+    "cinema_id": 3
+  },
+  {
+    "id": 5,
+    "name": "Phòng.01",
+    "cinema_id": 4
+  },
+  {
+    "id": 6,
+    "name": "Phòng.01",
+    "cinema_id": 5
+  },
+  {
+    "id": 7,
+    "name": "Phòng.01",
+    "cinema_id": 6
+  }
+]

@@ -1,0 +1,326 @@
+/* =========================================
+   HỆ THỐNG BIẾN (CSS VARIABLES)
+   ========================================= */
+:root {
+  /* Layout & Container */
+  --header-height: 60px;
+  --container-max-width: 1400px;
+  --carousel-min-height: 500px;
+
+  /* Kích thước thành phần UI (Booking & Movies) */
+  --seat-size: 40px;
+  --legend-size: 20px;
+  --poster-width: 100px;
+  --poster-height: 150px;
+  --indicator-width: 30px;
+  --indicator-active-width: 45px;
+  --indicator-height: 4px;
+  --nav-icon-size: 45px;
+  --row-label-width: 30px;
+  --screen-line-height: 5px;
+
+  /* Spacing & Offsets */
+  --sticky-top: 20px;
+  --hover-translate-y: -10px;
+
+  /* Viền & Bo góc (Borders & Radius) */
+  --border-width: 1px;
+  --radius-md: 8px;
+  --radius-lg: 15px;
+
+  /* Hiệu ứng mờ & Đổ bóng (Blurs & Shadows) */
+  --blur-md: 8px;
+  --shadow-offset-sm: 2px;
+  --shadow-offset-md: 4px;
+  --shadow-offset-lg: 10px;
+  --shadow-blur-sm: 8px;
+  --shadow-blur-md: 15px;
+  --shadow-blur-lg: 20px;
+}
+
+/* =========================================
+   CÁC CSS CŨ (ĐÃ ÁP DỤNG BIẾN)
+   ========================================= */
+header, nav {
+  height: var(--header-height);
+}
+
+.custom-alert-wrapper {
+    top: var(--header-height, 60px);
+    z-index: 1060;
+}
+
+.movie-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fff;
+    border-radius: var(--radius-md);
+}
+
+.movie-card:hover {
+    transform: translateY(var(--hover-translate-y));
+    box-shadow: 0 var(--shadow-offset-lg) var(--shadow-blur-lg) rgba(0, 0, 0, 0.2);
+}
+
+.ddn-background {
+    background-image: radial-gradient(ellipse at 50% 0%, #5c0a0a 0%, #240404 40%, #000000 85%) !important;
+    background-color: #000000 !important;
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: white;
+}
+
+.ddn-glass {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: var(--border-width) solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.ddn-glass:hover,
+.ddn-glass:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none !important;
+    color: white !important;
+}
+
+.ddn-glass::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.bg-orange {
+    background-color: #fd7e14 !important;
+    color: white !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.nav-pills .nav-link {
+    color: white;
+}
+
+/*Header*/
+.header-menu .nav-link {
+    transition: color 0.3s ease;
+}
+
+.header-menu .nav-link:hover {
+    color: #f11429 !important;
+}
+
+/*Carousel*/
+#heroCarousel, .carousel-inner, .carousel-item, .carousel-image-wrapper {
+    height: 60vh;
+    min-height: var(--carousel-min-height);
+    position: relative;
+}
+
+.hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.gradient-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 45%, rgba(0,0,0,0) 100%);
+}
+
+.custom-hero-content {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    text-align: left;
+}
+
+.movie-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-shadow: var(--shadow-offset-sm) var(--shadow-offset-sm) var(--shadow-blur-sm) rgba(0,0,0,0.8);
+}
+
+.custom-indicators button {
+    width: var(--indicator-width) !important;
+    height: var(--indicator-height) !important;
+    background-color: rgba(255,255,255,0.4) !important;
+}
+
+.custom-indicators button.active {
+    width: var(--indicator-active-width) !important;
+    background-color: #dc3545 !important;
+}
+
+.nav-icon-circle{
+    width: var(--nav-icon-size);
+    height: var(--nav-icon-size);
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 70%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+}
+
+.nav-icon-circle:hover {
+    background-color: rgba(220, 53, 69, 0.8);
+}
+
+/* Biến CSS không thể dùng trực tiếp trong cấu trúc Media Query */
+@media (max-width: 767.98px) {
+    .custom-nav-btn, .carousel-control-prev, .carousel-control-next{
+        display: none !important;
+    }
+    .banner {
+        margin-top: 0rem;
+    }
+}
+
+.film-showing a:hover {
+    opacity:0.6;
+}
+
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-carousel {
+    border: var(--border-width) solid #ff0000;
+    box-shadow: 0 0 var(--shadow-blur-lg) rgba(255, 0, 0, 0.8);
+}
+
+/*Tien ich*/
+.tien-ich {
+    background-color: #2c1517 !important;
+    border: var(--border-width) solid #631e24;
+    border-radius: var(--radius-lg);
+}
+.tien-ich:hover{
+    border: var(--border-width) solid red;
+}
+
+/*Footer*/
+.footer-link {
+    color: silver;
+    text-decoration: none;
+}
+.footer-link:hover {
+    color:red;
+}
+
+/* =========================================
+   CÁC CSS MỚI CHO TRANG BOOKING (CHỌN GHẾ)
+   ========================================= */
+
+.container-1400 {
+    max-width: var(--container-max-width);
+}
+
+.cinema-screen {
+    height: var(--screen-line-height);
+    background: linear-gradient(90deg, transparent, #dc3545, transparent);
+    box-shadow: 0 var(--shadow-offset-md) var(--shadow-blur-md) rgba(220, 53, 69, 0.6);
+}
+
+.seat-row-label {
+    width: var(--row-label-width);
+}
+
+.seat-box {
+    width: var(--seat-size);
+    height: var(--seat-size);
+}
+
+.seat-disabled {
+    cursor: not-allowed !important;
+}
+
+.seat-hidden {
+    opacity: 0.2 !important;
+}
+
+.seat-check:checked + .btn {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.legend-box {
+    width: var(--legend-size);
+    height: var(--legend-size);
+}
+
+.booking-poster {
+    width: var(--poster-width);
+    height: var(--poster-height);
+    object-fit: cover;
+}
+
+.sticky-offset-20 {
+    top: var(--sticky-top);
+}
+
+/* =========================================
+   THIẾT KẾ ĐỒNG HỒ ĐẾM NGƯỢC ĐỒNG BỘ
+   ========================================= */
+#timer-container {
+    background-color: rgba(220, 53, 69, 0.15) !important;
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+
+    border: 1px solid rgba(220, 53, 69, 0.3) !important;
+    border-radius: var(--radius-md);
+
+    box-shadow: 0 0 var(--shadow-blur-md) rgba(220, 53, 69, 0.2);
+
+    color: white !important;
+    padding: 15px !important;
+    transition: all 0.5s ease;
+}
+
+#timer-container .small {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#countdown-timer {
+    color: #ff4d5d !important;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(255, 77, 93, 0.5);
+}
+
+.timer-danger {
+    animation: timer-pulse 1s infinite;
+}
+/* =========================================
+   CSS CHO FORM ĐĂNG NHẬP & ĐĂNG KÝ
+   ========================================= */
+
+.auth-input-group {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.auth-input-bg {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+@keyframes timer-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; transform: scale(1.02); }
+    100% { opacity: 1; }
+}

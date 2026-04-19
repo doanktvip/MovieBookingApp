@@ -1,0 +1,32 @@
+<div class="tab-pane fade show active" id="pane-login" role="tabpanel">
+    <form id="loginForm">
+        <input type="hidden" name="next" id="nextUrlInput" value="{{ request.full_path | replace('/?', '/') }}">
+        <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary ms-1">Tên đăng nhập</label>
+            <div class="input-group input-group-lg rounded-3 overflow-hidden auth-input-group">
+                <span class="input-group-text border-0 text-secondary auth-input-bg">
+                    <i class="bi bi-person-fill"></i>
+                </span>
+                <input type="text" id="username" class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                       placeholder="Nhập username của bạn" name="username">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-semibold small text-secondary ms-1">Mật khẩu</label>
+            <div class="input-group input-group-lg rounded-3 overflow-hidden auth-input-group">
+                <span class="input-group-text border-0 text-secondary auth-input-bg">
+                    <i class="bi bi-lock-fill"></i>
+                </span>
+                <input type="password" id="password"
+                       class="form-control border-0 text-white shadow-none ps-2 auth-input-bg"
+                       placeholder="Nhập mật khẩu" name="password">
+            </div>
+        </div>
+
+        <button type="button" onclick="handleLogin(event)"
+                class="btn btn-danger w-100 py-3 fw-bold rounded-pill text-uppercase shadow-lg letter-spacing-1">
+            Đăng nhập ngay
+        </button>
+    </form>
+</div>

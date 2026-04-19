@@ -10,22 +10,77 @@
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/handle.js') }}"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body>
+<body class="ddn-background">
 {%block header%}
 {%include 'layout/header.html'%}
 {%endblock%}
+
 <main class="flex-fill">
     {%block content%}
-
     {%endblock%}
 </main>
-
 
 {%block footer%}
 {%include 'layout/footer.html'%}
 {%endblock%}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="position-fixed end-0 p-2 custom-alert-wrapper">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center shadow-lg"
+         role="alert">
+        {% if category == 'success' %}
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+        {% elif category == 'danger' %}
+        <i class="bi bi-exclamation-circle-fill me-2 fs-5 text-danger"></i>
+        {% endif %}
+        <div class="fw-bold">{{ message }}</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+<div id="js-alert-container" class="position-fixed end-0 p-2 custom-alert-wrapper"></div>
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white rounded-4 border border-secondary shadow-lg"
+             style="background-color: #16161a;">
 
+            <div class="modal-header border-0 pb-0 justify-content-center mt-4">
+                <h4 class="fw-bold mb-0">Hệ thống thành viên</h4>
+            </div>
+
+            <div class="modal-body px-4 px-sm-5 pb-4 pt-4">
+
+                <ul class="nav nav-pills d-flex p-1 rounded-pill mb-4"
+                    style="background-color: rgba(255, 255, 255, 0.08);" role="tablist">
+                    <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link active w-100 rounded-pill fw-bold" id="tab-login" data-bs-toggle="pill"
+                                data-bs-target="#pane-login" type="button" role="tab">
+                            Đăng nhập
+                        </button>
+                    </li>
+                    <li class="nav-item w-50" role="presentation">
+                        <button class="nav-link w-100 rounded-pill fw-bold" id="tab-register" data-bs-toggle="pill"
+                                data-bs-target="#pane-register" type="button" role="tab">
+                            Đăng ký mới
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content">
+
+                    {% include 'login.html' %}
+                    {% include 'register.html' %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

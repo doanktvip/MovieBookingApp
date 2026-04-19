@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "username": "admin123",
+    "password": "123456",
+    "email": "admin@cinema.com",
+    "role": "admin",
+    "active": true
+  },
+  {
+    "id": 2,
+    "username": "nguyendoan",
+    "password": "123456",
+    "email": "vana@gmail.com",
+    "role": "user",
+    "active": true
+  },
+  {
+    "id": 3,
+    "username": "hovandat",
+    "password": "123456",
+    "email": "vandat@gmail.com",
+    "role": "staff",
+    "active": true
+  }
+]
