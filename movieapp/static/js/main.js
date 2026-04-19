@@ -75,11 +75,12 @@ function registerUser(username, email, password, confirm_password) {
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
-            addPendingAlert(data.message, 'success')
-            const nextUrl = document.getElementById('nextUrlInput')?.value || '/';
-
-            loginUser(username, password, nextUrl);
-
+            showCustomAlert(data.message, 'success');
+            const loginTabBtn = document.getElementById('tab-login');
+            if (loginTabBtn) {
+                const tab = new bootstrap.Tab(loginTabBtn);
+                tab.show();
+            }
         } else {
             showCustomAlert(data.message, "danger");
         }
