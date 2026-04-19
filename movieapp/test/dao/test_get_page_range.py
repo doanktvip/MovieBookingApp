@@ -1,5 +1,4 @@
 import pytest
-
 from movieapp import dao
 
 

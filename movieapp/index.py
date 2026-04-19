@@ -2,15 +2,27 @@ import math
 import uuid
 from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils, db
-from flask import Flask, render_template, request, url_for, redirect, flash, session, abort, jsonify, current_app
+from flask import render_template, request, url_for, redirect, flash, session, abort, jsonify, current_app
 from flask_login import login_user, current_user, logout_user
 from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required, admin_required
-from movieapp.models import User, TranslationType, Ticket, ShowtimeSeat, SeatStatus, BookingStatus, Booking
+from movieapp.models import TranslationType, BookingStatus, Booking
 from movieapp.momo_payment import create_momo_payment
 from movieapp.utils import slugify, get_vn_weekday
 
 
 def register_routes(app):
+    @app.errorhandler(404)
+    def handle_404(e):
+        if current_app.config.get('TESTING'):
+            return "Not Found", 404
+        return redirect("/")
+
+    @app.errorhandler(405)
+    def handle_405(e):
+        if current_app.config.get('TESTING'):
+            return "Method Not Allowed", 405
+        return redirect("/")
+
     @app.before_request
     def assign_session_id():
         if 'user_session_id' not in session:
@@ -193,17 +205,7 @@ def register_routes(app):
                 session.modified = True
                 booking_session = {}
 
-        showtime_seats = dao.get_seats_by_showtime(showtime_id)
-        seat_map = {}
-        for st_seat in showtime_seats:
-            row = st_seat.seat.row
-            col = st_seat.seat.col
-            if row not in seat_map:
-                seat_map[row] = {}
-            seat_map[row][col] = st_seat
-
-        rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-        cols = list(range(1, 9))
+        seat_map, rows, cols = dao.get_seat_layout_for_showtime(showtime_id)
         seat_type_vip = dao.get_seat_type(2)
 
         return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
@@ -271,7 +273,7 @@ def register_routes(app):
 
     # Thanh toán
     @app.route("/checkout", methods=['GET', 'POST'])
-    @login_user_required
+    @user_required
     def pay():
         showtime_id = request.form.get('showtime_id')
         showtime = dao.get_showtime_by_id(showtime_id)
@@ -374,7 +376,7 @@ def register_routes(app):
         current_sid = session.get('user_session_id')
 
         if not customer_info:
-            flash("Lỗi: Phiên giao dịch đã hết hạn hoặc không tồn tại!", "danger")
+            flash("Phiên giao dịch đã hết hạn hoặc không tồn tại!", "danger")
             return redirect(url_for('index'))
 
         booking_id = customer_info.get('booking_id')
@@ -445,7 +447,6 @@ def register_routes(app):
 
     # Trang quản lý đặt vé(nhân viên)
     @app.route('/check_in', methods=['POST', 'GET'])
-    @login_user_required
     @staff_required
     def check_in():
         keyword = request.args.get('keyword')
@@ -473,7 +474,7 @@ def register_routes(app):
                                page_range=page_range)
 
     @app.route('/tickets')
-    @login_user_required
+    @user_required
     def my_tickets():
         page = request.args.get('page', 1, type=int)
 
@@ -489,7 +490,7 @@ def register_routes(app):
                                page_range=page_range)
 
     @app.route('/cancel-booking/<int:booking_id>', methods=['POST'])
-    @login_user_required
+    @user_required
     def cancel_ticket(booking_id):
         success, message = dao.cancel_booking(booking_id=booking_id, user_id=current_user.id)
 

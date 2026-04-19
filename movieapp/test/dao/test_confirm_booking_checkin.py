@@ -1,8 +1,6 @@
 from movieapp import db
 from movieapp.dao import confirm_booking_checkin
 from movieapp.models import Booking, BookingStatus, ShowtimeSeat, SeatStatus
-from movieapp.test.conftest import test_session, test_app, sample_full_chain, sample_users, sample_showtimes_complex, \
-    sample_movies_data, sample_cinemas, sample_basic_setup
 from unittest.mock import patch
 
 

@@ -1,7 +1,6 @@
 from unittest.mock import patch
 import pytest
 from movieapp import dao
-from movieapp.test.conftest import test_app, test_session, sample_users
 
 
 # TEST TRƯỜNG HỢP THÀNH CÔNG

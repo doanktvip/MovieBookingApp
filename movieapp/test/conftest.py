@@ -1,7 +1,7 @@
 import hashlib
 import pytest
 from flask import Flask
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from movieapp import db, login_manager
 from movieapp.models import (
     Cinema, User, Showtime, Movie, Genre, MovieFormat, Room, Province,
@@ -31,10 +31,9 @@ def create_app():
 # ==========================================
 # CẤU HÌNH CORE - FIX LỖI DB & THÊM CLIENT
 # ==========================================
-
+# Tạo App và DB mới hoàn toàn cho mỗi hàm test.
 @pytest.fixture(scope="function")
 def test_app():
-    """Tạo App và DB mới hoàn toàn cho mỗi hàm test."""
     app = create_app()
     with app.app_context():
         db.create_all()
@@ -44,15 +43,15 @@ def test_app():
         db.engine.dispose()
 
 
+# Fixture dùng để giả lập trình duyệt gửi request.
 @pytest.fixture(scope="function")
 def test_client(test_app):
-    """Fixture dùng để giả lập trình duyệt gửi request."""
     return test_app.test_client()
 
 
+# Fixture dùng để thao tác trực tiếp với Database.
 @pytest.fixture(scope="function")
 def test_session(test_app):
-    """Fixture dùng để thao tác trực tiếp với Database."""
     yield db.session
     db.session.rollback()
 
@@ -93,9 +92,9 @@ def sample_cinemas(test_session, sample_basic_setup):
     test_session.add_all([c1, c2, c3])
     test_session.commit()
 
-    r1 = Room(name="Phòng 01", capacity=20, cinema_id=c1.id)
-    r2 = Room(name="Phòng 02", capacity=20, cinema_id=c2.id)
-    r3 = Room(name="Phòng 03", capacity=20, cinema_id=c3.id)
+    r1 = Room(name="Phòng 01", cinema_id=c1.id)
+    r2 = Room(name="Phòng 02", cinema_id=c2.id)
+    r3 = Room(name="Phòng 03", cinema_id=c3.id)
     test_session.add_all([r1, r2, r3])
     test_session.commit()
 
@@ -121,10 +120,10 @@ def sample_users(test_session):
     u1 = User(username="new_user1", email='user1@gmail.com', password=hashed_pwd)
     u2 = User(username="new_user2", email='user2@gmail.com', password=hashed_pwd)
     admin = User(username="admin_test", email="admin@test.com", password=hashed_pwd, role=UserRole.ADMIN)
-    staff=User(username="staff_test", email="staff@test.com", password=hashed_pwd, role=UserRole.STAFF)
-    test_session.add_all([u1, u2, admin,staff])
+    staff = User(username="staff_test", email="staff@test.com", password=hashed_pwd, role=UserRole.STAFF)
+    test_session.add_all([u1, u2, admin, staff])
     test_session.commit()
-    yield {"users": {"user1": u1, "user2": u2, "admin": admin,"staff": staff}}
+    yield {"users": {"user1": u1, "user2": u2, "admin": admin, "staff": staff}}
 
 
 @pytest.fixture
@@ -152,9 +151,13 @@ def sample_showtimes_complex(test_session, sample_movies_data):
     f2d = sample_movies_data["formats"]["2D"]
     r1 = sample_movies_data["rooms"][0]
     m1 = sample_movies_data["movies"]["hot"]
-    now = datetime.combine(date.today(), datetime.min.time()) + timedelta(hours=10)
+
+    now = datetime.now()
+    future_time = datetime.combine(now.date(), datetime.max.time()) - timedelta(minutes=1)
+
     st1 = Showtime(movie_id=m1.id, room_id=r1.id, format_id=f2d.id, translation=TranslationType.SUBTITLE,
-                   start_time=now, end_time=now + timedelta(hours=2), base_price=50000)
+                   start_time=future_time, end_time=future_time + timedelta(hours=2), base_price=50000)
+
     test_session.add(st1)
     test_session.commit()
     sts_list = []

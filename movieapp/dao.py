@@ -246,10 +246,18 @@ def get_movie_format_all():
 def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, lang_str=None, page=1):
     query = Showtime.query.join(Room).join(Cinema).filter(Showtime.movie_id == movie_id)
 
+    now = datetime.now()
+    today_date = now.date()
+
     if date_str:
-        query = query.filter(func.date(Showtime.start_time) == date_str)
+        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     else:
-        query = query.filter(func.date(Showtime.start_time) == date.today())
+        target_date = today_date  # Nếu không truyền gì, mặc định là hôm nay
+
+    if target_date == today_date:
+        query = query.filter(func.date(Showtime.start_time) == today_date, Showtime.start_time >= now)
+    else:
+        query = query.filter(func.date(Showtime.start_time) == target_date)
 
     if format_str:
         query = query.join(MovieFormat).filter(MovieFormat.name == format_str)
@@ -290,6 +298,34 @@ def get_showtimes_grouped_by_cinema(movie_id, date_str=None, format_str=None, la
         cinema_dict[cinema].append(st)
 
     return cinema_dict, total_pages
+
+
+def get_seat_layout_for_showtime(showtime_id):
+    showtime_seats = get_seats_by_showtime(showtime_id)
+
+    seat_map = {}
+    rows_set = set()
+    max_col = 0
+
+    for st_seat in showtime_seats:
+        row = st_seat.seat.row
+        col = st_seat.seat.col
+
+        # Lưu lại hàng và cột lớn nhất để tự tạo mảng rows, cols
+        rows_set.add(row)
+        if col > max_col:
+            max_col = col
+
+        if row not in seat_map:
+            seat_map[row] = {}
+        seat_map[row][col] = st_seat
+
+    # Sắp xếp lại danh sách hàng theo thứ tự A, B, C...
+    rows = sorted(list(rows_set))
+    # Tạo danh sách cột từ 1 đến max_col
+    cols = list(range(1, max_col + 1))
+
+    return seat_map, rows, cols
 
 
 # Giải phóng ghế hết hạn

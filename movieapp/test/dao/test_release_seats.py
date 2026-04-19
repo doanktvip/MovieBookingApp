@@ -1,11 +1,9 @@
 from unittest.mock import patch
-
 import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import SeatStatus, BookingStatus, Ticket, Booking, ShowtimeSeat
-from movieapp.test.conftest import test_session, test_app, sample_showtimes_complex, sample_movies_data, \
-    sample_cinemas, sample_basic_setup, sample_users
+
 
 
 # CÁC TRƯỜNG HỢP VỀ THỜI GIAN VÀ TRẠNG THÁI BOOKING

@@ -1,14 +1,11 @@
 import hashlib
 import json
 import os
-from datetime import datetime
-from tkinter.font import names
+import random
+import traceback
+from datetime import datetime, timedelta
 
-from sqlalchemy.orm import joinedload
-
-import movieapp.dao
 from movieapp import app, db
-# Import đầy đủ Models, Enums và bảng movie_genre
 from movieapp.models import (
     User, Genre, Movie, movie_genre, Cinema, Room,
     Seat, Showtime, ShowtimeSeat, Booking, Ticket,
@@ -17,8 +14,8 @@ from movieapp.models import (
 )
 
 
-# Hàm hỗ trợ đọc file JSON
 def load_json(filename):
+    """Hàm hỗ trợ đọc file JSON từ thư mục data"""
     filepath = os.path.join(os.path.dirname(__file__), 'movieapp', 'data', filename)
     with open(filepath, encoding="utf-8") as f:
         return json.load(f)
@@ -26,117 +23,147 @@ def load_json(filename):
 
 if __name__ == "__main__":
     with app.app_context():
-        # 1. Xóa và tạo lại toàn bộ bảng
+        # 1. Xóa sạch và khởi tạo lại cấu trúc Database
         db.drop_all()
-        print("--- Đã xóa sạch các bảng cũ ---")
         db.create_all()
-        print("--- Đã tạo các bảng mới thành công! ---")
-
-        # 2. Bắt đầu nạp dữ liệu theo thứ tự (Tránh lỗi Khóa ngoại)
 
         try:
-            # 2.1. Nạp Users
+            # --- PHẦN 1: NẠP DỮ LIỆU TĨNH TỪ JSON ---
+
+            # Nạp Users (Băm mật khẩu và chuyển chuỗi thành Enum)
+            users = []
             for u in load_json("user.json"):
-                u['role'] = UserRole(u['role'].lower())  # Ép về chữ thường cho an toàn
+                u['role'] = UserRole(u['role'].lower())
                 u['password'] = hashlib.md5(u['password'].encode("utf-8")).hexdigest()
-                db.session.add(User(**u))
+                users.append(User(**u))
+            db.session.add_all(users)
 
-            # 2.2. Nạp Genres
-            for g in load_json("genre.json"):
-                db.session.add(Genre(**g))
-
-            # 2.3. Nạp Province
-            for p in load_json("province.json"):
-                db.session.add(Province(**p))
-
-            # 2.4. Nạp MovieFormat
-            for mf in load_json("movie_format.json"):
-                db.session.add(MovieFormat(**mf))
-
+            # Nạp dữ liệu cơ bản (Thể loại, Tỉnh thành, Định dạng, Rạp)
+            db.session.add_all([Genre(**g) for g in load_json("genre.json")])
+            db.session.add_all([Province(**p) for p in load_json("province.json")])
+            db.session.add_all([MovieFormat(**mf) for mf in load_json("movie_format.json")])
+            db.session.add_all([Cinema(**c) for c in load_json("cinema.json")])
             db.session.commit()
 
-            # 2.5. Nạp Cinemas
-            for c in load_json("cinema.json"):
-                db.session.add(Cinema(**c))
-
-            db.session.commit()
-
-            # 2.6. Nạp Movies
+            # Nạp Phim (Xử lý chuỗi ngày tháng sang datetime object)
+            movies_dict = {}
+            movies_to_add = []
             for m in load_json("movie.json"):
-                # SỬA Ở ĐÂY: Bỏ .date() đi để giữ nguyên kiểu DateTime cho khớp với Model
                 m['release_date'] = datetime.strptime(m['release_date'], "%Y-%m-%d")
-                db.session.add(Movie(**m))
-
+                new_movie = Movie(**m)
+                movies_to_add.append(new_movie)
+                movies_dict[m['id']] = new_movie
+            db.session.add_all(movies_to_add)
             db.session.commit()
 
-            # 2.7. Nạp Rooms
-            for r in load_json("room.json"):
-                db.session.add(Room(**r))
+            # Nạp Phòng chiếu
+            rooms_data = load_json("room.json")
+            if rooms_data:
+                db.session.add_all([Room(**r) for r in rooms_data])
+                db.session.commit()
+            rooms_list = db.session.query(Room).all()
 
+            # Nạp liên kết Phim - Thể loại (Dùng Bulk Insert cực nhanh)
+            movie_genre_data = load_json("movie_genre.json")
+            if movie_genre_data:
+                db.session.execute(movie_genre.insert(), movie_genre_data)
             db.session.commit()
 
-            # 2.8. Nạp Bảng trung gian Movie_Genre
-            for mg in load_json("movie_genre.json"):
-                stmt = movie_genre.insert().values(movie_id=mg['movie_id'], genre_id=mg['genre_id'])
-                db.session.execute(stmt)
+            # --- PHẦN 2: TỰ ĐỘNG SINH DỮ LIỆU ĐỘNG (GHẾ & LỊCH CHIẾU) ---
 
-            # 2.9. Nạp Seat Type
-            seat_type_normal = SeatType(name="Normal", surcharge=0)
-            seat_type_vip = SeatType(name="Vip", surcharge=20000)
-            db.session.add_all([seat_type_normal, seat_type_vip])
+            # Tạo loại ghế
+            st_normal = SeatType(name="Normal", surcharge=0)
+            st_vip = SeatType(name="Vip", surcharge=20000)
+            db.session.add_all([st_normal, st_vip])
             db.session.commit()
 
-            # 2.10. Nạp Seats
-            name_row = ["A", "B", "C", "D", "E", "F", "G", "H"]
-            for i in name_row:
-                for j in range(1, 9):
-                    s = Seat(room_id=1, seat_number=f"{i}{j}", row=i, col=j, seat_type_id=1)
-                    if i in ["G", "H"]:
-                        s.seat_type_id = 2
-                    db.session.add(s)
+            # Tạo Sơ đồ ghế 8x8 cho TẤT CẢ các phòng
+            seats = []
+            for rm in rooms_list:
+                for row_char in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+                    # Hàng F, G, H là ghế VIP
+                    type_id = st_vip.id if row_char in ["F", "G", "H"] else st_normal.id
+                    for col_num in range(1, 9):
+                        seats.append(Seat(room_id=rm.id, seat_number=f"{row_char}{col_num}",
+                                          row=row_char, col=col_num, seat_type_id=type_id))
+            db.session.add_all(seats)
             db.session.commit()
 
-            # 2.11. Nạp Showtimes
-            for st in load_json("showtime.json"):
-                st['start_time'] = datetime.strptime(st['start_time'], "%Y-%m-%dT%H:%M:%S")
-                st['end_time'] = datetime.strptime(st['end_time'], "%Y-%m-%dT%H:%M:%S")
-                st['translation'] = TranslationType(st['translation'])
-                db.session.add(Showtime(**st))
+            # Tự động sinh Lịch chiếu thông minh (4 ca/ngày, không chồng chéo)
+            movies_list = list(movies_dict.values())
+            formats_list = db.session.query(MovieFormat).all()
 
-            db.session.commit()
+            # Lịch chiếu bắt đầu từ 2 ngày trước để có dữ liệu "quá hạn"
+            start_date = datetime.now().date() - timedelta(days=2)
+            count_st = 0
 
-            # 2.12. Nạp ShowtimeSeats (Đã được tối ưu hiệu suất và tự động hóa)
-            showtimes = db.session.query(Showtime).all()
-            showtime_seats_list = []
+            for rm in rooms_list:
+                # Lấy sẵn danh sách ghế của phòng này để tạo ShowtimeSeat
+                seats_in_room = db.session.query(Seat).filter(Seat.room_id == rm.id).all()
 
-            for st in showtimes:
-                seats_in_room = db.session.query(Seat).options(
-                    joinedload(Seat.seat_type)
-                ).filter(Seat.room_id == st.room_id).all()
+                # Trải dài lịch chiếu trong 8 ngày
+                for day_offset in range(8):
+                    curr_day = start_date + timedelta(days=day_offset)
 
-                for seat in seats_in_room:
-                    calculated_price = st.base_price + seat.seat_type.surcharge
+                    # Random giờ mở cửa ca sáng (từ 08:00 đến 08:45)
+                    morning_start_offset = random.randint(0, 45)
+                    previous_end_time = datetime.combine(curr_day, datetime.min.time()).replace(hour=8,
+                                                                                                minute=morning_start_offset)
 
-                    showtime_seats_list.append(
-                        ShowtimeSeat(
-                            showtime_id=st.id,
-                            seat_id=seat.id,
-                            price=calculated_price
+                    # 4 ca chiếu mỗi ngày nối tiếp nhau
+                    for _ in range(4):
+                        # Chọn ngẫu nhiên phim và định dạng xoay vòng
+                        mv = movies_list[count_st % len(movies_list)]
+                        fmt = formats_list[count_st % len(formats_list)]
+
+                        # Lấy thời lượng phim (mặc định 120p nếu thiếu data)
+                        duration = mv.duration or 120
+
+                        # Rạp nghỉ dọn dẹp ngẫu nhiên từ 15 - 30 phút
+                        break_time = random.randint(15, 30)
+
+                        # Tính giờ chiếu ca tiếp theo
+                        start_t = previous_end_time + timedelta(minutes=break_time)
+                        end_t = start_t + timedelta(minutes=duration)
+
+                        # Cập nhật mốc thời gian cho vòng lặp sau
+                        previous_end_time = end_t
+
+                        # Tạo Suất chiếu
+                        new_st = Showtime(
+                            movie_id=mv.id,
+                            room_id=rm.id,
+                            format_id=fmt.id,
+                            base_price=75000.0 + (5000 * (count_st % 4)),
+                            translation=TranslationType.SUBTITLE if count_st % 2 == 0 else TranslationType.DUBBING,
+                            start_time=start_t,
+                            end_time=end_t
                         )
-                    )
+                        db.session.add(new_st)
+                        db.session.flush()  # Lưu tạm để lấy ID suất chiếu
+                        count_st += 1
 
-            db.session.add_all(showtime_seats_list)
-            db.session.commit()
+                        # Tự động làm đầy sơ đồ ghế cho suất chiếu này
+                        st_seats = [ShowtimeSeat(
+                            showtime_id=new_st.id,
+                            seat_id=s.id,
+                            price=new_st.base_price + (s.seat_type.surcharge or 0),
+                            status=SeatStatus.AVAILABLE
+                        ) for s in seats_in_room]
 
-            # 2.13. Nạp Bookings
-            if os.path.exists(os.path.join(os.path.dirname(__file__), 'movieapp', 'data', 'booking.json')):
-                for b in load_json("booking.json"):
-                    b['status'] = BookingStatus(b['status'].lower())
-                    db.session.add(Booking(**b))
+                        db.session.add_all(st_seats)
+
+                # Commit theo từng phòng để giải phóng bộ nhớ
                 db.session.commit()
 
-            print("ĐÃ SEED DỮ LIỆU THÀNH CÔNG!")
+            # --- KẾT QUẢ ---
+            total_st_seats = db.session.query(ShowtimeSeat).count()
+            print(f"✅ THÀNH CÔNG! Đã hoàn tất nạp dữ liệu.")
+            print(f"-> Đã sinh {count_st} suất chiếu.")
+            print(f"-> Đã tạo tổng cộng {total_st_seats} ghế.")
 
         except Exception as e:
             db.session.rollback()
-            print(f"CÓ LỖI XẢY RA KHI SEED DỮ LIỆU: {e}")
+            print(f"\n❌ THẤT BẠI. Đã hoàn tác (rollback) toàn bộ dữ liệu.")
+            print(f"Lý do lỗi: {e}\n")
+            traceback.print_exc()

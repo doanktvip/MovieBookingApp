@@ -1,61 +1,37 @@
 [
   {
     "id": 1,
-    "name": "Phòng 1 (Standard)",
-    "capacity": 50,
+    "name": "Phòng.01",
     "cinema_id": 1
   },
   {
     "id": 2,
-    "name": "Phòng chiếu 2",
-    "capacity": 30,
+    "name": "Phòng.02",
     "cinema_id": 1
   },
   {
     "id": 3,
-    "name": "Phòng chiếu 3",
-    "capacity": 60,
-    "cinema_id": 1
+    "name": "Phòng.01",
+    "cinema_id": 2
   },
   {
     "id": 4,
-    "name": "Phòng chiếu 1",
-    "capacity": 40,
-    "cinema_id": 2
-  },{
+    "name": "Phòng.01",
+    "cinema_id": 3
+  },
+  {
     "id": 5,
-    "name": "Phòng chiếu 2",
-    "capacity": 60,
-    "cinema_id": 2
+    "name": "Phòng.01",
+    "cinema_id": 4
   },
   {
     "id": 6,
-    "name": "Phòng chiếu 3",
-    "capacity": 50,
-    "cinema_id": 2
+    "name": "Phòng.01",
+    "cinema_id": 5
   },
   {
     "id": 7,
-    "name": "Phòng chiếu 1",
-    "capacity": 60,
-    "cinema_id": 3
-  },
-  {
-    "id": 8,
-    "name": "Phòng chiếu 2",
-    "capacity": 70,
-    "cinema_id": 3
-  },
-  {
-    "id": 9,
-    "name": "Phòng chiếu 3",
-    "capacity": 50,
-    "cinema_id": 3
-  },
-  {
-    "id": 10,
-    "name": "Phòng chiếu 1",
-    "capacity": 60,
-    "cinema_id": 4
+    "name": "Phòng.01",
+    "cinema_id": 6
   }
 ]

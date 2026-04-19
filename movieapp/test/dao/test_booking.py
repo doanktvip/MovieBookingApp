@@ -1,19 +1,16 @@
 from datetime import datetime, timedelta
 import pytest
-
 from movieapp import db
 from movieapp.dao import create_pending_booking, update_status_booking
 from movieapp.models import Booking, BookingStatus, ShowtimeSeat, SeatStatus
-from movieapp.test.conftest import test_session, test_app, sample_full_chain, sample_users, sample_showtimes_complex
 from unittest.mock import patch
 
 
 # ==========================================
 # KIỂM THỬ HÀM TẠO ĐƠN HÀNG (CREATE)
 # ==========================================
-
+# Kiểm tra trường hợp giỏ hàng trống - Dùng sample_showtimes_complex để tránh data rác
 def test_create_booking_empty(sample_showtimes_complex, sample_users):
-    """Kiểm tra trường hợp giỏ hàng trống - Dùng sample_showtimes_complex để tránh data rác"""
     data_st = sample_showtimes_complex
     user = sample_users["users"]["user1"]
     booking_session_empty = {}
@@ -27,8 +24,8 @@ def test_create_booking_empty(sample_showtimes_complex, sample_users):
         )
 
 
+# Kiểm tra tạo đơn hàng mới với 2 ghế - Dùng fixture chưa có booking
 def test_create_booking_new(sample_showtimes_complex, sample_users):
-    """Kiểm tra tạo đơn hàng mới với 2 ghế - Dùng fixture chưa có booking"""
     data_st = sample_showtimes_complex
     user = sample_users["users"]["user1"]
 
@@ -54,8 +51,8 @@ def test_create_booking_new(sample_showtimes_complex, sample_users):
     assert len(booking.tickets) == 2
 
 
+# Kiểm tra khách hàng quay lại thanh toán đơn hàng đang chờ
 def test_create_booking_recontinue_pay(sample_showtimes_complex, sample_users):
-    """Kiểm tra khách hàng quay lại thanh toán đơn hàng đang chờ"""
     data_st = sample_showtimes_complex
     user = sample_users["users"]["user1"]
     st_id = data_st["showtime"].id
@@ -131,8 +128,8 @@ def test_update_booking_status_not_found(test_app):
             update_status_booking(booking_id=9999, status=BookingStatus.PAID, current_sid="abc")
 
 
+# Dùng sample_full_chain vì hàm này cần 1 booking có sẵn để thanh toán
 def test_update_booking_status_success(sample_full_chain, test_session):
-    """Dùng sample_full_chain vì hàm này cần 1 booking có sẵn để thanh toán"""
     data = sample_full_chain
     booking = data["booking"]
     st_seat = data["showtime_seats"][1]
@@ -149,8 +146,8 @@ def test_update_booking_status_success(sample_full_chain, test_session):
     assert st_seat.status == SeatStatus.BOOKED
 
 
+# Bảo mật: Session ID không khớp
 def test_update_status_booking_wrong_session(sample_full_chain, test_session):
-    """Bảo mật: Session ID không khớp"""
     data = sample_full_chain
     st_seat = data["showtime_seats"][1]
 
@@ -161,8 +158,8 @@ def test_update_status_booking_wrong_session(sample_full_chain, test_session):
         update_status_booking(data["booking"].id, BookingStatus.PAID, "session_hacker")
 
 
+# Hết hạn thời gian giữ ghế
 def test_update_status_booking_expire_paying(sample_full_chain, test_session):
-    """Hết hạn thời gian giữ ghế"""
     data = sample_full_chain
     st_seat = data["showtime_seats"][1]
     session_id = "session_123"

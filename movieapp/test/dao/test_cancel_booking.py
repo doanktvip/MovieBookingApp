@@ -2,7 +2,6 @@ from unittest.mock import patch
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import BookingStatus, SeatStatus
-from movieapp.test.conftest import test_app, sample_full_chain
 
 
 # Test hủy thành công

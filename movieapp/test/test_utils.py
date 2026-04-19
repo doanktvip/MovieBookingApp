@@ -1,7 +1,5 @@
 from datetime import datetime
-
 import pytest
-
 from movieapp.utils import stats_seats, format_api_response_fail, get_vn_weekday
 
 

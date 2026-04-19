@@ -1,7 +1,6 @@
 import pytest
 from movieapp import dao
-from movieapp.test.conftest import test_app, sample_showtimes_complex, sample_movies_data, sample_cinemas, \
-    test_session, sample_basic_setup
+
 
 
 # TEST HÀM: get_showtime_by_id

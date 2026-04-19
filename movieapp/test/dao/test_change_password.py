@@ -1,7 +1,6 @@
 import hashlib
 from unittest.mock import patch
 from movieapp import dao, db
-from movieapp.test.conftest import test_app, test_session, sample_users
 
 
 # 1. Test không tìm thấy người dùng
