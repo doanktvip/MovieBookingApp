@@ -28,7 +28,7 @@ def anonymous_required(f):
 def staff_required(f):
     @wraps(f)
     def decorated_func(*args, **kwargs):
-        if current_user.role != UserRole.STAFF:
+        if not current_user.is_authenticated or current_user.role != UserRole.STAFF:
             return redirect("/")
         return f(*args, **kwargs)
 
@@ -38,16 +38,17 @@ def staff_required(f):
 def user_required(f):
     @wraps(f)
     def decorated_func(*args, **kwargs):
-        if current_user.role != UserRole.USER:
+        if not current_user.is_authenticated or current_user.role != UserRole.USER:
             return redirect("/")
         return f(*args, **kwargs)
 
     return decorated_func
 
+
 def admin_required(f):
     @wraps(f)
     def decorated_func(*args, **kwargs):
-        if current_user.role != UserRole.ADMIN:
+        if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
             return redirect("/")
         return f(*args, **kwargs)
 

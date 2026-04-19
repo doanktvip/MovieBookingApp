@@ -131,10 +131,9 @@ class CinemaView(BaseModelView):
     # Cấu hình tạo Phòng ngay trong Rạp (Inline Model)
     inline_models = [
         (Room, dict(
-            form_columns=['id', 'name', 'capacity'],
+            form_columns=['id', 'name'],
             column_labels={
-                'name': 'Tên phòng chiếu',
-                'capacity': 'Sức chứa (số ghế)'
+                'name': 'Tên phòng chiếu'
             }
         ))
     ]
@@ -190,9 +189,9 @@ class CinemaView(BaseModelView):
 class RoomView(BaseModelView):
     column_searchable_list = ['name']
     column_editable_list = ['name']
-    column_list = ['name', 'capacity', 'cinema']
-    form_columns = ['name', 'capacity', 'cinema']
-    column_labels = {'name': 'Tên phòng', 'capacity': 'Sức chứa', 'cinema': 'Thuộc Rạp'}
+    column_list = ['name', 'cinema']
+    form_columns = ['name', 'cinema']
+    column_labels = {'name': 'Tên phòng', 'cinema': 'Thuộc Rạp'}
 
 
 class SeatTypeView(BaseModelView):
@@ -346,10 +345,9 @@ class MyAdminIndexView(AdminAuthMixin, AdminIndexView):
         return self.render('admin/index.html', stats=stats)
 
 
-class MyLogoutView(BaseView):
+class MyExitView(BaseView):
     @expose("/")
     def index(self):
-        logout_user()
         return redirect("/")
 
     def is_accessible(self) -> bool:
@@ -378,4 +376,4 @@ admin.add_view(TicketView(Ticket, db.session, name='Danh sách vé', category='G
 admin.add_view(UserView(User, db.session, name='Người dùng'))
 
 # Đăng xuất
-admin.add_view(MyLogoutView("Đăng xuất"))
+admin.add_view(MyExitView("Thoát"))

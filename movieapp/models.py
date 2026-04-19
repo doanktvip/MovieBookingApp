@@ -87,7 +87,6 @@ class Movie(BaseModel):
 class Room(BaseModel):
     __tablename__ = 'room'
     name = Column(String(50), nullable=False)
-    capacity = Column(Integer)
     cinema_id = Column(Integer, ForeignKey('cinema.id'), nullable=False)
 
     seats = relationship('Seat', backref='room', cascade="all, delete-orphan", lazy=True)

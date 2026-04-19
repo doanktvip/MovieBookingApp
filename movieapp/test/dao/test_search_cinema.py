@@ -1,5 +1,4 @@
 from movieapp.dao import load_cinema
-from movieapp.test.conftest import sample_cinemas, test_session, test_app, sample_basic_setup
 
 
 def test_all(sample_cinemas):

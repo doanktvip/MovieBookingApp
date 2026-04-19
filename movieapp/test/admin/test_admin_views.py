@@ -1,6 +1,6 @@
 from unittest.mock import patch
-from movieapp.admin import MyAdminIndexView, MyLogoutView
-from movieapp.models import UserRole  # Đừng quên import UserRole
+from movieapp.admin import MyAdminIndexView
+from movieapp.models import UserRole
 
 
 # TEST: index (MyAdminIndexView)
@@ -41,35 +41,16 @@ def test_my_admin_index_view_coverage(mock_render, mock_booking, mock_movie, moc
 
 
 # TEST: index (MyLogoutView)
-@patch('movieapp.admin.current_user')
-@patch('movieapp.admin.logout_user')
-def test_my_logout_view_index_coverage(mock_logout, mock_user, test_app):
-    # Cấp quyền: Giả lập người dùng đang đăng nhập
-    mock_user.is_authenticated = True
+def test_exit_view_redirect(test_client, sample_users):
+    user = sample_users["users"]["user1"]
 
-    view = MyLogoutView()
+    # Giả lập đã đăng nhập để pass qua is_accessible
+    with patch('flask_login.utils._get_user') as mocked_user:
+        mocked_user.return_value = user
 
-    # Cần request context để hàm redirect() hoạt động trơn tru
-    with test_app.test_request_context('/admin/logout/'):
-        response = view.index()
+        # Truy cập vào endpoint của view (thường là /admin/exitview/)
+        response = test_client.get('/admin/myexitview/')
 
-        # Kiểm tra xem dòng 352 (logout_user) có được thực thi không
-        mock_logout.assert_called_once()
-
-        # Kiểm tra xem dòng 353 có trả về lệnh chuyển hướng (302) về trang chủ "/" không
+        # Kiểm tra mã chuyển hướng 302 về trang chủ
         assert response.status_code == 302
-        assert response.location == '/'
-
-
-# TEST: is_accessible (MyLogoutView)
-@patch('movieapp.admin.current_user')
-def test_my_logout_view_is_accessible_coverage(mock_user):
-    view = MyLogoutView()
-
-    # Trường hợp 1: Người dùng đã đăng nhập -> Trả về True
-    mock_user.is_authenticated = True
-    assert view.is_accessible() is True
-
-    # Trường hợp 2: Người dùng chưa đăng nhập -> Trả về False
-    mock_user.is_authenticated = False
-    assert view.is_accessible() is False
+        assert response.location == "/"

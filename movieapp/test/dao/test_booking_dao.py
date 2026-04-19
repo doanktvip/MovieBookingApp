@@ -2,7 +2,6 @@ import pytest
 from datetime import datetime, timedelta
 from movieapp import dao, db
 from movieapp.models import Booking, Ticket, BookingStatus, SeatStatus, ShowtimeSeat
-from movieapp.test.conftest import test_app, sample_users, sample_showtimes_complex, sample_full_chain
 
 
 # CÁC RÀNG BUỘC KHI ĐẶT GHẾ

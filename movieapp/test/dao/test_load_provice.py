@@ -1,5 +1,4 @@
 from movieapp.dao import load_provinces
-from movieapp.test.conftest import test_session, test_app, sample_basic_setup
 
 
 def test_load_provinces_success(sample_basic_setup):

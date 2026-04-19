@@ -1,7 +1,5 @@
 from unittest.mock import patch
-
 import pytest
-from movieapp.test.conftest import test_client, test_app, test_session, sample_users
 
 
 # TEST ĐĂNG KÝ THÀNH CÔNG
