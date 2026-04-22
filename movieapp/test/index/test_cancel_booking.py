@@ -56,4 +56,4 @@ def test_cancel_booking_fail(logged_in_client):
 # TRƯỜNG HỢP: CHƯA ĐĂNG NHẬP
 def test_cancel_booking_unauthorized(test_client):
     response = test_client.post('/cancel-booking/99')
-    assert response.status_code == 302
+    assert response.status_code == 401
