@@ -1,22 +1,33 @@
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from movieapp.models import UserRole
 
 
 # TRƯỜNG HỢP: CÓ SESSION_ID VÀ DỌN DẸP THÀNH CÔNG
 def test_clear_booking_session_success(test_client):
+    # Giả lập Session có chứa giỏ hàng
     with test_client.session_transaction() as sess:
         sess['user_session_id'] = 'active-session-123'
         sess['booking'] = {'1': 'seat1'}
 
-    with patch('movieapp.dao.clear_db_booking_by_session') as mocked_clear_db:
-        response = test_client.post('/api/clear-booking-session')
+    # Giả lập một User hợp lệ (đã đăng nhập, quyền USER)
+    mock_user = MagicMock()
+    mock_user.is_authenticated = True
+    mock_user.role = UserRole.USER
 
-        assert response.status_code == 200
-        assert response.json["status"] == "cleared"
+    # Dùng patch để "tiêm" mock_user vào file decorators
+    with patch('movieapp.decorators.current_user', mock_user):
+        with patch('movieapp.dao.clear_db_booking_by_session') as mocked_clear_db:
+            # Bây giờ gọi API sẽ vượt qua được @user_required
+            response = test_client.post('/api/clear-booking-session')
 
-        mocked_clear_db.assert_called_once_with('active-session-123')
+            assert response.status_code == 200
+            assert response.json["status"] == "cleared"
 
-        with test_client.session_transaction() as sess:
-            assert 'booking' not in sess
+            mocked_clear_db.assert_called_once_with('active-session-123')
+
+    # Kiểm tra session đã được dọn sạch
+    with test_client.session_transaction() as sess:
+        assert 'booking' not in sess
 
 
 # TRƯỜNG HỢP: DAO GẶP LỖI

@@ -1,4 +1,4 @@
-from flask import redirect, url_for, request, jsonify
+from flask import redirect, url_for, request, jsonify, abort
 from flask_admin import Admin, AdminIndexView, expose, BaseView
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
@@ -109,7 +109,9 @@ class AdminAuthMixin:
         return current_user.is_authenticated and current_user.role == UserRole.ADMIN
 
     def inaccessible_callback(self, name, **kwargs):
-        return redirect("/")
+        if not current_user.is_authenticated:
+            abort(401)
+        abort(403)
 
 
 class BaseModelView(AdminAuthMixin, ModelView):
