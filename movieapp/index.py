@@ -17,6 +17,15 @@ def register_routes(app):
             session['user_session_id'] = str(uuid.uuid4())
             session.modified = True
 
+    # Ngăn chặn trình duyệt lưu cache
+    @app.after_request
+    def add_header(response):
+        if 'text/html' in response.headers.get('Content-Type', ''):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
     # Trang chủ
     @app.route('/')
     def index():

@@ -105,13 +105,12 @@ if __name__ == "__main__":
                 for day_offset in range(8):
                     curr_day = start_date + timedelta(days=day_offset)
 
-                    # Random giờ mở cửa ca sáng (từ 08:00 đến 08:45)
-                    morning_start_offset = random.randint(0, 45)
-                    previous_end_time = datetime.combine(curr_day, datetime.min.time()).replace(hour=8,
-                                                                                                minute=morning_start_offset)
+                    # Định nghĩa 4 khung giờ mục tiêu cho 4 ca (VD: 8h, 12h, 18h, 22h)
+                    target_hours = [8, 12, 18, 22]
+                    previous_end_time = None
 
-                    # 4 ca chiếu mỗi ngày nối tiếp nhau
-                    for _ in range(4):
+                    # 4 ca chiếu mỗi ngày phân bổ theo mốc thời gian
+                    for i in range(4):
                         # Chọn ngẫu nhiên phim và định dạng xoay vòng
                         mv = movies_list[count_st % len(movies_list)]
                         fmt = formats_list[count_st % len(formats_list)]
@@ -119,11 +118,24 @@ if __name__ == "__main__":
                         # Lấy thời lượng phim (mặc định 120p nếu thiếu data)
                         duration = mv.duration or 120
 
-                        # Rạp nghỉ dọn dẹp ngẫu nhiên từ 15 - 30 phút
-                        break_time = random.randint(15, 30)
+                        # 1. Khởi tạo mốc thời gian gốc cho ca chiếu (Ví dụ: 08:00)
+                        base_time = datetime.combine(curr_day, datetime.min.time()).replace(hour=target_hours[i],
+                                                                                            minute=0)
 
-                        # Tính giờ chiếu ca tiếp theo
-                        start_t = previous_end_time + timedelta(minutes=break_time)
+                        # 2. Tạo độ trễ ngẫu nhiên (sớm hơn 15p hoặc trễ tới 30p) để lịch chiếu tự nhiên hơn
+                        # VD: 8:00 có thể random thành 07:45 hoặc 08:20
+                        random_offset = random.randint(-15, 30)
+                        target_start_time = base_time + timedelta(minutes=random_offset)
+
+                        # 3. CHỐNG CHỒNG CHÉO: Đảm bảo rạp đã dọn dẹp xong từ ca trước (tối thiểu 15 phút)
+                        if previous_end_time is not None:
+                            min_start_time = previous_end_time + timedelta(minutes=15)
+                            # Giờ bắt đầu chính thức sẽ lấy giờ nào trễ hơn
+                            start_t = max(target_start_time, min_start_time)
+                        else:
+                            start_t = target_start_time
+
+                        # Tính giờ kết thúc
                         end_t = start_t + timedelta(minutes=duration)
 
                         # Cập nhật mốc thời gian cho vòng lặp sau
