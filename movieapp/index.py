@@ -16,6 +16,10 @@ def register_routes(app):
         if 'user_session_id' not in session:
             session['user_session_id'] = str(uuid.uuid4())
             session.modified = True
+        try:
+            dao.release_expired_seats()
+        except Exception as e:
+            print(f"Lỗi dọn dẹp ghế tự động: {e}")
 
     # Ngăn chặn trình duyệt lưu cache
     @app.after_request
@@ -174,7 +178,7 @@ def register_routes(app):
 
     @app.context_processor
     def common_attribute():
-        dao.release_expired_seats()
+        # dao.release_expired_seats()
         return {
             "slugify": slugify
         }
@@ -204,13 +208,13 @@ def register_routes(app):
                 session.pop('booking', None)
                 session.modified = True
                 booking_session = {}
-
+        prev_tickets = dao.count_user_tickets_for_showtime(current_user.id, showtime_id)
         seat_map, rows, cols = dao.get_seat_layout_for_showtime(showtime_id)
         seat_type_vip = dao.get_seat_type(2)
-
         return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
                                room=showtime.room, seat_map=seat_map, rows=rows, cols=cols, seat_type_vip=seat_type_vip,
-                               time_remaining=time_remaining, booking_session=booking_session)
+                               time_remaining=time_remaining, booking_session=booking_session,
+                               prev_tickets=prev_tickets)
 
     @app.route('/api/booking', methods=['POST'])
     @user_required  # Bắt buộc đăng nhập để đặt ghế
@@ -261,10 +265,10 @@ def register_routes(app):
         current_sid = session.get('user_session_id')
 
         if seat_id and current_sid:
-            # 1. Xóa trong Database
+            # Xóa trong Database
             dao.release_single_seat_db(seat_id, current_sid)
 
-            # 2. Xóa trong Session
+            # Xóa trong Session
             booking_session = session.get('booking', {})
             if str(seat_id) in booking_session:
                 booking_session.pop(str(seat_id))

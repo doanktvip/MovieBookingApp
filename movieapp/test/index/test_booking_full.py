@@ -24,26 +24,6 @@ def test_booking_404_not_found(test_client, sample_users):
         assert res1.status_code == 404
 
 
-# TEST EXCEPTION
-def test_booking_release_seats_exception(test_client, sample_full_chain):
-    user = sample_full_chain["users"]["user1"]
-    st = sample_full_chain["showtime"]
-
-    with patch('flask_login.utils._get_user') as mocked_user:
-        mocked_user.return_value = user
-        with patch('movieapp.dao.release_expired_seats') as mocked_release:
-            mocked_release.side_effect = [Exception("DB Busy"), None]
-
-            with patch('movieapp.index.render_template') as mocked_render:
-                mocked_render.return_value = "OK"
-                url = f'/booking/showtime-{st.id}-slug-room-{st.room_id}'
-                response = test_client.get(url)
-
-                assert response.status_code == 200
-                with test_client.session_transaction() as sess:
-                    assert any("Hệ thống đang bận" in m[1] for m in sess.get('_flashes', []))
-
-
 # TEST KHI GIỮ GHẾ CÒN HẠN
 def test_booking_session_active(test_client, sample_full_chain):
     user = sample_full_chain["users"]["user1"]
@@ -112,3 +92,30 @@ def test_booking_seat_map_logic(test_client, sample_full_chain):
 
             assert 'A' in seat_map
             assert 1 in seat_map['A']
+
+
+# TEST EXCEPTION
+def test_booking_release_seats_exception(test_client, sample_full_chain):
+    user = sample_full_chain["users"]["user1"]
+    st = sample_full_chain["showtime"]
+
+    with patch('flask_login.utils._get_user') as mocked_user:
+        mocked_user.return_value = user
+
+        with patch('movieapp.dao.release_expired_seats') as mocked_release:
+            # Danh sách kết quả trả về tương ứng với 3 lần gọi hàm trong 1 request:
+            # - Lần 1 (before_request): Trả về None (Chạy bình thường)
+            # - Lần 2 (trong hàm booking): Văng lỗi Exception để kích hoạt dòng flash
+            # - Lần 3 (trong get_seat_layout): Trả về None (Chạy bình thường để load giao diện)
+            # - Lần 4 (dự phòng): None
+            mocked_release.side_effect = [None, Exception("DB Busy"), None, None]
+
+            with patch('movieapp.index.render_template') as mocked_render:
+                mocked_render.return_value = "OK"
+                url = f'/booking/showtime-{st.id}-slug-room-{st.room_id}'
+                response = test_client.get(url)
+
+                assert response.status_code == 200
+                with test_client.session_transaction() as sess:
+                    flashes = sess.get('_flashes', [])
+                    assert any("Hệ thống đang bận" in str(msg) for cat, msg in flashes)

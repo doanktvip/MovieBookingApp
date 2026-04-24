@@ -332,57 +332,65 @@ def get_seat_layout_for_showtime(showtime_id):
 def release_expired_seats(showtime_id=None):
     try:
         now = datetime.now()
-
-        expired_seats_query = db.session.query(ShowtimeSeat.id).filter(
-            ShowtimeSeat.status == SeatStatus.RESERVED,
-            ShowtimeSeat.hold_until < now
-        )
-
+        # Tìm các ghế RESERVED đã quá hạn
+        query = db.session.query(ShowtimeSeat).filter(ShowtimeSeat.status == SeatStatus.RESERVED,
+                                                      ShowtimeSeat.hold_until < now)
         if showtime_id:
-            expired_seats_query = expired_seats_query.filter(ShowtimeSeat.showtime_id == showtime_id)
+            query = query.filter(ShowtimeSeat.showtime_id == showtime_id)
 
-        expired_seat_ids = [s.id for s in expired_seats_query.all()]
+        expired_seats = query.all()
 
-        if not expired_seat_ids:
+        if not expired_seats:
             return
 
-        related_bookings = db.session.query(Booking).join(Ticket).filter(
+        expired_seat_ids = [s.id for s in expired_seats]
+        # Xóa các Ticket và lưu lại danh sách booking_id để kiểm tra dọn dẹp sau đó
+        tickets_to_delete = Ticket.query.join(Booking).filter(
             Ticket.showtime_seat_id.in_(expired_seat_ids),
             Booking.status == BookingStatus.PENDING
         ).all()
 
-        for booking in related_bookings:
-            booking.status = BookingStatus.FAILED
-            for t in booking.tickets:
-                if t.showtime_seat:
-                    t.showtime_seat.status = SeatStatus.AVAILABLE
-                    t.showtime_seat.hold_until = None
-                    t.showtime_seat.hold_session_id = None
+        booking_ids_to_check = {t.booking_id for t in tickets_to_delete}
+        for t in tickets_to_delete:
+            db.session.delete(t)
 
-        db.session.query(ShowtimeSeat).filter(
-            ShowtimeSeat.id.in_(expired_seat_ids),
-            ShowtimeSeat.status != SeatStatus.AVAILABLE
-        ).update({
-            ShowtimeSeat.status: SeatStatus.AVAILABLE,
-            ShowtimeSeat.hold_until: None,
-            ShowtimeSeat.hold_session_id: None
-        }, synchronize_session=False)
+        db.session.flush()
+        # Cập nhật trạng thái ghế về AVAILABLE
+        for s in expired_seats:
+            s.status = SeatStatus.AVAILABLE
+            s.hold_until = None
+            s.hold_session_id = None
+
+        # Dọn dẹp Booking "rỗng"
+        if booking_ids_to_check:
+            for b_id in booking_ids_to_check:
+                b = db.session.get(Booking, b_id)
+                if b and not b.tickets:
+                    db.session.delete(b)
 
         db.session.commit()
-
     except Exception as e:
         db.session.rollback()
-        print(f"Lỗi hiệu năng/logic: {e}")
-        raise e
+        print(f"Lỗi release_expired_seats: {e}")
 
 
 def release_single_seat_db(seat_id, session_id):
     try:
-        s = ShowtimeSeat.query.filter_by(
-            id=seat_id,
-            hold_session_id=str(session_id)
-        ).first()
+        s = ShowtimeSeat.query.filter_by(id=seat_id, hold_session_id=str(session_id)).first()
+
         if s:
+            # Tìm và xóa Ticket liên quan (nếu có Booking PENDING)
+            ticket = Ticket.query.join(Booking).filter(Ticket.showtime_seat_id == s.id,
+                                                       Booking.status == BookingStatus.PENDING).first()
+
+            if ticket:
+                booking = ticket.booking
+                db.session.delete(ticket)
+                db.session.flush()
+                # Nếu booking không còn vé nào thì xóa luôn booking
+                if not booking.tickets:
+                    db.session.delete(booking)
+
             s.status = SeatStatus.AVAILABLE
             s.hold_until = None
             s.hold_session_id = None
@@ -434,6 +442,19 @@ def get_seat_by_id(seat_id):
     return db.session.get(Seat, seat_id)
 
 
+def count_user_tickets_for_showtime(user_id, showtime_id):
+    if not user_id or not showtime_id:
+        return 0
+
+    count = db.session.query(Ticket).join(Booking).filter(
+        Booking.user_id == user_id,
+        Booking.showtime_id == showtime_id,
+        Booking.status.in_([BookingStatus.PAID, BookingStatus.PENDING])
+    ).count()
+
+    return count
+
+
 # Đặt ghế
 def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_seats):
     now = datetime.now()
@@ -447,10 +468,7 @@ def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_
         return False, "Phim đã bắt đầu chiếu, không thể đặt vé.", {}, None
 
     # Ràng buộc: Tối đa 8 ghế / 1 người / 1 suất chiếu
-    prev_tickets = db.session.query(Ticket).join(Booking).filter(
-        Booking.user_id == user_id,
-        Booking.showtime_id == showtime_id,
-        Booking.status.in_([BookingStatus.PAID, BookingStatus.PENDING])).count()
+    prev_tickets = count_user_tickets_for_showtime(user_id, showtime_id)
 
     if prev_tickets + len(selected_st_seat_ids) > 8:
         return False, f"Bạn đã có {prev_tickets} vé cho suất này. Chỉ được đặt tối đa 8 ghế.", {}, None

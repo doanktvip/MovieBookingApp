@@ -1,4 +1,5 @@
 import hashlib
+import os
 import pytest
 from flask import Flask
 from datetime import datetime, timedelta
@@ -191,7 +192,10 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
 
 @pytest.fixture
 def driver():
-    service = Service(executable_path="../../.venv/chromedriver.exe")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    driver_path = os.path.join(project_root, ".venv", "chromedriver.exe")
+    service = Service(executable_path=driver_path)
     driver = webdriver.Chrome(service=service)
     yield driver
     driver.quit()

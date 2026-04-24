@@ -9,14 +9,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function updateBookingSummary(element) {
     const selectedSeats = document.querySelectorAll('.seat-check:checked');
-    let totalAmount = 0;
-    let seatNames = [];
+    const prevTicketsCount = parseInt(document.getElementById('prev_tickets_count').value) || 0;
+    const maxAllowed = 8 - prevTicketsCount;
+    if (selectedSeats.length > maxAllowed) {
+        if (maxAllowed === 0) {
+            showCustomAlert("Bạn đã đặt tối đa 8 ghế cho suất chiếu này!");
+        } else {
+            showCustomAlert(`Bạn chỉ được chọn thêm tối đa ${maxAllowed} ghế!`);
+        }
 
-    if (selectedSeats.length > 8) {
-        alert("Bạn chỉ được chọn tối đa 8 ghế!");
         if (element) element.checked = false;
         return updateBookingSummary();
     }
+    let totalAmount = 0;
+    let seatNames = [];
 
     if (element && !element.checked) {
         if (confirmedSeats.has(element.value)) {
@@ -33,6 +39,7 @@ function updateBookingSummary(element) {
     // Cập nhật giao diện
     document.getElementById('seat-count').innerText = selectedSeats.length;
     document.getElementById('total-price').innerText = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
+    document.getElementById('ticket-price').innerText = new Intl.NumberFormat('vi-VN').format(totalAmount) + ' đ';
     document.getElementById('total_amount_hidden').value = totalAmount;
 
     const btnBook = document.getElementById('btn-book-seats');
@@ -81,7 +88,7 @@ function handleBooking() {
             // Tùy chọn: Chuyển trang hoặc giữ lại tùy luồng của bạn
             document.querySelector('form').submit();
         } else {
-            alert(data.message);
+            showCustomAlert(data.message);
             btnBook.disabled = false;
             btnBook.innerHTML = 'Đặt ghế';
             if (data.message.includes("người khác")) location.reload();

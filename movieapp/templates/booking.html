@@ -1,12 +1,14 @@
 {% extends 'layout/base.html' %}
 
+{% block title %}Đặt ghế{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-5 container-1400">
 
     <form action="/checkout" method="POST">
         <input type="hidden" name="showtime_id" value="{{ showtime.id }}">
         <input type="hidden" name="total_amount_hidden" id="total_amount_hidden" value="0">
-
+        <input type="hidden" id="prev_tickets_count" value="{{ prev_tickets | default(0) }}">
         <div class="row g-4">
 
             <div class="col-lg-8">
