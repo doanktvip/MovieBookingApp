@@ -1,8 +1,11 @@
 import hashlib
+import os
 import pytest
 from flask import Flask
 from datetime import datetime, timedelta
 from movieapp import db, login_manager
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from movieapp.models import (
     Cinema, User, Showtime, Movie, Genre, MovieFormat, Room, Province,
     TranslationType, Ticket, BookingStatus, ShowtimeSeat, SeatStatus,
@@ -185,3 +188,14 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
     test_session.add(ticket)
     test_session.commit()
     yield {**sample_users, **sample_showtimes_complex, "booking": booking, "ticket": ticket}
+
+
+@pytest.fixture
+def driver():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    driver_path = os.path.join(project_root, ".venv", "chromedriver.exe")
+    service = Service(executable_path=driver_path)
+    driver = webdriver.Chrome(service=service)
+    yield driver
+    driver.quit()

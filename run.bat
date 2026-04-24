@@ -11,10 +11,10 @@ echo Dang nap du lieu...
 echo =================================
 python create_db.py
 
-echo.
-echo =================================
-echo Chay server...
-echo =================================
-python -m movieapp.index
+@REM echo.
+@REM echo =================================
+@REM echo Chay server...
+@REM echo =================================
+@REM python -m movieapp.index
 
 pause
