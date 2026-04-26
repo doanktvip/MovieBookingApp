@@ -5,17 +5,12 @@ from movieapp import dao, db
 from movieapp.models import SeatStatus, BookingStatus, Ticket, Booking, ShowtimeSeat
 
 
-# ==========================================
 # 1. TEST: HÀM release_expired_seats
-# ==========================================
-
 @pytest.mark.parametrize("hold_offset, init_booking_status, expected_seat_status, expected_booking_status", [
     # Trường hợp 1: Ghế hết hạn, Booking PENDING -> Booking bị XÓA (None), Ghế AVAILABLE
     (-10, BookingStatus.PENDING, SeatStatus.AVAILABLE, None),
-
     # Trường hợp 2: Ghế chưa hết hạn, Booking PENDING -> Giữ nguyên
     (10, BookingStatus.PENDING, SeatStatus.RESERVED, BookingStatus.PENDING),
-
     # Trường hợp 3: Ghế hết hạn, Booking PAID -> Vé không bị xóa, Booking giữ nguyên PAID, Ghế được set AVAILABLE
     (-10, BookingStatus.PAID, SeatStatus.AVAILABLE, BookingStatus.PAID),
 ], ids=["expired_pending_deleted", "not_expired_pending", "expired_paid"])
@@ -28,7 +23,7 @@ def test_release_expired_seats_logic(test_app, sample_users, sample_showtimes_co
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][0])
         st_seat.status = SeatStatus.RESERVED
         st_seat.hold_until = datetime.now() + timedelta(minutes=hold_offset)
-        st_seat.hold_session_id = "test_session_123"
+        st_seat.hold_session_id = user.id
 
         # Tạo Booking và Ticket
         booking = Booking(user_id=user.id, showtime_id=showtime.id,
@@ -69,6 +64,7 @@ def test_release_expired_seats_specific_showtime(test_app, sample_showtimes_comp
         for seat in [seat_target, seat_other]:
             seat.status = SeatStatus.RESERVED
             seat.hold_until = now - timedelta(minutes=5)
+            seat.hold_session_id = 123
 
         seat_other.showtime_id = 9999
         db.session.commit()
@@ -102,7 +98,8 @@ def test_release_single_seat_db_coverage(test_app, sample_users, sample_showtime
     with test_app.app_context():
         user = sample_users["users"]["user1"]
         showtime = sample_showtimes_complex["showtime"]
-        session_id = "test_session_123"
+
+        session_id = user.id
 
         # Setup ghế 1
         seat1 = db.session.merge(sample_showtimes_complex["showtime_seats"][0])
@@ -158,4 +155,4 @@ def test_release_single_seat_db_exception(test_app):
     with test_app.app_context():
         # Phủ nhánh except (bắt lỗi DB)
         with patch.object(db.session, 'query', side_effect=Exception("DB Error")):
-            dao.release_single_seat_db(1, "ss_id")
+            dao.release_single_seat_db(1, 123)

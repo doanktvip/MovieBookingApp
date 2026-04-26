@@ -106,7 +106,7 @@ if __name__ == "__main__":
                     curr_day = start_date + timedelta(days=day_offset)
 
                     # Định nghĩa 4 khung giờ mục tiêu cho 4 ca (VD: 8h, 12h, 18h, 22h)
-                    target_hours = [8, 12, 18, 22]
+                    target_hours = [8, 12, 18, 23]
                     previous_end_time = None
 
                     # 4 ca chiếu mỗi ngày phân bổ theo mốc thời gian

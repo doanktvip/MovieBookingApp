@@ -18,6 +18,10 @@ class BasePage:
         element = self.find(by, value)
         self.driver.execute_script("arguments[0].click();", element)
 
+    def js_clicks(self, by, value):
+        elements = self.finds(by, value)
+        self.driver.execute_script("arguments[0].click();", elements[0])
+
     def typing(self, by, value, text):
         e = self.find(by, value)
         e.send_keys(text)

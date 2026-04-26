@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch
+from datetime import datetime, timedelta
 
 
 # Fixture giả lập login để vượt qua Decorator
@@ -8,7 +9,7 @@ def mock_user_session(test_client, sample_users):
     user = sample_users["users"]["user1"]
     with test_client.session_transaction() as sess:
         sess['_user_id'] = str(user.id)
-        sess['user_session_id'] = 'session-id-123'
+        sess['user_session_id'] = user.id
     return user
 
 
@@ -106,3 +107,51 @@ def test_api_booking_empty_seats(test_client, mock_user_session):
 
     assert response.status_code == 400
     assert response.json["message"] == "Vui lòng chọn ít nhất 1 ghế!"
+
+
+# CHỌN LẠI ĐÚNG GHẾ CŨ VÀ CÒN HẠN (Không bị reset thời gian)
+def test_api_booking_same_seats_valid_time(test_client, mock_user_session):
+    booking_dict = {"101": {"id": "101", "name": "A1", "price": 85000.0}}
+
+    with test_client.session_transaction() as sess:
+        sess['booking'] = booking_dict
+
+    with patch('movieapp.dao.get_reservation_expiry_time') as mock_get_time, \
+            patch('movieapp.dao.process_seat_reservations_secure') as mock_process:
+        # Thời gian giữ ghế vẫn còn hạn (10 phút nữa)
+        mock_get_time.return_value = datetime.now() + timedelta(minutes=10)
+
+        response = test_client.post('/api/booking', json={
+            "showtime_id": 1,
+            "seats": [{"id": "101", "name": "A1"}]
+        })
+
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+        assert response.json["message"] == "Tiếp tục thanh toán"
+
+        mock_process.assert_not_called()
+
+
+# TRƯỜNG HỢP: CHỌN LẠI GHẾ CŨ NHƯNG ĐÃ HẾT HẠN (Phải gọi lại DAO để làm mới)
+def test_api_booking_same_seats_expired_time(test_client, mock_user_session):
+    booking_dict = {"101": {"id": "101", "name": "A1", "price": 85000.0}}
+
+    with test_client.session_transaction() as sess:
+        sess['booking'] = booking_dict
+
+    with patch('movieapp.dao.get_reservation_expiry_time') as mock_get_time, \
+            patch('movieapp.dao.process_seat_reservations_secure') as mock_process:
+        # Ghế này đã hết hạn từ 5 phút trước
+        mock_get_time.return_value = datetime.now() - timedelta(minutes=5)
+
+        mock_process.return_value = (True, "Thành công", booking_dict, datetime.now() + timedelta(minutes=10))
+
+        response = test_client.post('/api/booking', json={
+            "showtime_id": 1,
+            "seats": [{"id": "101", "name": "A1"}]})
+
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+
+        mock_process.assert_called_once()

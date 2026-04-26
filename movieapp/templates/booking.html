@@ -43,14 +43,24 @@
                             {% set seat_price = st_seat.price | default(showtime.base_price +
                             st_seat.seat.seat_type.surcharge) %}
 
-                            {% if is_locked %}
-                            {# TRẠNG THÁI 1: Ghế bị khóa #}
+                            {% if st_seat.id in owned_seat_ids %}
+                            {# TRẠNG THÁI MỚI: Ghế của chính mình đã mua/đang chờ #}
+                            <button type="button"
+                                    class="btn btn-dark border-danger text-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-disabled"
+                                    disabled title="Ghế bạn đã mua">
+                                {{ col_num }}
+                            </button>
+
+                            {% elif is_locked %}
+                            {# TRẠNG THÁI 1 CŨ: Ghế bị khóa (do người LẠ mua) #}
                             <button type="button"
                                     class="btn btn-dark border-secondary text-secondary p-0 d-flex align-items-center justify-content-center seat-box seat-disabled"
                                     disabled title="Ghế đã có người chọn">
                                 {{ col_num }}
                             </button>
+
                             {% else %}
+                            {# TRẠNG THÁI 2: Ghế có thể chọn ... (giữ nguyên mã cũ của bạn) #}
                             {# TRẠNG THÁI 2: Ghế có thể chọn #}
                             {% set btn_class = 'btn-outline-warning' if is_vip else 'btn-outline-light' %}
 
@@ -106,6 +116,11 @@
                                 <div class="bg-dark border border-secondary rounded me-2 legend-box"
                                      style="width: 20px; height: 20px;"></div>
                                 Đã đặt
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-dark border border-danger rounded me-2 legend-box"
+                                     style="width: 20px; height: 20px;"></div>
+                                Ghế bạn đã đặt
                             </div>
                             <div class="d-flex align-items-center">
                                 <div class="border border-secondary rounded me-2 legend-box seat-hidden"

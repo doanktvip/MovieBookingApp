@@ -3,7 +3,6 @@ from movieapp import dao, db
 from movieapp.models import SeatStatus
 
 
-
 # Test trường hợp session_id là None
 def test_get_reservation_expiry_time_no_session(test_app):
     with test_app.app_context():
@@ -14,7 +13,7 @@ def test_get_reservation_expiry_time_no_session(test_app):
 # Test trường hợp tìm thấy ghế đang giữ và còn hạn
 def test_get_reservation_expiry_time_valid(test_app, sample_showtimes_complex):
     with test_app.app_context():
-        session_id = "active-session-123"
+        session_id = 123
         showtime = sample_showtimes_complex["showtime"]
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][1])
 
@@ -34,7 +33,7 @@ def test_get_reservation_expiry_time_valid(test_app, sample_showtimes_complex):
 # Test trường hợp ghế đã hết hạn
 def test_get_reservation_expiry_time_expired(test_app, sample_showtimes_complex):
     with test_app.app_context():
-        session_id = "expired-session-456"
+        session_id = 456
         showtime = sample_showtimes_complex["showtime"]
         st_seat = db.session.merge(sample_showtimes_complex["showtime_seats"][1])
 
@@ -54,7 +53,6 @@ def test_get_reservation_expiry_time_expired(test_app, sample_showtimes_complex)
 def test_get_reservation_expiry_time_no_match(test_app, sample_showtimes_complex):
     with test_app.app_context():
         showtime = sample_showtimes_complex["showtime"]
-
-        result = dao.get_reservation_expiry_time("non-existent-session", showtime.id)
+        result = dao.get_reservation_expiry_time(999, showtime.id)
 
         assert result is None
