@@ -147,7 +147,7 @@ class ShowtimeSeat(BaseModel):
     status = Column(Enum(SeatStatus), default=SeatStatus.AVAILABLE)
     price = Column(Float)
     hold_until = Column(DateTime, nullable=True)
-    hold_session_id = Column(String(255), nullable=True)
+    hold_session_id = Column(Integer, nullable=True)
 
     ticket = relationship('Ticket', backref='showtime_seat', uselist=False, lazy=True)
     seat = relationship('Seat', backref='showtime_seats', lazy=True)

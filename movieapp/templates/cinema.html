@@ -121,23 +121,29 @@
                             <div class="modal-body border-0 px-4">
                                 <div class="mb-4">
                                     <h6 class="fw-bold mb-3 text-white">Chọn ngày:</h6>
-                                    <div class="d-flex flex-nowrap gap-2 overflow-x-auto pb-2">
-                                        {% for d in sorted_dates %}
-                                        {% set date_str = d.strftime('%Y-%m-%d') %}
-                                        {% set is_selected = (current_date == date_str) %}
 
-                                        <input type="radio" class="btn-check" name="date_{{ c.id }}"
-                                               id="date-{{ c.id }}-{{ date_str }}"
-                                               value="{{ date_str }}" {% if is_selected %}checked{% endif %}
-                                               onchange="changeDateColor(this, '{{ c.id }}')">
+                                    <div style="width: 100%; overflow: hidden;">
 
-                                        <label id="label-date-{{ c.id }}-{{ date_str }}"
-                                               class="btn date-label-{{ c.id }} {{ 'btn-danger fw-bold shadow-lg' if is_selected else 'ddn-glass text-white' }} rounded-3 px-4 py-2 border-0 flex-shrink-0"
-                                               for="date-{{ c.id }}-{{ date_str }}"
-                                               style="cursor: pointer; transition: none !important;">
-                                            {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}
-                                        </label>
-                                        {% endfor %}
+                                        <div class="d-flex flex-nowrap gap-2 pb-2"
+                                             style="overflow-x: auto;display: flex;white-space: nowrap;-webkit-overflow-scrolling: touch;">
+                                            {% for d in sorted_dates %}
+                                            {% set date_str = d.strftime('%Y-%m-%d') %}
+                                            {% set is_selected = (current_date == date_str) %}
+
+                                            <input type="radio" class="btn-check" name="date_{{ c.id }}"
+                                                   id="date-{{ c.id }}-{{ date_str }}"
+                                                   value="{{ date_str }}" {% if is_selected %}checked{% endif %}
+                                                   onchange="changeDateColor(this, '{{ c.id }}')">
+
+                                            <label id="label-date-{{ c.id }}-{{ date_str }}"
+                                                   class="btn date-label-{{ c.id }} {{ 'btn-danger fw-bold' if is_selected else 'ddn-glass text-white' }} rounded-3 px-4 py-2 border-0 flex-shrink-0"
+                                                   for="date-{{ c.id }}-{{ date_str }}"
+                                                   style="min-width: 110px; cursor: pointer; flex-shrink: 0 !important;">
+                                                {{ get_vn_weekday(d) }}, {{ d.strftime('%d/%m') }}
+                                            </label>
+                                            {% endfor %}
+
+                                        </div>
                                     </div>
                                 </div>
 

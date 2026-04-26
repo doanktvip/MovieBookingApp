@@ -333,8 +333,9 @@ def release_expired_seats(showtime_id=None):
     try:
         now = datetime.now()
         # Tìm các ghế RESERVED đã quá hạn
-        query = db.session.query(ShowtimeSeat).filter(ShowtimeSeat.status == SeatStatus.RESERVED,
-                                                      ShowtimeSeat.hold_until < now)
+        query = db.session.query(ShowtimeSeat).with_for_update().filter(
+            ShowtimeSeat.status == SeatStatus.RESERVED,
+            ShowtimeSeat.hold_until < now)
         if showtime_id:
             query = query.filter(ShowtimeSeat.showtime_id == showtime_id)
 
@@ -376,7 +377,7 @@ def release_expired_seats(showtime_id=None):
 
 def release_single_seat_db(seat_id, session_id):
     try:
-        s = ShowtimeSeat.query.filter_by(id=seat_id, hold_session_id=str(session_id)).first()
+        s = ShowtimeSeat.query.filter_by(id=seat_id, hold_session_id=int(session_id)).first()
 
         if s:
             # Tìm và xóa Ticket liên quan (nếu có Booking PENDING)
@@ -455,8 +456,21 @@ def count_user_tickets_for_showtime(user_id, showtime_id):
     return count
 
 
+def get_user_owned_seat_ids_for_showtime(user_id, showtime_id):
+    if not user_id or not showtime_id:
+        return []
+
+    tickets = db.session.query(Ticket).join(Booking).filter(
+        Booking.user_id == user_id,
+        Booking.showtime_id == showtime_id,
+        Booking.status.in_([BookingStatus.PAID, BookingStatus.PENDING])
+    ).all()
+
+    return [t.showtime_seat_id for t in tickets]
+
+
 # Đặt ghế
-def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_seats):
+def process_seat_reservations_secure(user_id, showtime_id, selected_seats):
     now = datetime.now()
     selected_st_seat_ids = [str(s.get('id')) for s in selected_seats]
 
@@ -488,7 +502,7 @@ def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_
 
     for s in seats_to_lock:
         is_taken_by_others = (s.status == SeatStatus.RESERVED and
-                              str(s.hold_session_id) != str(session_id) and
+                              str(s.hold_session_id) != str(user_id) and
                               s.hold_until and s.hold_until > now)
 
         if s.status == SeatStatus.BOOKED or is_taken_by_others:
@@ -497,7 +511,7 @@ def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_
         # Đánh dấu giữ ghế
         s.status = SeatStatus.RESERVED
         s.hold_until = expire_time
-        s.hold_session_id = str(session_id)
+        s.hold_session_id = int(user_id)
 
         # Lấy tên ghế gửi từ frontend để map
         seat_name = next((item['name'] for item in selected_seats if str(item['id']) == str(s.id)), "")
@@ -508,7 +522,7 @@ def process_seat_reservations_secure(user_id, session_id, showtime_id, selected_
         }
 
     # Giải phóng các ghế cũ mà user đã bỏ tick (nếu trước đó có chọn)
-    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=str(session_id)).all()
+    user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=int(user_id)).all()
     for s in user_held_seats:
         if str(s.id) not in selected_st_seat_ids:
             s.status = SeatStatus.AVAILABLE
@@ -524,7 +538,7 @@ def clear_db_booking_by_session(session_id):
     if not session_id: return
     try:
         ShowtimeSeat.query.filter_by(
-            hold_session_id=str(session_id),
+            hold_session_id=int(session_id),
             status=SeatStatus.RESERVED
         ).update({
             "status": SeatStatus.AVAILABLE,
@@ -545,7 +559,7 @@ def get_reservation_expiry_time(session_id, showtime_id):
     now = datetime.now()
 
     active_seat = ShowtimeSeat.query.filter(
-        ShowtimeSeat.hold_session_id == str(session_id),
+        ShowtimeSeat.hold_session_id == int(session_id),
         ShowtimeSeat.status == SeatStatus.RESERVED,
         ShowtimeSeat.showtime_id == showtime_id
     ).first()
@@ -555,6 +569,26 @@ def get_reservation_expiry_time(session_id, showtime_id):
             return active_seat.hold_until
 
     return None
+
+
+def get_user_reserved_seats_session(user_id, showtime_id):
+    # Tìm các ghế user đang giữ trong DB
+    seats = ShowtimeSeat.query.filter_by(
+        hold_session_id=int(user_id),
+        showtime_id=showtime_id,
+        status=SeatStatus.RESERVED
+    ).all()
+
+    booking_dict = {}
+    for s in seats:
+        # Lấy tên ghế (ví dụ: A1, B2)
+        seat_name = f"{s.seat.row}{s.seat.col}"
+        booking_dict[str(s.id)] = {
+            "id": str(s.id),
+            "name": seat_name,
+            "price": float(s.price or 0)
+        }
+    return booking_dict
 
 
 # Tạo booking(Pending)
