@@ -68,27 +68,33 @@
                             <i class="bi bi-camera-reels me-1"></i> Rạp
                         </a>
                     </li>
-                    {%if current_user.is_authenticated and current_user.role.name=='USER'%}
+                    {%if current_user.is_authenticated%}
+                    {% if current_user.role.name == 'USER' %}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
                         <a class="nav-link {% if request.path.startswith('/tickets') %}active{% endif %}"
                            href="/tickets">
                             <i class="bi bi-ticket me-1"></i> Vé của tôi
                         </a>
                     </li>
-                    {%elif current_user.is_authenticated and current_user.role.name=='STAFF'%}
+                    {% endif %}
+
+                    {% if current_user.role.name in ['STAFF', 'ADMIN'] %}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
                         <a class="nav-link {% if request.path.startswith('/check_in') %}active{% endif %}"
                            href="/check_in">
                             <i class="bi bi-card-checklist me-1"></i> Quản lý vé phim
                         </a>
                     </li>
-                    {%elif current_user.is_authenticated and current_user.role.name=='ADMIN'%}
+                    {% endif %}
+
+                    {% if current_user.role.name == 'ADMIN' %}
                     <li class="nav-item ms-lg-2 mb-2 mb-lg-0">
                         <a class="nav-link {% if request.path.startswith('/admin') %}active{% endif %}"
                            href="/admin">
-                            <i class="bi bi-card-checklist me-1"></i> Quản lý
+                            <i class="bi bi-gear me-1"></i> Quản lý chung
                         </a>
                     </li>
+                    {% endif %}
                     {%endif%}
                 </ul>
 

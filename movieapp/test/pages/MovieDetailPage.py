@@ -1,3 +1,5 @@
+import random
+
 from selenium.webdriver.common.by import By
 from movieapp.test.pages.BasePage import BasePage
 
@@ -5,19 +7,24 @@ from movieapp.test.pages.BasePage import BasePage
 class MovieDetailPage(BasePage):
     URL = 'http://127.0.0.1:5000/movies'
 
-    MOVIE_TITLE = (By.CSS_SELECTOR, 'h1.movie-title')
-    MOVIE_LINKS = (By.CSS_SELECTOR, '#movie-container > div.row.g-4 > div:nth-child(1) > a')
+    SHOWTIME_LINKS = (By.CSS_SELECTOR, '#showtime-container a')
 
-    FIRST_SHOWTIME_LINK = (By.CSS_SELECTOR, '#showtime-container div:nth-child(1) a:nth-child(1)')
+    ALL_MOVIE_LINKS = (By.CSS_SELECTOR, '#movie-container > div.row.g-4 > div > a')
+    selected_index = 0
 
     def open_page(self):
         self.open(self.URL)
 
-    def get_movie_title(self):
-        return self.find(*self.MOVIE_TITLE).text
+    def get_movie_title_random(self):
+        elements = self.finds(*self.ALL_MOVIE_LINKS)
+        self.selected_index = random.randint(0, len(elements) - 1)
+        full_card_text = elements[self.selected_index].text.strip()
+        title_only = full_card_text.split('\n')[1]
+        return title_only
 
-    def click_first_movie(self):
-        self.click(*self.MOVIE_LINKS)
+    def click_random_movie(self):
+        elements = self.finds(*self.ALL_MOVIE_LINKS)
+        self.driver.execute_script("arguments[0].click();", elements[self.selected_index])
 
-    def click_first_showtime(self):
-        self.js_click(*self.FIRST_SHOWTIME_LINK)
+    def click_random_showtime(self):
+        self.js_clicks(*self.SHOWTIME_LINKS)

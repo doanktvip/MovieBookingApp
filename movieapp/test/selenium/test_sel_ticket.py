@@ -11,9 +11,10 @@ def prepare_checkout(driver):
     movie_page = MovieDetailPage(driver)
     movie_page.open_page()
     time.sleep(1)
-    movie_page.click_first_movie()
+    movie_page.get_movie_title_random()
+    movie_page.click_random_movie()
     time.sleep(1)
-    movie_page.click_first_showtime()
+    movie_page.click_random_showtime()
     time.sleep(1)
 
     login_page = LoginPage(driver)
@@ -25,7 +26,7 @@ def test_checkout_momo_cancel(driver):
     prepare_checkout(driver)
 
     booking_page = BookingPage(driver)
-    booking_page.click_first_available_seat()
+    booking_page.click_random_available_seat()
     available_seats = driver.find_elements(By.CSS_SELECTOR, "#selected-seats-list > div.bg-danger")
     seat_names = [seat.text for seat in available_seats]
     booking_page.click_book_button()
@@ -70,7 +71,7 @@ def test_checkout_momo_success(driver):
     prepare_checkout(driver)
 
     booking_page = BookingPage(driver)
-    booking_page.click_first_available_seat()
+    booking_page.click_random_available_seat()
     available_seats = driver.find_elements(By.CSS_SELECTOR, "#selected-seats-list > div.bg-danger")
     seat_names = [seat.text for seat in available_seats]
     booking_page.click_book_button()
@@ -118,6 +119,7 @@ def test_checkout_momo_success(driver):
     alert_msg = result_alert.text
 
     assert "Đã hủy vé thành công!" in alert_msg or "Chỉ được hủy vé trước giờ chiếu ít nhất 2 tiếng!" in alert_msg
+
 
 def test_ticket_page_edge_cases_and_exceptions(driver):
     prepare_checkout(driver)

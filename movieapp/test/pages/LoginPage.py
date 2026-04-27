@@ -11,12 +11,12 @@ class LoginPage(BasePage):
     BUTTON_LOGIN = (By.CSS_SELECTOR, "button[onclick*='handleLogin']")
 
     def open_login_modal(self):
-        self.click(*self.BUTTON_MODAL_LOGIN)
+        self.js_click(*self.BUTTON_MODAL_LOGIN)
 
     def open_login_tab(self):
-        self.click(*self.TAB_LOGIN)
+        self.js_click(*self.TAB_LOGIN)
 
     def login(self, username, password):
-        self.typing(*self.USERNAME, username)
-        self.typing(*self.PASSWORD, password)
-        self.click(*self.BUTTON_LOGIN)
+        self.js_typing(*self.USERNAME, username)
+        self.js_typing(*self.PASSWORD, password)
+        self.js_click(*self.BUTTON_LOGIN)

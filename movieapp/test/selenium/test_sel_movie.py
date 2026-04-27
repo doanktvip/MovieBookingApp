@@ -1,5 +1,4 @@
 import time
-import pytest
 from selenium.webdriver.common.by import By
 from movieapp.test.pages.MoviePage import MoviePage
 

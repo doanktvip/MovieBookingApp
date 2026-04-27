@@ -11,10 +11,10 @@ def test_booking_from_movie_detail_flow_require_login(driver):
     movie_page.open_page()
     time.sleep(1)
 
-    movie_page.click_first_movie()
+    movie_page.click_random_movie()
     time.sleep(2)
 
-    movie_page.click_first_showtime()
+    movie_page.click_random_showtime()
     time.sleep(1)
 
     login_page = LoginPage(driver)
@@ -56,10 +56,10 @@ def test_select_seat_and_checkout_flow(driver):
     movie_page.open_page()
     time.sleep(1)
 
-    movie_page.click_first_movie()
+    movie_page.click_random_movie()
     time.sleep(2)
 
-    movie_page.click_first_showtime()
+    movie_page.click_random_showtime()
     time.sleep(1)
 
     login_page = LoginPage(driver)
@@ -74,7 +74,7 @@ def test_select_seat_and_checkout_flow(driver):
     assert total_price.text == "0 đ"
     assert booking_page.is_book_button_enabled() is False
 
-    booking_page.click_first_available_seat()
+    booking_page.click_random_available_seat()
 
     assert total_price.text != "0 đ"
     assert booking_page.is_book_button_enabled() is True

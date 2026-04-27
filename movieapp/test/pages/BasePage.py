@@ -1,3 +1,6 @@
+import random
+
+
 class BasePage:
     def __init__(self, driver):
         self.driver = driver
@@ -20,8 +23,13 @@ class BasePage:
 
     def js_clicks(self, by, value):
         elements = self.finds(by, value)
-        self.driver.execute_script("arguments[0].click();", elements[0])
+        index = random.randint(0, len(elements) - 1)
+        self.driver.execute_script("arguments[0].click();", elements[index])
 
     def typing(self, by, value, text):
         e = self.find(by, value)
         e.send_keys(text)
+
+    def js_typing(self, by, value, text):
+        element = self.find(by, value)
+        self.driver.execute_script("arguments[0].value = arguments[1];", element, text)
