@@ -10,9 +10,10 @@ def prepare_checkout(driver):
     movie_page = MovieDetailPage(driver)
     movie_page.open_page()
     time.sleep(1)
-    movie_page.click_first_movie()
+    movie_page.get_movie_title_random()
+    movie_page.click_random_movie()
     time.sleep(1)
-    movie_page.click_first_showtime()
+    movie_page.click_random_showtime()
     time.sleep(1)
 
     login_page = LoginPage(driver)
@@ -20,9 +21,9 @@ def prepare_checkout(driver):
     time.sleep(1)
 
     booking_page = BookingPage(driver)
-    booking_page.click_first_available_seat()
+    booking_page.click_random_available_seat()
     booking_page.click_book_button()
-    time.sleep(1)
+    time.sleep(2)
 
     assert "/checkout" in driver.current_url
 
