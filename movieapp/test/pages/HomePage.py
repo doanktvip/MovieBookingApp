@@ -15,13 +15,17 @@ class HomePage(BasePage):
     def open_page(self):
         self.open(self.URL)
 
-    # Lấy tên bộ phim đang hiển thị trên slide to nhất
     def get_active_hero_movie_title(self):
-        return self.find(*self.HERO_ACTIVE_TITLE).text
+        return self.get_text(*self.HERO_ACTIVE_TITLE)
 
-    # Bấm nút mũi tên phải trên slide
     def click_next_hero_slide(self):
         self.click(*self.HERO_NEXT_BTN)
+
+    def wait_for_slide_change(self, previous_title):
+        from selenium.webdriver.support.ui import WebDriverWait
+        WebDriverWait(self.driver, 5).until(
+            lambda driver: self.get_active_hero_movie_title() != previous_title
+        )
 
     def click_kham_pha_ngay(self):
         self.js_click(*self.KHAM_PHA_NGAY_BTN)

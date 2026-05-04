@@ -1,8 +1,4 @@
-import time
-import pytest
 import uuid
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
 from movieapp.test.pages.HomePage import HomePage
 from movieapp.test.pages.LoginPage import LoginPage
 from movieapp.test.pages.RegisterPage import RegisterPage
@@ -14,19 +10,17 @@ def test_register_flow_success(driver):
 
     login_page = LoginPage(driver)
     login_page.open_login_modal()
-    time.sleep(1)
+
     register_page = RegisterPage(driver)
     register_page.open_register_tab()
-    time.sleep(1)
 
     unique_user = f"user_{uuid.uuid4().hex[:5]}"
-
     register_page.register(unique_user, f"{unique_user}@gmail.com", "123456", "123456")
-    time.sleep(2)
+
+    login_page.open_login_tab()
     login_page.login(unique_user, "123456")
-    time.sleep(1)
-    user_avatar = driver.find_element(By.CSS_SELECTOR, ".dropdown img.rounded-circle").is_displayed()
-    assert user_avatar is True
+
+    assert login_page.is_user_avatar_displayed() is True
 
 
 def test_register_fail_password_mismatch(driver):
@@ -35,18 +29,14 @@ def test_register_fail_password_mismatch(driver):
 
     login_page = LoginPage(driver)
     login_page.open_login_modal()
-    time.sleep(1)
+
     register_page = RegisterPage(driver)
     register_page.open_register_tab()
-    time.sleep(1)
 
     unique_user = f"user_{uuid.uuid4().hex[:5]}"
-
     register_page.register(unique_user, f"{unique_user}@gmail.com", "123456", "1")
-    time.sleep(1)
+
     login_page.open_login_tab()
-    time.sleep(1)
-    login_page.login(unique_user, "123456")
-    time.sleep(1)
-    with pytest.raises(NoSuchElementException):
-        driver.find_element(By.CSS_SELECTOR, ".dropdown img.rounded-circle")
+    login_page.login(unique_user, "123456", False)
+
+    assert login_page.is_user_avatar_displayed() is False

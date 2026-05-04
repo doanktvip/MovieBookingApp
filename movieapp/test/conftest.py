@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 from movieapp import db, login_manager
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from movieapp.test.pages.LoginPage import LoginPage
+from movieapp.test.pages.MovieDetailPage import MovieDetailPage
 from movieapp.models import (
     Cinema, User, Showtime, Movie, Genre, MovieFormat, Room, Province,
     TranslationType, Ticket, BookingStatus, ShowtimeSeat, SeatStatus,
@@ -199,3 +203,27 @@ def driver():
     driver = webdriver.Chrome(service=service)
     yield driver
     driver.quit()
+
+
+@pytest.fixture
+def logged_in_driver(driver):
+    def _login_action(username, password):
+        login_page = LoginPage(driver)
+        login_page.open_page()
+        login_page.open_login_modal()
+        login_page.open_login_tab()
+        login_page.login(username, password)
+        WebDriverWait(driver, 10).until(lambda d: login_page.is_user_avatar_displayed())
+        return driver
+
+    return _login_action
+
+
+@pytest.fixture
+def ready_to_book_driver(logged_in_driver):
+    driver = logged_in_driver("nguyendoan", "123456")
+    movie_page = MovieDetailPage(driver)
+    movie_page.select_random_valid_movie_and_showtime()
+
+    WebDriverWait(driver, 10).until(EC.url_contains("/booking/showtime"))
+    return driver

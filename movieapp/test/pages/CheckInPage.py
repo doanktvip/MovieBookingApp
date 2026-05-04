@@ -24,4 +24,15 @@ class CheckInPage(BasePage):
         self.click(*self.FIRST_CHECKIN_BTN)
 
     def get_first_status_text(self):
-        return self.find(*self.FIRST_STATUS_TEXT).text
+        return self.get_text(*self.FIRST_STATUS_TEXT)
+
+    def get_first_disabled_btn_text(self):
+        if self.is_displayed(*self.FIRST_DISABLED_BTN):
+            return self.get_text(*self.FIRST_DISABLED_BTN)
+
+    def get_search_input_value(self):
+        return self.find(*self.SEARCH_INPUT).get_attribute("value")
+
+    def is_title_displayed(self, expected_title):
+        title = self.find(By.CSS_SELECTOR, "h1.card-title")
+        return expected_title in title.text

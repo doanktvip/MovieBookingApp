@@ -46,3 +46,14 @@ class TicketPage(BasePage):
             btn.click()
             return modal_target_id
         return None
+
+    def get_status_badge_text(self, seat_names):
+        card = self.get_booking_card_by_seats(seat_names)
+        return card.find_element(By.CSS_SELECTOR, ".badge").text.strip()
+
+    def confirm_cancel(self, modal_target_id):
+        confirm_btn_selector = f"{modal_target_id} button[type='submit'].btn-danger"
+        self.click(By.CSS_SELECTOR, confirm_btn_selector)
+
+    def get_alert_message(self):
+        return self.get_text(By.CSS_SELECTOR, ".alert-success, .alert-danger")

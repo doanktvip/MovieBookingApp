@@ -23,3 +23,7 @@ class MoviePage(BasePage):
 
     def click_page_2(self):
         self.js_click(*self.PAGE_2_LINK)
+
+    def get_movie_titles(self):
+        elements = self.finds(By.CSS_SELECTOR, '#movie-container div.row h5')
+        return [e.text for e in elements]

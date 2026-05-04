@@ -1,85 +1,51 @@
-import time
-from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from movieapp.test.pages.BookingPage import BookingPage
 from movieapp.test.pages.CinemaPage import CinemaPage
-from movieapp.test.pages.MovieDetailPage import MovieDetailPage
 from movieapp.test.pages.LoginPage import LoginPage
+from movieapp.test.pages.CheckoutPage import CheckoutPage
+from movieapp.test.pages.MovieDetailPage import MovieDetailPage
 
 
-def test_booking_from_movie_detail_flow_require_login(driver):
-    movie_page = MovieDetailPage(driver)
-    movie_page.open_page()
-    time.sleep(1)
+def test_booking_from_movie_detail_flow_require_login(logged_in_driver):
+    test_driver = logged_in_driver("nguyendoan", "123456")
+    movie_page = MovieDetailPage(test_driver)
 
-    movie_page.click_random_movie()
-    time.sleep(2)
+    movie_page.select_random_valid_movie_and_showtime()
 
-    movie_page.click_random_showtime()
-    time.sleep(1)
+    WebDriverWait(test_driver, 10).until(EC.url_contains("/booking/showtime"))
 
-    login_page = LoginPage(driver)
-    time.sleep(1)
-
-    login_page.login("nguyendoan", "123456")
-    time.sleep(2)
-
-    assert "/booking/showtime" in driver.current_url
-
-    seat_area_exists = len(driver.find_elements(By.CSS_SELECTOR, 'input[name="seat_ids"]')) > 0
-    assert seat_area_exists is True
+    booking_page = BookingPage(test_driver)
+    assert booking_page.has_seat_area()
 
 
-def test_booking_from_cinema_flow_require_login(driver):
-    cinema_page = CinemaPage(driver)
+def test_booking_from_cinema_flow_require_login(logged_in_driver):
+    test_driver = logged_in_driver("nguyendoan", "123456")
+
+    cinema_page = CinemaPage(test_driver)
     cinema_page.open_page()
-    time.sleep(1)
-
     cinema_page.click_first_showtime_button()
-    time.sleep(1)
-
     cinema_page.click_first_showtime_in_modal()
-    time.sleep(1)
 
-    login_page = LoginPage(driver)
+    WebDriverWait(test_driver, 10).until(EC.url_contains("/booking/showtime"))
 
-    login_page.login("nguyendoan", "123456")
-    time.sleep(2)
-
-    assert "/booking/showtime" in driver.current_url
-
-    seat_area_exists = len(driver.find_elements(By.CSS_SELECTOR, 'input[name="seat_ids"]')) > 0
-    assert seat_area_exists is True
+    booking_page = BookingPage(test_driver)
+    assert booking_page.has_seat_area()
 
 
-def test_select_seat_and_checkout_flow(driver):
-    movie_page = MovieDetailPage(driver)
-    movie_page.open_page()
-    time.sleep(1)
+def test_select_seat_and_checkout_flow(ready_to_book_driver):
+    test_driver = ready_to_book_driver
+    booking_page = BookingPage(test_driver)
 
-    movie_page.click_random_movie()
-    time.sleep(2)
-
-    movie_page.click_random_showtime()
-    time.sleep(1)
-
-    login_page = LoginPage(driver)
-    time.sleep(1)
-
-    login_page.login("nguyendoan", "123456")
-    time.sleep(2)
-
-    booking_page = BookingPage(driver)
-
-    total_price = driver.find_element(By.ID, "total-price")
-    assert total_price.text == "0 đ"
+    assert booking_page.get_total_price() == "0 đ"
     assert booking_page.is_book_button_enabled() is False
 
     booking_page.click_random_available_seat()
 
-    assert total_price.text != "0 đ"
+    assert booking_page.get_total_price() != "0 đ"
     assert booking_page.is_book_button_enabled() is True
 
     booking_page.click_book_button()
-    time.sleep(1)
 
-    assert "/checkout" in driver.current_url
+    checkout_page = CheckoutPage(test_driver)
+    assert checkout_page.is_on_page()
