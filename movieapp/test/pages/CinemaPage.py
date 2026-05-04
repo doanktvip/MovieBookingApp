@@ -35,3 +35,10 @@ class CinemaPage(BasePage):
 
     def click_first_showtime_in_modal(self):
         self.js_click(*self.FIRST_SHOWTIME_LINK_IN_MODAL)
+
+    def get_cinema_titles(self):
+        elements = self.finds(By.CSS_SELECTOR, '#cinema-container h3.fw-bold')
+        return [el.text for el in elements]
+
+    def is_showtime_modal_displayed(self):
+        return self.is_displayed(By.CSS_SELECTOR, '.modal.show')

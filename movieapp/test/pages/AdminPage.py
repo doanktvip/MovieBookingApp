@@ -7,11 +7,9 @@ class AdminPage(BasePage):
 
     BRAND_NAME = (By.CSS_SELECTOR, "a.navbar-brand")
 
-    # Menu cha: Đếm vị trí li trên thanh Navbar
     MENU_CO_SO_VAT_CHAT = (By.CSS_SELECTOR, "ul.navbar-nav > li:nth-child(2) > a")
     MENU_PHIM_LICH_CHIEU = (By.CSS_SELECTOR, "ul.navbar-nav > li:nth-child(3) > a")
 
-    # Menu con: Tìm chính xác theo link href
     SUBMENU_PROVINCE = (By.CSS_SELECTOR, "a[href*='/admin/province']")
     SUBMENU_MOVIE = (By.CSS_SELECTOR, "a[href*='/admin/movie']")
     MENU_USER = (By.CSS_SELECTOR, "a[href*='/admin/user']")
@@ -33,3 +31,6 @@ class AdminPage(BasePage):
 
     def click_user_menu(self):
         self.js_click(*self.MENU_USER)
+
+    def get_brand_name(self):
+        return self.get_text(*self.BRAND_NAME)
