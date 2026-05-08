@@ -37,4 +37,7 @@ jobs:
       env:
         PYTHONPATH: movieapp
       run: |
+        # Bật server Flask chạy ngầm (Dấu & ở cuối câu lệnh giúp chạy ngầm background)
+        python movieapp/index.py &
+        sleep 5
         pytest movieapp/test/ --cov=movieapp
