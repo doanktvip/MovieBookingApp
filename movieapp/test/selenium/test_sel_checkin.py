@@ -1,5 +1,3 @@
-from selenium.webdriver.support.ui import WebDriverWait
-from movieapp.test.pages.LoginPage import LoginPage
 from movieapp.test.pages.CheckInPage import CheckInPage
 from movieapp.test.pages.BookingPage import BookingPage
 from movieapp.test.pages.CheckoutPage import CheckoutPage

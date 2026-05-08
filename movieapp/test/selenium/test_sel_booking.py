@@ -2,7 +2,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from movieapp.test.pages.BookingPage import BookingPage
 from movieapp.test.pages.CinemaPage import CinemaPage
-from movieapp.test.pages.LoginPage import LoginPage
 from movieapp.test.pages.CheckoutPage import CheckoutPage
 from movieapp.test.pages.MovieDetailPage import MovieDetailPage
 

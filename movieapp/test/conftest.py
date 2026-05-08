@@ -1,11 +1,13 @@
 import hashlib
 import os
 import pytest
+import sys
 from flask import Flask
 from datetime import datetime, timedelta
 from movieapp import db, login_manager
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from movieapp.test.pages.LoginPage import LoginPage
@@ -196,11 +198,23 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
 
 @pytest.fixture
 def driver():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.dirname(current_dir))
-    driver_path = os.path.join(project_root, ".venv", "chromedriver.exe")
-    service = Service(executable_path=driver_path)
-    driver = webdriver.Chrome(service=service)
+    chrome_options = Options()
+
+    # Nếu đang chạy trên Windows (máy của bạn) thì dùng file .exe
+    if sys.platform.startswith('win'):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        driver_path = os.path.join(project_root, ".venv", "chromedriver.exe")
+        service = Service(executable_path=driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    # Nếu chạy trên hệ điều hành khác (như Linux trên GitHub Actions) thì để nó tự tìm
+    else:
+        chrome_options.add_argument('--headless')  # Chạy ẩn không giao diện
+        chrome_options.add_argument('--no-sandbox')  # Cần thiết cho Linux/GitHub Actions
+        chrome_options.add_argument('--disable-dev-shm-usage')  # Khắc phục lỗi RAM trên máy ảo
+        driver = webdriver.Chrome(options=chrome_options)
+
     yield driver
     driver.quit()
 
