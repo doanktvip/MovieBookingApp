@@ -47,4 +47,4 @@ jobs:
         sleep 10
         
         # Chạy toàn bộ test
-        pytest movieapp/test/ --cov=movieapp
+        pytest movieapp/test/ --cov=movieapp --cov-report=term-missing

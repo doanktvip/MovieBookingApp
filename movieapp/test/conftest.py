@@ -213,6 +213,7 @@ def driver():
         chrome_options.add_argument('--headless')  # Chạy ẩn không giao diện
         chrome_options.add_argument('--no-sandbox')  # Cần thiết cho Linux/GitHub Actions
         chrome_options.add_argument('--disable-dev-shm-usage')  # Khắc phục lỗi RAM trên máy ảo
+        chrome_options.add_argument('--window-size=1920,1080')  # Đảm bảo hiển thị đầy đủ trên máy ảo
         driver = webdriver.Chrome(options=chrome_options)
 
     yield driver

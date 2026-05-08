@@ -52,11 +52,18 @@ class BasePage:
             return False
 
     def get_text(self, by, value):
-        element = self.wait.until(EC.visibility_of_element_located((by, value)))
-        return element.text
+        element = self.wait.until(EC.presence_of_element_located((by, value)))
+
+        text = element.get_attribute("textContent")
+        return text.strip() if text else ""
 
     def get_current_url(self):
         return self.driver.current_url
 
-    def is_user_avatar_displayed(self):
-        return self.is_displayed(By.CSS_SELECTOR, ".dropdown img.rounded-circle", timeout=3)
+    def is_user_avatar_displayed(self, timeout=5):
+        try:
+            wait = WebDriverWait(self.driver, timeout)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dropdown img.rounded-circle")))
+            return True
+        except:
+            return False

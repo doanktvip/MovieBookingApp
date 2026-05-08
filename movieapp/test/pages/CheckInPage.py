@@ -29,6 +29,7 @@ class CheckInPage(BasePage):
     def get_first_disabled_btn_text(self):
         if self.is_displayed(*self.FIRST_DISABLED_BTN):
             return self.get_text(*self.FIRST_DISABLED_BTN)
+        return None
 
     def get_search_input_value(self):
         return self.find(*self.SEARCH_INPUT).get_attribute("value")

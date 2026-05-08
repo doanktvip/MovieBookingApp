@@ -44,3 +44,25 @@ def test_perform_checkin(ready_to_book_driver, logged_in_driver):
 
     assert "Đã vào rạp" in checkin_page.get_first_status_text()
     assert "Đã xử lý" in checkin_page.get_first_disabled_btn_text()
+
+
+def test_disabled_button_not_present_before_checkin(ready_to_book_driver, logged_in_driver):
+    test_driver = ready_to_book_driver
+    booking_page = BookingPage(test_driver)
+    booking_page.click_random_available_seat()
+    booking_page.click_book_button()
+
+    checkout_page = CheckoutPage(test_driver)
+    checkout_page.select_momo()
+    checkout_page.click_pay_button()
+
+    test_driver.get("http://127.0.0.1:5000/momo_return?resultCode=0&orderId=TEST-CVG&message=Success")
+    test_driver.get("http://127.0.0.1:5000/logout")
+
+    test_driver = logged_in_driver("hovandat", "123456")
+    checkin_page = CheckInPage(test_driver)
+    checkin_page.open_page()
+
+    disabled_text = checkin_page.get_first_disabled_btn_text()
+
+    assert disabled_text is None
