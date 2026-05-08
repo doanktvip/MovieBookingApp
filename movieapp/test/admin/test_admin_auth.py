@@ -1,7 +1,8 @@
-from unittest.mock import patch
+import pytest
 from movieapp.admin import AdminAuthMixin
 from movieapp.models import UserRole
-
+from unittest.mock import patch
+from werkzeug.exceptions import Unauthorized, Forbidden
 
 # TEST: is_accessible
 @patch('movieapp.admin.current_user')
@@ -23,14 +24,20 @@ def test_admin_auth_mixin_is_accessible_coverage(mock_user):
 
 
 # TEST: inaccessible_callback
-def test_admin_auth_mixin_inaccessible_callback_coverage(test_app):
+@patch('movieapp.admin.current_user')
+def test_admin_auth_mixin_inaccessible_callback_coverage(mock_user, test_app):
     mixin = AdminAuthMixin()
 
     with test_app.test_request_context('/admin/bi-mat'):
-        response = mixin.inaccessible_callback(name='test_view')
+        # Nhánh 1: Chưa đăng nhập -> abort(401) sẽ ném ra lỗi Unauthorized
+        mock_user.is_authenticated = False
+        with pytest.raises(Unauthorized) as excinfo:
+            mixin.inaccessible_callback(name='test_view')
+        assert excinfo.value.code == 401
 
-        # Kiểm tra xem có lệnh chuyển hướng (302) không
-        assert response.status_code == 302
-
-        # Kiểm tra xem có đúng là bị đá về trang chủ ('/') không
-        assert response.location == '/'
+        # Nhánh 2: Đã đăng nhập nhưng không phải ADMIN -> abort(403) sẽ ném ra lỗi Forbidden
+        mock_user.is_authenticated = True
+        mock_user.role = UserRole.USER
+        with pytest.raises(Forbidden) as excinfo:
+            mixin.inaccessible_callback(name='test_view')
+        assert excinfo.value.code == 403

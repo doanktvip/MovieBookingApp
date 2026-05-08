@@ -1,8 +1,17 @@
 import hashlib
+import os
 import pytest
+import sys
 from flask import Flask
 from datetime import datetime, timedelta
 from movieapp import db, login_manager
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from movieapp.test.pages.LoginPage import LoginPage
+from movieapp.test.pages.MovieDetailPage import MovieDetailPage
 from movieapp.models import (
     Cinema, User, Showtime, Movie, Genre, MovieFormat, Room, Province,
     TranslationType, Ticket, BookingStatus, ShowtimeSeat, SeatStatus,
@@ -185,3 +194,50 @@ def sample_full_chain(test_session, sample_users, sample_showtimes_complex):
     test_session.add(ticket)
     test_session.commit()
     yield {**sample_users, **sample_showtimes_complex, "booking": booking, "ticket": ticket}
+
+
+@pytest.fixture
+def driver():
+    chrome_options = Options()
+
+    # Nếu đang chạy trên Windows (máy của bạn) thì dùng file .exe
+    if sys.platform.startswith('win'):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(os.path.dirname(current_dir))
+        driver_path = os.path.join(project_root, ".venv", "chromedriver.exe")
+        service = Service(executable_path=driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
+    # Nếu chạy trên hệ điều hành khác (như Linux trên GitHub Actions) thì để nó tự tìm
+    else:
+        chrome_options.add_argument('--headless')  # Chạy ẩn không giao diện
+        chrome_options.add_argument('--no-sandbox')  # Cần thiết cho Linux/GitHub Actions
+        chrome_options.add_argument('--disable-dev-shm-usage')  # Khắc phục lỗi RAM trên máy ảo
+        driver = webdriver.Chrome(options=chrome_options)
+
+    yield driver
+    driver.quit()
+
+
+@pytest.fixture
+def logged_in_driver(driver):
+    def _login_action(username, password):
+        login_page = LoginPage(driver)
+        login_page.open_page()
+        login_page.open_login_modal()
+        login_page.open_login_tab()
+        login_page.login(username, password)
+        WebDriverWait(driver, 10).until(lambda d: login_page.is_user_avatar_displayed())
+        return driver
+
+    return _login_action
+
+
+@pytest.fixture
+def ready_to_book_driver(logged_in_driver):
+    driver = logged_in_driver("nguyendoan", "123456")
+    movie_page = MovieDetailPage(driver)
+    movie_page.select_random_valid_movie_and_showtime()
+
+    WebDriverWait(driver, 10).until(EC.url_contains("/booking/showtime"))
+    return driver

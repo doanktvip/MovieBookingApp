@@ -4,30 +4,33 @@ from datetime import datetime, timedelta
 from movieapp import app, dao, login_manager, utils, db
 from flask import render_template, request, url_for, redirect, flash, session, abort, jsonify, current_app
 from flask_login import login_user, current_user, logout_user
-from movieapp.decorators import staff_required, login_user_required, anonymous_required, user_required, admin_required
+from movieapp.decorators import login_user_required, user_required, staff_or_admin_required, anonymous_required
 from movieapp.models import TranslationType, BookingStatus, Booking
 from movieapp.momo_payment import create_momo_payment
 from movieapp.utils import slugify, get_vn_weekday
 
 
 def register_routes(app):
-    @app.errorhandler(404)
-    def handle_404(e):
-        if current_app.config.get('TESTING'):
-            return "Not Found", 404
-        return redirect("/")
-
-    @app.errorhandler(405)
-    def handle_405(e):
-        if current_app.config.get('TESTING'):
-            return "Method Not Allowed", 405
-        return redirect("/")
-
     @app.before_request
     def assign_session_id():
-        if 'user_session_id' not in session:
+        if current_user.is_authenticated:
+            session['user_session_id'] = current_user.id
+        elif 'user_session_id' not in session:
             session['user_session_id'] = str(uuid.uuid4())
-            session.modified = True
+        session.modified = True
+        try:
+            dao.release_expired_seats()
+        except Exception as e:
+            print(f"Lỗi dọn dẹp ghế tự động: {e}")
+
+    # Ngăn chặn trình duyệt lưu cache
+    @app.after_request
+    def add_header(response):
+        if 'text/html' in response.headers.get('Content-Type', ''):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
 
     # Trang chủ
     @app.route('/')
@@ -39,6 +42,7 @@ def register_routes(app):
 
     # Đăng nhập
     @app.route('/api/login', methods=['POST'])
+    @anonymous_required
     def api_login():
         data = request.get_json()
 
@@ -53,6 +57,8 @@ def register_routes(app):
 
             if user:
                 login_user(user)
+                session['user_session_id'] = user.id
+                session.modified = True
                 return jsonify({
                     "status": "success",
                     "message": "Đăng nhập thành công",
@@ -72,12 +78,16 @@ def register_routes(app):
         return dao.get_user_by_id(user_id=user_id)
 
     @app.route("/logout")
+    @login_user_required
     def logout_my_user():
+        session.pop('user_session_id', None)
+        session.pop('booking', None)
         logout_user()
         return redirect(url_for('index'))
 
     # Đăng ký
     @app.route('/api/register', methods=['POST'])
+    @anonymous_required
     def api_register():
         data = request.get_json()
 
@@ -174,7 +184,6 @@ def register_routes(app):
 
     @app.context_processor
     def common_attribute():
-        dao.release_expired_seats()
         return {
             "slugify": slugify
         }
@@ -192,28 +201,32 @@ def register_routes(app):
         current_sid = session.get('user_session_id')
         time_remaining = 0
         booking_session = session.get('booking', {})
-
         if current_sid:
             expire_time = dao.get_reservation_expiry_time(current_sid, showtime_id)
-
             if expire_time:
                 now = datetime.now()
                 time_remaining = math.ceil((expire_time - now).total_seconds())
+                booking_session = dao.get_user_reserved_seats_session(current_sid, showtime_id)
+                session['booking'] = booking_session
+                session.modified = True
             else:
                 dao.clear_db_booking_by_session(current_sid)
                 session.pop('booking', None)
                 session.modified = True
                 booking_session = {}
-
+        prev_tickets = dao.count_user_tickets_for_showtime(current_user.id, showtime_id)
+        owned_seat_ids = dao.get_user_owned_seat_ids_for_showtime(current_user.id, showtime_id)
+        session_seat_count = len(booking_session) if booking_session else 0
+        actual_prev_tickets = max(0, prev_tickets - session_seat_count)
         seat_map, rows, cols = dao.get_seat_layout_for_showtime(showtime_id)
         seat_type_vip = dao.get_seat_type(2)
-
         return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
                                room=showtime.room, seat_map=seat_map, rows=rows, cols=cols, seat_type_vip=seat_type_vip,
-                               time_remaining=time_remaining, booking_session=booking_session)
+                               time_remaining=time_remaining, booking_session=booking_session,
+                               prev_tickets=actual_prev_tickets,owned_seat_ids=owned_seat_ids)
 
     @app.route('/api/booking', methods=['POST'])
-    @login_user_required  # Bắt buộc đăng nhập để đặt ghế
+    @user_required
     def api_booking():
         data = request.json
         selected_seats = data.get('seats', [])
@@ -222,26 +235,35 @@ def register_routes(app):
         if not showtime_id or not selected_seats:
             return jsonify({"status": "error", "message": "Vui lòng chọn ít nhất 1 ghế!"}), 400
 
-        current_session_id = session.get('user_session_id')
         user_id = current_user.id
 
-        # Gọi hàm xử lý nguyên khối ở DAO
-        success, msg, booking_dict, expire_time = dao.process_seat_reservations_secure(
-            user_id, current_session_id, showtime_id, selected_seats
-        )
+        incoming_seat_ids = set(str(s.get('id')) for s in selected_seats)
+
+        current_booking = session.get('booking', {})
+        current_booking_ids = set(current_booking.keys())
+
+        if current_booking and incoming_seat_ids == current_booking_ids:
+            expire_time = dao.get_reservation_expiry_time(user_id, showtime_id)
+
+            if expire_time and expire_time > datetime.now():
+                return jsonify({"status": "success", "message": "Tiếp tục thanh toán",
+                                "redirect_url": url_for("pay", showtime_id=showtime_id)})
+
+        success, msg, booking_dict, expire_time = dao.process_seat_reservations_secure(user_id=user_id,
+                                                                                       showtime_id=showtime_id,
+                                                                                       selected_seats=selected_seats)
 
         if not success:
             return jsonify({"status": "error", "message": msg}), 400
 
-        # Nếu thành công, lưu thông tin vào Session để trang Checkout sử dụng
         session['booking'] = booking_dict
         session.modified = True
 
-        return jsonify(
-            {"status": "success", "message": "Thành công",
-             "redirect_url": url_for("pay", showtime_id=showtime_id)})
+        return jsonify({"status": "success", "message": "Thành công",
+                        "redirect_url": url_for("pay", showtime_id=showtime_id)})
 
     @app.route('/api/clear-booking-session', methods=['POST'])
+    @user_required
     def clear_booking_session():
         current_sid = session.get('user_session_id')
         if current_sid:
@@ -253,16 +275,17 @@ def register_routes(app):
         return jsonify({"status": "cleared"})
 
     @app.route('/api/release-seat', methods=['POST'])
+    @user_required
     def api_release_seat():
         data = request.json
         seat_id = data.get('seat_id')
         current_sid = session.get('user_session_id')
 
         if seat_id and current_sid:
-            # 1. Xóa trong Database
+            # Xóa trong Database
             dao.release_single_seat_db(seat_id, current_sid)
 
-            # 2. Xóa trong Session
+            # Xóa trong Session
             booking_session = session.get('booking', {})
             if str(seat_id) in booking_session:
                 booking_session.pop(str(seat_id))
@@ -304,6 +327,7 @@ def register_routes(app):
                                time_remaining=time_remaining)
 
     @app.route("/process_payment", methods=['POST', 'GET'])
+    @user_required
     def process_payment():
         showtime_id = request.form.get('showtime_id')
         payment_method = request.form.get('payment_method')
@@ -366,6 +390,7 @@ def register_routes(app):
         return "Chức năng thanh toán khác đang cập nhật"
 
     @app.route('/momo_return')
+    @user_required
     def momo_return():
         # 1. MoMo trả về một đống dữ liệu qua thanh URL (GET request)
         result_code = request.args.get('resultCode')
@@ -447,7 +472,7 @@ def register_routes(app):
 
     # Trang quản lý đặt vé(nhân viên)
     @app.route('/check_in', methods=['POST', 'GET'])
-    @staff_required
+    @staff_or_admin_required
     def check_in():
         keyword = request.args.get('keyword')
         page = request.args.get("page", default=1, type=int)

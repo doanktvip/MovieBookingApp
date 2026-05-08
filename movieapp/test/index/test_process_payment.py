@@ -1,15 +1,26 @@
 from datetime import datetime, timedelta
 
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+
+from movieapp.models import UserRole
 
 
 # --- TEST 1: KHÔNG CÓ GIỎ HÀNG (LỖI 404) ---
 def test_process_payment_no_booking_session(test_client):
-    response = test_client.post('/process_payment', data={'showtime_id': 1})
+    # Giả lập một User hợp lệ (đã đăng nhập)
+    mock_user = MagicMock()
+    mock_user.is_authenticated = True
+    mock_user.role = UserRole.USER
 
-    # Khẳng định bị chặn lại bởi abort(404)
-    assert response.status_code == 404
+    # Vượt qua decorator bảo mật
+    with patch('movieapp.decorators.current_user', mock_user):
+        # Gửi request không kèm Session giỏ hàng
+        response = test_client.post('/process_payment', data={'showtime_id': 1})
+
+        # Khẳng định bị chặn lại bởi abort(404) do trống giỏ hàng
+        assert response.status_code == 404
+
 
 # --- TEST 2: HẾT HẠN GIỮ GHẾ (VỀ TRANG CHỦ) ---
 @patch('movieapp.index.dao.get_reservation_expiry_time')
@@ -29,6 +40,7 @@ def test_process_payment_expired(mock_expiry, test_client, sample_users):
     # Bị flash lỗi và văng về trang chủ '/'
     assert response.status_code == 302
     assert response.location == '/'
+
 
 # ---Các trường hợp khi if thỏa
 # --- TEST 3: LỖI KHI TẠO BOOKING VÀO DATABASE ---
@@ -90,6 +102,7 @@ def test_process_payment_momo_success(mock_expiry, mock_stats, mock_create_db, m
         assert sess['customer_info']['booking_id'] == 999
         assert sess['customer_info']['total_amount'] == 50000
 
+
 # --- TEST 5: GỌI MOMO THẤT BẠI (KHÔNG CÓ PAYURL) ---
 @patch('movieapp.index.create_momo_payment')
 @patch('movieapp.index.dao.create_pending_booking')
@@ -143,4 +156,3 @@ def test_process_payment_other_method(mock_expiry, mock_stats, mock_create_db, t
     # Trả về câu thông báo dạng chuỗi (Status Code mặc định là 200)
     assert response.status_code == 200
     assert "Chức năng thanh toán khác đang cập nhật" in response.get_data(as_text=True)
-
