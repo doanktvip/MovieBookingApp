@@ -47,7 +47,8 @@ header, nav {
 
 .custom-alert-wrapper {
     top: var(--header-height, 60px);
-    z-index: 1060;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
 }
 
 .movie-card {
