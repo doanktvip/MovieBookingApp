@@ -1,4 +1,5 @@
 import random
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -52,10 +53,14 @@ class BasePage:
             return False
 
     def get_text(self, by, value):
-        element = self.wait.until(EC.presence_of_element_located((by, value)))
-
-        text = element.get_attribute("textContent")
-        return text.strip() if text else ""
+        for _ in range(3):
+            try:
+                element = self.wait.until(EC.presence_of_element_located((by, value)))
+                text = element.get_attribute("textContent")
+                return text.strip() if text else ""
+            except StaleElementReferenceException:  # pragma: no cover
+                continue  # pragma: no cover
+        return ""  # pragma: no cover
 
     def get_current_url(self):
         return self.driver.current_url
