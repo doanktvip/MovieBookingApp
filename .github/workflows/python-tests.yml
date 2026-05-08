@@ -36,6 +36,7 @@ jobs:
       env:
         # Quan trọng: Phải để dấu chấm (.) để Python hiểu thư mục gốc là module
         PYTHONPATH: .
+        DATABASE_URL: sqlite:///test_db.sqlite
       run: |
         # Khởi tạo database bằng dữ liệu JSON thật
         python create_db.py
