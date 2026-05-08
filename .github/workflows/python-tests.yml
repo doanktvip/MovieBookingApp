@@ -1,6 +1,5 @@
 name: MovieApp Run Tests
 
-# Kích hoạt action này mỗi khi có code push hoặc pull request vào nhánh main/master
 on:
   push:
     branches: [ main ]
@@ -9,35 +8,42 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest # Chạy trên máy chủ Ubuntu ảo của GitHub
+    runs-on: ubuntu-latest
 
     steps:
-    # Lấy mã nguồn của bạn về máy chủ ảo
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Cài đặt Python
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
         python-version: "3.13"
-        cache: 'pip' # Giúp lưu cache thư viện, chạy nhanh hơn ở các lần sau
+        cache: 'pip'
 
-    # Cài đặt các thư viện cần thiết từ requirements.txt
     - name: Install dependencies
       run: |
-        # Câu lệnh này giúp nâng cấp công cụ pip
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        # Đảm bảo bạn đã cài đặt công cụ test
-        pip install pytest pytest-cov selenium
+        pip install pytest pytest-cov selenium webdriver-manager
 
-    # Chạy Pytest cho toàn bộ thư mục test
+    # Cài đặt Chrome cho Selenium
+    - name: Setup Chrome
+      uses: browser-actions/setup-chrome@latest
+      with:
+        chrome-version: stable
+
     - name: Run Pytest
       env:
-        PYTHONPATH: movieapp
+        # Quan trọng: Phải để dấu chấm (.) để Python hiểu thư mục gốc là module
+        PYTHONPATH: .
       run: |
-        # Bật server Flask chạy ngầm (Dấu & ở cuối câu lệnh giúp chạy ngầm background)
+        # Khởi tạo database bằng dữ liệu JSON thật
+        python create_db.py
+        # Khởi động Flask server ngầm
         python movieapp/index.py &
-        sleep 5
+        
+        # Chờ server sẵn sàng (tăng lên 10s cho chắc chắn)
+        sleep 10
+        
+        # Chạy toàn bộ test
         pytest movieapp/test/ --cov=movieapp

@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch, mock_open
 from movieapp.dao import load_tien_ich
 
@@ -54,7 +55,8 @@ def test_load_tien_ich_system_exception(mock_exists):
 @patch('os.path.exists')
 @patch('builtins.open', new_callable=mock_open, read_data='[]')
 def test_load_tien_ich_correct_path(mock_file, mock_exists, mock_abs):
-    mock_abs.return_value = "D:\\GitHub\\MovieBookingApp\\movieapp\\dao.py"
+    fake_dao_path = os.path.join("fake", "path", "movieapp", "dao.py")
+    mock_abs.return_value = fake_dao_path
     mock_exists.return_value = True
 
     load_tien_ich()
