@@ -122,6 +122,53 @@ def test_release_unselected_seats(test_app, sample_users, sample_showtimes_compl
         assert seat_b_check.hold_session_id == user.id
 
 
+def test_release_unselected_seats_with_pending_ticket(test_app, sample_users, sample_showtimes_complex):
+    with test_app.app_context():
+        user = sample_users["users"]["user1"]
+        showtime = db.session.merge(sample_showtimes_complex["showtime"])
+        seats = [db.session.merge(s) for s in sample_showtimes_complex["showtime_seats"]]
+
+        showtime.start_time = datetime.now() + timedelta(hours=1)
+        db.session.commit()
+
+        seat_a = seats[0]
+        seat_a.status = SeatStatus.RESERVED
+        seat_a.hold_session_id = user.id
+        seat_a.hold_until = datetime.now() + timedelta(minutes=10)
+
+        seat_b = seats[1]
+        seat_b.status = SeatStatus.AVAILABLE
+
+        # Create a pending booking and ticket for seat_a
+        booking = Booking(user_id=user.id, showtime_id=showtime.id, total_price=50000, status=BookingStatus.PENDING)
+        db.session.add(booking)
+        db.session.flush()
+        ticket = Ticket(booking_id=booking.id, showtime_seat_id=seat_a.id, final_price=50000)
+        db.session.add(ticket)
+        db.session.commit()
+        
+        booking_id = booking.id
+        ticket_id = ticket.id
+
+        selected_seats_input = [{"id": seat_b.id, "name": "Seat_B"}]
+
+        success, _, _, _ = dao.process_seat_reservations_secure(
+            user.id, showtime.id, selected_seats_input
+        )
+
+        assert success is True
+
+        seat_a_check = db.session.get(ShowtimeSeat, seat_a.id)
+        assert seat_a_check.status == SeatStatus.AVAILABLE
+        assert seat_a_check.hold_session_id is None
+
+        # Check if ticket and booking are deleted
+        deleted_ticket = db.session.get(Ticket, ticket_id)
+        assert deleted_ticket is None
+        deleted_booking = db.session.get(Booking, booking_id)
+        assert deleted_booking is None
+
+
 # HÀM count_bookings_by_user
 def test_count_bookings_by_user_has_data(test_app, sample_full_chain):
     with test_app.app_context():

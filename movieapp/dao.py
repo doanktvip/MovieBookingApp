@@ -463,7 +463,7 @@ def get_user_owned_seat_ids_for_showtime(user_id, showtime_id):
     tickets = db.session.query(Ticket).join(Booking).filter(
         Booking.user_id == user_id,
         Booking.showtime_id == showtime_id,
-        Booking.status.in_([BookingStatus.PAID, BookingStatus.PENDING])
+        Booking.status == BookingStatus.PAID
     ).all()
 
     return [t.showtime_seat_id for t in tickets]
@@ -525,6 +525,14 @@ def process_seat_reservations_secure(user_id, showtime_id, selected_seats):
     user_held_seats = ShowtimeSeat.query.filter_by(hold_session_id=int(user_id)).all()
     for s in user_held_seats:
         if str(s.id) not in selected_st_seat_ids:
+            ticket = Ticket.query.join(Booking).filter(Ticket.showtime_seat_id == s.id,
+                                                       Booking.status == BookingStatus.PENDING).first()
+            if ticket:
+                booking = ticket.booking
+                db.session.delete(ticket)
+                db.session.flush()
+                if not booking.tickets:
+                    db.session.delete(booking)
             s.status = SeatStatus.AVAILABLE
             s.hold_until = None
             s.hold_session_id = None
@@ -537,14 +545,30 @@ def process_seat_reservations_secure(user_id, showtime_id, selected_seats):
 def clear_db_booking_by_session(session_id):
     if not session_id: return
     try:
-        ShowtimeSeat.query.filter_by(
+        seats_to_release = ShowtimeSeat.query.filter_by(
             hold_session_id=int(session_id),
             status=SeatStatus.RESERVED
-        ).update({
-            "status": SeatStatus.AVAILABLE,
-            "hold_until": None,
-            "hold_session_id": None
-        })
+        ).all()
+        if not seats_to_release:
+            return
+        seat_ids = [s.id for s in seats_to_release]
+        tickets_to_delete = Ticket.query.join(Booking).filter(
+            Ticket.showtime_seat_id.in_(seat_ids),
+            Booking.status == BookingStatus.PENDING
+        ).all()
+        booking_ids_to_check = {t.booking_id for t in tickets_to_delete}
+        for t in tickets_to_delete:
+            db.session.delete(t)
+        db.session.flush()
+        if booking_ids_to_check:
+            for b_id in booking_ids_to_check:
+                b = db.session.get(Booking, b_id)
+                if b and not b.tickets:
+                    db.session.delete(b)
+        for s in seats_to_release:
+            s.status = SeatStatus.AVAILABLE
+            s.hold_until = None
+            s.hold_session_id = None
         db.session.commit()
     except Exception as e:
         db.session.rollback()
