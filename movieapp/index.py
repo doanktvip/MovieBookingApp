@@ -421,20 +421,28 @@ def register_routes(app):
 
             except Exception as e:
                 error_msg = str(e)
-                dao.update_status_booking(booking_id, BookingStatus.FAILED, current_sid)
+                try:
+                    dao.update_status_booking(booking_id, BookingStatus.FAILED, current_sid)
+                except Exception:
+                    pass
                 flash(
                     f"Lỗi: {error_msg} Giao dịch đã bị trừ tiền trên MoMo, vui lòng liên hệ CSKH kèm mã đơn {booking_id} để được đối soát/hoàn tiền!",
                     "danger")
 
                 # (Tuỳ chọn) Nếu muốn, bạn có thể dọn dẹp giỏ hàng hiện tại luôn
                 session.pop('booking', None)
+                session.pop('customer_info', None)
                 return redirect(url_for('index'))
 
         else:
             # Code khác '0' nghĩa là thất bại (Khách hủy giao dịch, không đủ tiền...)
-            dao.update_status_booking(booking_id, BookingStatus.PENDING, current_sid)
+            try:
+                dao.update_status_booking(booking_id, BookingStatus.PENDING, current_sid)
+            except Exception:
+                pass
 
             flash(f"Giao dịch thất bại hoặc đã bị hủy. Lỗi: {message}", "danger")
+            session.pop('customer_info', None)
             return redirect(url_for('index'))
 
     @app.route('/userinfo', methods=['GET'])
