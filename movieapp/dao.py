@@ -693,7 +693,7 @@ def update_status_booking(booking_id, status, current_sid=None):
                     # Kiểm tra bảo mật: Ghế có còn thuộc về người này không?
                     if current_sid and str(st_seat.hold_session_id) != str(current_sid):
                         raise Exception(
-                            f"Ghế {st_seat.seat.row}{st_seat.seat.col} đã hết thời gian giữ và bị người khác lấy!")
+                            f"Ghế {st_seat.seat.row}{st_seat.seat.col} đã bị người khác lấy!")
                     if st_seat.hold_until and st_seat.hold_until < now:
                         raise Exception(
                             "Giao dịch trễ! Thời gian giữ ghế đã hết hạn trước khi hệ thống ghi nhận thanh toán.")

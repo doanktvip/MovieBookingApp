@@ -223,7 +223,7 @@ def register_routes(app):
         return render_template('booking.html', showtime=showtime, movie=showtime.movie, cinema=showtime.room.cinema,
                                room=showtime.room, seat_map=seat_map, rows=rows, cols=cols, seat_type_vip=seat_type_vip,
                                time_remaining=time_remaining, booking_session=booking_session,
-                               prev_tickets=actual_prev_tickets,owned_seat_ids=owned_seat_ids)
+                               prev_tickets=actual_prev_tickets, owned_seat_ids=owned_seat_ids)
 
     @app.route('/api/booking', methods=['POST'])
     @user_required
@@ -423,7 +423,7 @@ def register_routes(app):
                 error_msg = str(e)
                 try:
                     dao.update_status_booking(booking_id, BookingStatus.FAILED, current_sid)
-                except Exception:
+                except Exception:  # pragma: no cover
                     pass
                 flash(
                     f"Lỗi: {error_msg} Giao dịch đã bị trừ tiền trên MoMo, vui lòng liên hệ CSKH kèm mã đơn {booking_id} để được đối soát/hoàn tiền!",

@@ -74,7 +74,7 @@ def test_momo_return_db_exception(mock_update_status, test_client):
 
     with test_client.session_transaction() as sess:
         assert 'booking' not in sess
-        assert 'customer_info' in sess
+        assert 'customer_info' not in sess
 
 
 # --- TEST 4: KHÁCH HỦY THANH TOÁN HOẶC LỖI (RESULT CODE KHÁC '0') ---

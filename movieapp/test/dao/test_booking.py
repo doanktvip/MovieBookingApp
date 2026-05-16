@@ -154,7 +154,7 @@ def test_update_status_booking_wrong_session(sample_full_chain, test_session):
     st_seat.hold_session_id = "session_real"
     test_session.commit()
 
-    with pytest.raises(Exception, match="đã hết thời gian giữ và bị người khác lấy"):
+    with pytest.raises(Exception, match="đã bị người khác lấy"):
         update_status_booking(data["booking"].id, BookingStatus.PAID, "session_hacker")
 
 
